@@ -1,10 +1,11 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { 
   LayoutDashboard, ShoppingCart, Package, Users, 
-  FileText, Settings, X, LogOut, Paintbrush
+  FileText, Settings, X
 } from "lucide-react";
 import { useGetCompany, useGetDashboard } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
+import logoIcon from "@/assets/gestiopro-icon.png";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -19,11 +20,11 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const alertsCount = dashboard?.lowStock?.length || 0;
 
   const navItems = [
-    { href: "/", icon: LayoutDashboard, label: "Tableau de bord" },
-    { href: "/ventes", icon: ShoppingCart, label: "Ventes" },
-    { href: "/stock", icon: Package, label: "Stock", badge: alertsCount > 0 ? alertsCount : undefined, alert: alertsCount > 0 },
-    { href: "/clients", icon: Users, label: "Clients" },
-    { href: "/rapports", icon: FileText, label: "Rapports" },
+    { href: "/app", icon: LayoutDashboard, label: "Tableau de bord" },
+    { href: "/app/ventes", icon: ShoppingCart, label: "Ventes" },
+    { href: "/app/stock", icon: Package, label: "Stock", badge: alertsCount > 0 ? alertsCount : undefined, alert: alertsCount > 0 },
+    { href: "/app/clients", icon: Users, label: "Clients" },
+    { href: "/app/rapports", icon: FileText, label: "Rapports" },
   ];
 
   return (
@@ -42,14 +43,12 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         !isOpen && "-translate-x-full md:translate-x-0"
       )}>
         <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border shrink-0">
-          <div className="flex items-center gap-2 text-primary">
-            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0 font-bold text-lg shadow-sm">
-              G
-            </div>
+          <Link to="/app" className="flex items-center gap-2">
+            <img src={logoIcon} alt="GestioPro" className="w-8 h-8 rounded-lg shrink-0" />
             <span className="font-display font-bold text-xl text-sidebar-foreground">
               GestioPro
             </span>
-          </div>
+          </Link>
           <button 
             onClick={() => setIsOpen(false)}
             className="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
@@ -86,10 +85,10 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           <div className="pt-4 pb-2">
             <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider px-3">Entreprise</p>
           </div>
-          <Link to="/parametres" onClick={() => setIsOpen(false)} className="block">
+          <Link to="/app/parametres" onClick={() => setIsOpen(false)} className="block">
             <div className={cn(
               "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer",
-              location === "/parametres" ? "bg-primary/10 text-primary font-semibold" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground font-medium"
+              location === "/app/parametres" ? "bg-primary/10 text-primary font-semibold" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground font-medium"
             )}>
               <Settings size={20} />
               <span className="text-sm truncate">Paramètres</span>
