@@ -141,7 +141,7 @@ export function useGetCompany() {
 export function useUpdateCompany() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Partial<Company>) => {
+    mutationFn: async ({ data }: { data: Partial<Company> }) => {
       Object.assign(company, data);
       return delay(company);
     },
