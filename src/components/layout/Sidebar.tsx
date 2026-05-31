@@ -12,7 +12,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
-  const [location] = useLocation();
+  const location = useLocation({ select: (s) => s.pathname });
   const { data: company } = useGetCompany();
   const { data: dashboard } = useGetDashboard();
 
