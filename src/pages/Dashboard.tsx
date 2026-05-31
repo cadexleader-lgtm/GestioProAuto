@@ -124,7 +124,7 @@ export function Dashboard() {
           </CardContent>
           {dashboard.lowStock.length > 0 && (
             <div className="p-4 border-t border-border mt-auto">
-              <Link href="/stock" className="w-full py-2.5 text-sm font-semibold text-primary hover:bg-primary/5 rounded-xl transition-colors flex items-center justify-center gap-2">
+              <Link to="/stock" className="w-full py-2.5 text-sm font-semibold text-primary hover:bg-primary/5 rounded-xl transition-colors flex items-center justify-center gap-2">
                 Gérer le stock <ArrowRight size={16} />
               </Link>
             </div>
@@ -135,7 +135,7 @@ export function Dashboard() {
       <Card className="shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Dernières ventes</CardTitle>
-          <Link href="/ventes" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
+          <Link to="/ventes" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
             Tout voir <ArrowRight size={16} />
           </Link>
         </CardHeader>
