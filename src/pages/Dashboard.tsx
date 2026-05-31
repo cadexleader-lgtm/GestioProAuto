@@ -4,7 +4,7 @@ import { ShoppingCart, TrendingUp, TrendingDown, CheckCircle2, AlertTriangle, Ar
 import { formatFCFA } from "@/lib/format";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "wouter";
+import { Link } from "@tanstack/react-router";
 
 export function Dashboard() {
   const { data: dashboard, isLoading } = useGetDashboard();

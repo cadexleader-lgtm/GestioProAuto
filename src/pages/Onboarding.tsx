@@ -1,5 +1,5 @@
 import { useGetCompany, useUpdateCompany, useListSectors, getGetCompanyQueryKey } from "@workspace/api-client-react";
-import { useLocation } from "wouter";
+import { useLocation } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
