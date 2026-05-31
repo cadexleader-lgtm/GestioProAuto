@@ -13,7 +13,8 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 export function Onboarding() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
+  const setLocation = (to: string) => navigate({ to });
   const queryClient = useQueryClient();
   const { data: company, isLoading: isLoadingCompany } = useGetCompany();
   const { data: sectors, isLoading: isLoadingSectors } = useListSectors();
