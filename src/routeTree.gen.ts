@@ -9,162 +9,120 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VentesRouteImport } from './routes/ventes'
-import { Route as StockRouteImport } from './routes/stock'
-import { Route as RapportsRouteImport } from './routes/rapports'
-import { Route as ParametresRouteImport } from './routes/parametres'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppVentesRouteImport } from './routes/app.ventes'
+import { Route as AppStockRouteImport } from './routes/app.stock'
+import { Route as AppRapportsRouteImport } from './routes/app.rapports'
+import { Route as AppParametresRouteImport } from './routes/app.parametres'
+import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
+import { Route as AppClientsRouteImport } from './routes/app.clients'
 
-const VentesRoute = VentesRouteImport.update({
-  id: '/ventes',
-  path: '/ventes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StockRoute = StockRouteImport.update({
-  id: '/stock',
-  path: '/stock',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RapportsRoute = RapportsRouteImport.update({
-  id: '/rapports',
-  path: '/rapports',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ParametresRoute = ParametresRouteImport.update({
-  id: '/parametres',
-  path: '/parametres',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ClientsRoute = ClientsRouteImport.update({
-  id: '/clients',
-  path: '/clients',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppVentesRoute = AppVentesRouteImport.update({
+  id: '/app/ventes',
+  path: '/app/ventes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppStockRoute = AppStockRouteImport.update({
+  id: '/app/stock',
+  path: '/app/stock',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRapportsRoute = AppRapportsRouteImport.update({
+  id: '/app/rapports',
+  path: '/app/rapports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppParametresRoute = AppParametresRouteImport.update({
+  id: '/app/parametres',
+  path: '/app/parametres',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppOnboardingRoute = AppOnboardingRouteImport.update({
+  id: '/app/onboarding',
+  path: '/app/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppClientsRoute = AppClientsRouteImport.update({
+  id: '/app/clients',
+  path: '/app/clients',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/clients': typeof ClientsRoute
-  '/onboarding': typeof OnboardingRoute
-  '/parametres': typeof ParametresRoute
-  '/rapports': typeof RapportsRoute
-  '/stock': typeof StockRoute
-  '/ventes': typeof VentesRoute
+  '/app/clients': typeof AppClientsRoute
+  '/app/onboarding': typeof AppOnboardingRoute
+  '/app/parametres': typeof AppParametresRoute
+  '/app/rapports': typeof AppRapportsRoute
+  '/app/stock': typeof AppStockRoute
+  '/app/ventes': typeof AppVentesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/clients': typeof ClientsRoute
-  '/onboarding': typeof OnboardingRoute
-  '/parametres': typeof ParametresRoute
-  '/rapports': typeof RapportsRoute
-  '/stock': typeof StockRoute
-  '/ventes': typeof VentesRoute
+  '/app/clients': typeof AppClientsRoute
+  '/app/onboarding': typeof AppOnboardingRoute
+  '/app/parametres': typeof AppParametresRoute
+  '/app/rapports': typeof AppRapportsRoute
+  '/app/stock': typeof AppStockRoute
+  '/app/ventes': typeof AppVentesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/clients': typeof ClientsRoute
-  '/onboarding': typeof OnboardingRoute
-  '/parametres': typeof ParametresRoute
-  '/rapports': typeof RapportsRoute
-  '/stock': typeof StockRoute
-  '/ventes': typeof VentesRoute
+  '/app/clients': typeof AppClientsRoute
+  '/app/onboarding': typeof AppOnboardingRoute
+  '/app/parametres': typeof AppParametresRoute
+  '/app/rapports': typeof AppRapportsRoute
+  '/app/stock': typeof AppStockRoute
+  '/app/ventes': typeof AppVentesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/clients'
-    | '/onboarding'
-    | '/parametres'
-    | '/rapports'
-    | '/stock'
-    | '/ventes'
+    | '/app/clients'
+    | '/app/onboarding'
+    | '/app/parametres'
+    | '/app/rapports'
+    | '/app/stock'
+    | '/app/ventes'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/clients'
-    | '/onboarding'
-    | '/parametres'
-    | '/rapports'
-    | '/stock'
-    | '/ventes'
+    | '/app/clients'
+    | '/app/onboarding'
+    | '/app/parametres'
+    | '/app/rapports'
+    | '/app/stock'
+    | '/app/ventes'
   id:
     | '__root__'
     | '/'
-    | '/clients'
-    | '/onboarding'
-    | '/parametres'
-    | '/rapports'
-    | '/stock'
-    | '/ventes'
+    | '/app/clients'
+    | '/app/onboarding'
+    | '/app/parametres'
+    | '/app/rapports'
+    | '/app/stock'
+    | '/app/ventes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ClientsRoute: typeof ClientsRoute
-  OnboardingRoute: typeof OnboardingRoute
-  ParametresRoute: typeof ParametresRoute
-  RapportsRoute: typeof RapportsRoute
-  StockRoute: typeof StockRoute
-  VentesRoute: typeof VentesRoute
+  AppClientsRoute: typeof AppClientsRoute
+  AppOnboardingRoute: typeof AppOnboardingRoute
+  AppParametresRoute: typeof AppParametresRoute
+  AppRapportsRoute: typeof AppRapportsRoute
+  AppStockRoute: typeof AppStockRoute
+  AppVentesRoute: typeof AppVentesRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/ventes': {
-      id: '/ventes'
-      path: '/ventes'
-      fullPath: '/ventes'
-      preLoaderRoute: typeof VentesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/stock': {
-      id: '/stock'
-      path: '/stock'
-      fullPath: '/stock'
-      preLoaderRoute: typeof StockRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/rapports': {
-      id: '/rapports'
-      path: '/rapports'
-      fullPath: '/rapports'
-      preLoaderRoute: typeof RapportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/parametres': {
-      id: '/parametres'
-      path: '/parametres'
-      fullPath: '/parametres'
-      preLoaderRoute: typeof ParametresRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/clients': {
-      id: '/clients'
-      path: '/clients'
-      fullPath: '/clients'
-      preLoaderRoute: typeof ClientsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -172,18 +130,70 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/ventes': {
+      id: '/app/ventes'
+      path: '/app/ventes'
+      fullPath: '/app/ventes'
+      preLoaderRoute: typeof AppVentesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/stock': {
+      id: '/app/stock'
+      path: '/app/stock'
+      fullPath: '/app/stock'
+      preLoaderRoute: typeof AppStockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/rapports': {
+      id: '/app/rapports'
+      path: '/app/rapports'
+      fullPath: '/app/rapports'
+      preLoaderRoute: typeof AppRapportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/parametres': {
+      id: '/app/parametres'
+      path: '/app/parametres'
+      fullPath: '/app/parametres'
+      preLoaderRoute: typeof AppParametresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/onboarding': {
+      id: '/app/onboarding'
+      path: '/app/onboarding'
+      fullPath: '/app/onboarding'
+      preLoaderRoute: typeof AppOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/clients': {
+      id: '/app/clients'
+      path: '/app/clients'
+      fullPath: '/app/clients'
+      preLoaderRoute: typeof AppClientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ClientsRoute: ClientsRoute,
-  OnboardingRoute: OnboardingRoute,
-  ParametresRoute: ParametresRoute,
-  RapportsRoute: RapportsRoute,
-  StockRoute: StockRoute,
-  VentesRoute: VentesRoute,
+  AppClientsRoute: AppClientsRoute,
+  AppOnboardingRoute: AppOnboardingRoute,
+  AppParametresRoute: AppParametresRoute,
+  AppRapportsRoute: AppRapportsRoute,
+  AppStockRoute: AppStockRoute,
+  AppVentesRoute: AppVentesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
