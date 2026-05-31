@@ -263,7 +263,7 @@ export function useCreateSale() {
         reference: `INV-${String(2401 + sales.length).padStart(4, "0")}`,
         total,
         paymentMethod: data.paymentMethod,
-        sellerName: company.ownerName.split(" ")[0],
+        sellerName: data.sellerName || company.ownerName.split(" ")[0],
         createdAt: new Date().toISOString(),
         items,
       };
