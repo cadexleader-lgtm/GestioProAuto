@@ -171,7 +171,7 @@ export function useListProducts(params?: { search?: string; lowStockOnly?: boole
 export function useCreateProduct() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Omit<Product, "id" | "createdAt">) => {
+    mutationFn: async ({ data }: { data: Omit<Product, "id" | "createdAt"> }) => {
       const p: Product = { ...data, id: `p${products.length + 1}`, createdAt: new Date().toISOString() };
       products.unshift(p);
       return delay(p);
@@ -195,7 +195,7 @@ export function useUpdateProduct() {
 export function useDeleteProduct() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id }: { id: string }) => {
       const idx = products.findIndex((p) => p.id === id);
       if (idx >= 0) products.splice(idx, 1);
       return delay({ ok: true });
@@ -221,7 +221,7 @@ export function useListCustomers(params?: { search?: string }) {
 export function useCreateCustomer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Omit<Customer, "id" | "createdAt">) => {
+    mutationFn: async ({ data }: { data: Omit<Customer, "id" | "createdAt"> }) => {
       const c: Customer = { ...data, id: `c${customers.length + 1}`, createdAt: new Date().toISOString() };
       customers.unshift(c);
       return delay(c);
@@ -233,7 +233,7 @@ export function useCreateCustomer() {
 export function useDeleteCustomer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id }: { id: string }) => {
       const idx = customers.findIndex((c) => c.id === id);
       if (idx >= 0) customers.splice(idx, 1);
       return delay({ ok: true });
