@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link, useLocation } from "@tanstack/react-router";
 import { 
   LayoutDashboard, ShoppingCart, Package, Users, 
   FileText, Settings, X, LogOut, Paintbrush
