@@ -86,7 +86,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           <div className="pt-4 pb-2">
             <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider px-3">Entreprise</p>
           </div>
-          <Link href="/parametres" onClick={() => setIsOpen(false)}>
+          <Link to="/parametres" onClick={() => setIsOpen(false)} className="block">
             <div className={cn(
               "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer",
               location === "/parametres" ? "bg-primary/10 text-primary font-semibold" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground font-medium"
