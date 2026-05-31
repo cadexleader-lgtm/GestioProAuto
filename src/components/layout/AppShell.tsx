@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { NewSaleSheet } from "../sales/NewSaleSheet";
