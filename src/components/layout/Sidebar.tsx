@@ -62,7 +62,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           {navItems.map((item) => {
             const active = location === item.href;
             return (
-              <Link key={item.href} href={item.href} onClick={() => setIsOpen(false)}>
+              <Link key={item.href} to={item.href} onClick={() => setIsOpen(false)} className="block">
                 <div className={cn(
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative overflow-hidden cursor-pointer",
                   active ? "bg-primary/10 text-primary font-semibold" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground font-medium"
