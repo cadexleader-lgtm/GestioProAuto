@@ -249,7 +249,7 @@ export function useListSales() {
 export function useCreateSale() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ data }: { data: { customerId?: string; paymentMethod: string; items: { productId: string; quantity: number; unitPriceOverride?: number }[] } }) => {
+    mutationFn: async ({ data }: { data: { customerId?: string; paymentMethod: string; sellerName?: string; items: { productId: string; quantity: number; unitPriceOverride?: number }[] } }) => {
       let total = 0;
       const items: SaleItem[] = data.items.map((it) => {
         const p = products.find((pp) => pp.id === it.productId)!;
