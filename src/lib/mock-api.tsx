@@ -13,11 +13,11 @@ export interface Company {
   name: string;
   ownerName: string;
   email: string;
-  phone?: string;
+  phone?: string | null;
   country: string;
   city: string;
   currency: string;
-  sectorId: string | null;
+  sectorId?: string | null;
 }
 
 export interface Sector {
