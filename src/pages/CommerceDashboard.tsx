@@ -6,7 +6,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "@tanstack/react-router";
 
-export function Dashboard() {
+export function CommerceDashboard() {
   const { data: dashboard, isLoading } = useGetDashboard();
 
   if (isLoading) {
