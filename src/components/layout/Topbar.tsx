@@ -6,9 +6,10 @@ import { cn } from "@/lib/utils";
 interface TopbarProps {
   onMenuClick: () => void;
   onNewSale: () => void;
+  showQuickSale?: boolean;
 }
 
-export function Topbar({ onMenuClick, onNewSale }: TopbarProps) {
+export function Topbar({ onMenuClick, onNewSale, showQuickSale = true }: TopbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const { data: company } = useGetCompany();
   const { data: dashboard } = useGetDashboard();
@@ -52,12 +53,14 @@ export function Topbar({ onMenuClick, onNewSale }: TopbarProps) {
           )}
         </button>
 
-        <button 
-          onClick={onNewSale}
-          className="md:hidden w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md shadow-primary/20"
-        >
-          <Plus size={18} />
-        </button>
+        {showQuickSale && (
+          <button
+            onClick={onNewSale}
+            className="md:hidden w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md shadow-primary/20"
+          >
+            <Plus size={18} />
+          </button>
+        )}
       </div>
     </header>
   );

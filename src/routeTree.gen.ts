@@ -19,6 +19,10 @@ import { Route as AppRapportsRouteImport } from './routes/app.rapports'
 import { Route as AppParametresRouteImport } from './routes/app.parametres'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
 import { Route as AppClientsRouteImport } from './routes/app.clients'
+import { Route as AppRestoTablesRouteImport } from './routes/app.resto.tables'
+import { Route as AppRestoMenuRouteImport } from './routes/app.resto.menu'
+import { Route as AppRestoCuisineRouteImport } from './routes/app.resto.cuisine'
+import { Route as AppRestoCommandesRouteImport } from './routes/app.resto.commandes'
 
 const InscriptionRoute = InscriptionRouteImport.update({
   id: '/inscription',
@@ -70,6 +74,26 @@ const AppClientsRoute = AppClientsRouteImport.update({
   path: '/app/clients',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRestoTablesRoute = AppRestoTablesRouteImport.update({
+  id: '/app/resto/tables',
+  path: '/app/resto/tables',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRestoMenuRoute = AppRestoMenuRouteImport.update({
+  id: '/app/resto/menu',
+  path: '/app/resto/menu',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRestoCuisineRoute = AppRestoCuisineRouteImport.update({
+  id: '/app/resto/cuisine',
+  path: '/app/resto/cuisine',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRestoCommandesRoute = AppRestoCommandesRouteImport.update({
+  id: '/app/resto/commandes',
+  path: '/app/resto/commandes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +106,10 @@ export interface FileRoutesByFullPath {
   '/app/stock': typeof AppStockRoute
   '/app/ventes': typeof AppVentesRoute
   '/app/': typeof AppIndexRoute
+  '/app/resto/commandes': typeof AppRestoCommandesRoute
+  '/app/resto/cuisine': typeof AppRestoCuisineRoute
+  '/app/resto/menu': typeof AppRestoMenuRoute
+  '/app/resto/tables': typeof AppRestoTablesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +122,10 @@ export interface FileRoutesByTo {
   '/app/stock': typeof AppStockRoute
   '/app/ventes': typeof AppVentesRoute
   '/app': typeof AppIndexRoute
+  '/app/resto/commandes': typeof AppRestoCommandesRoute
+  '/app/resto/cuisine': typeof AppRestoCuisineRoute
+  '/app/resto/menu': typeof AppRestoMenuRoute
+  '/app/resto/tables': typeof AppRestoTablesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +139,10 @@ export interface FileRoutesById {
   '/app/stock': typeof AppStockRoute
   '/app/ventes': typeof AppVentesRoute
   '/app/': typeof AppIndexRoute
+  '/app/resto/commandes': typeof AppRestoCommandesRoute
+  '/app/resto/cuisine': typeof AppRestoCuisineRoute
+  '/app/resto/menu': typeof AppRestoMenuRoute
+  '/app/resto/tables': typeof AppRestoTablesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +157,10 @@ export interface FileRouteTypes {
     | '/app/stock'
     | '/app/ventes'
     | '/app/'
+    | '/app/resto/commandes'
+    | '/app/resto/cuisine'
+    | '/app/resto/menu'
+    | '/app/resto/tables'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +173,10 @@ export interface FileRouteTypes {
     | '/app/stock'
     | '/app/ventes'
     | '/app'
+    | '/app/resto/commandes'
+    | '/app/resto/cuisine'
+    | '/app/resto/menu'
+    | '/app/resto/tables'
   id:
     | '__root__'
     | '/'
@@ -145,6 +189,10 @@ export interface FileRouteTypes {
     | '/app/stock'
     | '/app/ventes'
     | '/app/'
+    | '/app/resto/commandes'
+    | '/app/resto/cuisine'
+    | '/app/resto/menu'
+    | '/app/resto/tables'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +206,10 @@ export interface RootRouteChildren {
   AppStockRoute: typeof AppStockRoute
   AppVentesRoute: typeof AppVentesRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppRestoCommandesRoute: typeof AppRestoCommandesRoute
+  AppRestoCuisineRoute: typeof AppRestoCuisineRoute
+  AppRestoMenuRoute: typeof AppRestoMenuRoute
+  AppRestoTablesRoute: typeof AppRestoTablesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +284,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClientsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/resto/tables': {
+      id: '/app/resto/tables'
+      path: '/app/resto/tables'
+      fullPath: '/app/resto/tables'
+      preLoaderRoute: typeof AppRestoTablesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/resto/menu': {
+      id: '/app/resto/menu'
+      path: '/app/resto/menu'
+      fullPath: '/app/resto/menu'
+      preLoaderRoute: typeof AppRestoMenuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/resto/cuisine': {
+      id: '/app/resto/cuisine'
+      path: '/app/resto/cuisine'
+      fullPath: '/app/resto/cuisine'
+      preLoaderRoute: typeof AppRestoCuisineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/resto/commandes': {
+      id: '/app/resto/commandes'
+      path: '/app/resto/commandes'
+      fullPath: '/app/resto/commandes'
+      preLoaderRoute: typeof AppRestoCommandesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,7 +326,21 @@ const rootRouteChildren: RootRouteChildren = {
   AppStockRoute: AppStockRoute,
   AppVentesRoute: AppVentesRoute,
   AppIndexRoute: AppIndexRoute,
+  AppRestoCommandesRoute: AppRestoCommandesRoute,
+  AppRestoCuisineRoute: AppRestoCuisineRoute,
+  AppRestoMenuRoute: AppRestoMenuRoute,
+  AppRestoTablesRoute: AppRestoTablesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
