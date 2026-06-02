@@ -165,9 +165,12 @@ export function useUpdateCompany() {
   return useMutation({
     mutationFn: async ({ data }: { data: Partial<Company> }) => {
       Object.assign(company, data);
+      if (data.sectorId) writeLS(SECTOR_LS_KEY, data.sectorId);
+      if (data.subSectorId) writeLS(SUBSECTOR_LS_KEY, data.subSectorId);
+      writeLS(COMPANY_LS_KEY, JSON.stringify(company));
       return delay(company);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: getGetCompanyQueryKey() }),
+    onSuccess: () => qc.invalidateQueries(),
   });
 }
 
