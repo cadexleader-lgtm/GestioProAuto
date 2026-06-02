@@ -18,6 +18,7 @@ export interface Company {
   city: string;
   currency: string;
   sectorId?: string;
+  subSectorId?: string;
 }
 
 export interface Sector {
@@ -65,17 +66,38 @@ export interface Sale {
   items?: SaleItem[];
 }
 
+// ---------- Persisted sector (localStorage) ----------
+const SECTOR_LS_KEY = "gestiopro.sector";
+const SUBSECTOR_LS_KEY = "gestiopro.subSector";
+const COMPANY_LS_KEY = "gestiopro.company";
+
+function readLS(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try { return window.localStorage.getItem(key); } catch { return null; }
+}
+function writeLS(key: string, value: string) {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem(key, value); } catch {}
+}
+
+const persistedCompany = (() => {
+  const raw = readLS(COMPANY_LS_KEY);
+  if (!raw) return null;
+  try { return JSON.parse(raw) as Partial<Company>; } catch { return null; }
+})();
+
 // ---------- Seed data ----------
 const company: Company = {
   id: "co_1",
-  name: "Boutique Sankara",
-  ownerName: "Aminata Sankara",
-  email: "aminata@sankara.shop",
-  phone: "+221 77 555 12 34",
-  country: "Sénégal",
-  city: "Dakar",
+  name: persistedCompany?.name ?? "Boutique Sankara",
+  ownerName: persistedCompany?.ownerName ?? "Aminata Sankara",
+  email: persistedCompany?.email ?? "aminata@sankara.shop",
+  phone: persistedCompany?.phone ?? "+221 77 555 12 34",
+  country: persistedCompany?.country ?? "Sénégal",
+  city: persistedCompany?.city ?? "Dakar",
   currency: "XOF",
-  sectorId: "sec_shop",
+  sectorId: readLS(SECTOR_LS_KEY) ?? persistedCompany?.sectorId ?? "commerce",
+  subSectorId: readLS(SUBSECTOR_LS_KEY) ?? undefined,
 };
 
 const sectors: Sector[] = [
