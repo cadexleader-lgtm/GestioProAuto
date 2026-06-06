@@ -1,199 +1,141 @@
 /**
- * Single Core / Multi Sector — configuration centrale.
- * Chaque secteur déclare ses sous-secteurs et les modules (entrées sidebar) qu'il active.
+ * GestioPro — Single Sector (Commerce) / Multi Sub-Sector.
+ * Chaque sous-secteur déclare ses modules métiers ; les modules
+ * transversaux (fournisseurs, RH, dépenses, trésorerie, documents)
+ * sont ajoutés automatiquement à tous les sous-secteurs.
  */
 
-export type SectorId =
-  | "commerce"
-  | "phones"
-  | "supermarket"
-  | "restaurant"
-  | "insurance"
-  | "clinic"
-  | "school"
-  | "services";
-
-export interface SubSector {
-  id: string;
-  label: string;
-}
+export type SubSectorId = "boutique" | "electromenager" | "vehicules" | "restaurant";
 
 export interface SectorModule {
   href: string;
-  iconName: string; // nom d'icône lucide (résolu côté Sidebar)
+  iconName: string;
   label: string;
-  badge?: "alerts"; // type de badge dynamique
+  badge?: "alerts";
 }
 
+export interface SubSectorConfig {
+  id: SubSectorId;
+  label: string;
+  shortLabel: string;
+  iconName: string;
+  description: string;
+  tagline: string;
+  hasQuickSale: boolean;
+  metierModules: SectorModule[];
+}
+
+/** Modules transversaux ajoutés à tous les sous-secteurs */
+export const CROSS_MODULES: SectorModule[] = [
+  { href: "/app/clients", iconName: "Users", label: "Clients" },
+  { href: "/app/fournisseurs", iconName: "Truck", label: "Fournisseurs" },
+  { href: "/app/personnel", iconName: "Users2", label: "Personnel" },
+  { href: "/app/depenses", iconName: "Receipt", label: "Dépenses" },
+  { href: "/app/tresorerie", iconName: "Wallet", label: "Trésorerie" },
+  { href: "/app/rapports", iconName: "BarChart3", label: "Rapports" },
+  { href: "/app/documents", iconName: "FileText", label: "Documents" },
+];
+
+export const SUB_SECTORS: Record<SubSectorId, SubSectorConfig> = {
+  boutique: {
+    id: "boutique",
+    label: "Boutique & Magasin",
+    shortLabel: "Boutique",
+    iconName: "ShoppingBag",
+    description: "Caisse rapide, stock multi-catégories, fidélité clients.",
+    tagline: "POS moderne pour boutiques de détail",
+    hasQuickSale: true,
+    metierModules: [
+      { href: "/app", iconName: "LayoutDashboard", label: "Tableau de bord" },
+      { href: "/app/ventes", iconName: "ShoppingCart", label: "Ventes" },
+      { href: "/app/stock", iconName: "Package", label: "Produits & Stock", badge: "alerts" },
+    ],
+  },
+  electromenager: {
+    id: "electromenager",
+    label: "Vente d'Électroménager",
+    shortLabel: "Électroménager",
+    iconName: "Tv",
+    description: "TV, frigos, climatiseurs — garanties, SAV, facturation pro.",
+    tagline: "ERP spécialisé électroménager & SAV",
+    hasQuickSale: true,
+    metierModules: [
+      { href: "/app", iconName: "LayoutDashboard", label: "Tableau de bord" },
+      { href: "/app/ventes", iconName: "ShoppingCart", label: "Ventes" },
+      { href: "/app/stock", iconName: "Package", label: "Produits & Stock", badge: "alerts" },
+      { href: "/app/elec/garanties", iconName: "ShieldCheck", label: "Garanties & SAV" },
+      { href: "/app/elec/facturation", iconName: "FileSpreadsheet", label: "Facturation Pro" },
+      { href: "/app/elec/credits", iconName: "CreditCard", label: "Ventes à crédit" },
+    ],
+  },
+  vehicules: {
+    id: "vehicules",
+    label: "Vente de Véhicules",
+    shortLabel: "Véhicules",
+    iconName: "Car",
+    description: "Parc auto, finance d'achat, maintenance, GPS, crédit & location.",
+    tagline: "ERP automobile complet",
+    hasQuickSale: false,
+    metierModules: [
+      { href: "/app", iconName: "LayoutDashboard", label: "Tableau de bord" },
+      { href: "/app/auto/vehicules", iconName: "Car", label: "Parc véhicules" },
+      { href: "/app/auto/credits", iconName: "CreditCard", label: "Ventes à crédit" },
+      { href: "/app/auto/locations", iconName: "KeyRound", label: "Locations" },
+      { href: "/app/auto/gps", iconName: "MapPin", label: "Suivi GPS" },
+    ],
+  },
+  restaurant: {
+    id: "restaurant",
+    label: "Restaurant & Bar Lounge",
+    shortLabel: "Restaurant",
+    iconName: "UtensilsCrossed",
+    description: "Tables, cuisine, bar, serveurs, tickets WhatsApp.",
+    tagline: "Pilotez votre restaurant en temps réel",
+    hasQuickSale: false,
+    metierModules: [
+      { href: "/app", iconName: "LayoutDashboard", label: "Tableau de bord" },
+      { href: "/app/resto/commandes", iconName: "ClipboardList", label: "Commandes" },
+      { href: "/app/resto/cuisine", iconName: "ChefHat", label: "Cuisine & Bar" },
+      { href: "/app/resto/tables", iconName: "Grid3x3", label: "Tables" },
+      { href: "/app/resto/menu", iconName: "UtensilsCrossed", label: "Menu" },
+    ],
+  },
+};
+
+export const SUB_SECTORS_ARRAY: SubSectorConfig[] = Object.values(SUB_SECTORS);
+
+export function getSubSectorConfig(id?: string | null): SubSectorConfig {
+  if (id && (SUB_SECTORS as Record<string, SubSectorConfig>)[id]) {
+    return (SUB_SECTORS as Record<string, SubSectorConfig>)[id];
+  }
+  return SUB_SECTORS.boutique;
+}
+
+export function getAllModules(id?: string | null): SectorModule[] {
+  const sub = getSubSectorConfig(id);
+  return [...sub.metierModules, ...CROSS_MODULES];
+}
+
+// ---- Backward-compatible exports (used by older code) ----
+export type SectorId = "commerce";
 export interface SectorConfig {
   id: SectorId;
   label: string;
   iconName: string;
   description: string;
-  subSectors: SubSector[];
-  modules: SectorModule[];
-  /** Affiche le bouton "Nouvelle vente" du Topbar (commerce-like) */
   hasQuickSale: boolean;
+  subSectors: { id: string; label: string }[];
+  modules: SectorModule[];
 }
-
-const sharedTail: SectorModule[] = [
-  { href: "/app/clients", iconName: "Users", label: "Clients" },
-  { href: "/app/rapports", iconName: "FileText", label: "Rapports" },
-];
-
 export const SECTORS: Record<SectorId, SectorConfig> = {
   commerce: {
     id: "commerce",
-    label: "Commerce / Boutique",
+    label: "Commerce",
     iconName: "ShoppingBag",
-    description: "Vente au détail, fidélité, suivi du stock.",
+    description: "Toutes les activités commerciales.",
     hasQuickSale: true,
-    subSectors: [
-      { id: "boutique-vetements", label: "Magasin de vêtements" },
-      { id: "boutique-cosmetique", label: "Boutique cosmétique" },
-      { id: "informatique", label: "Boutique informatique" },
-      { id: "quincaillerie", label: "Quincaillerie" },
-      { id: "librairie", label: "Librairie / Papeterie" },
-      { id: "generaliste", label: "Commerce général" },
-    ],
-    modules: [
-      { href: "/app", iconName: "LayoutDashboard", label: "Tableau de bord" },
-      { href: "/app/ventes", iconName: "ShoppingCart", label: "Ventes" },
-      { href: "/app/stock", iconName: "Package", label: "Stock", badge: "alerts" },
-      ...sharedTail,
-    ],
-  },
-  phones: {
-    id: "phones",
-    label: "Magasin de téléphones",
-    iconName: "Smartphone",
-    description: "IMEI, SAV, accessoires.",
-    hasQuickSale: true,
-    subSectors: [
-      { id: "tel-neuf", label: "Téléphones neufs" },
-      { id: "tel-occasion", label: "Téléphones d'occasion" },
-      { id: "reparation", label: "Réparation / SAV" },
-      { id: "accessoires", label: "Accessoires uniquement" },
-    ],
-    modules: [
-      { href: "/app", iconName: "LayoutDashboard", label: "Tableau de bord" },
-      { href: "/app/ventes", iconName: "ShoppingCart", label: "Ventes" },
-      { href: "/app/stock", iconName: "Package", label: "Stock & IMEI", badge: "alerts" },
-      ...sharedTail,
-    ],
-  },
-  supermarket: {
-    id: "supermarket",
-    label: "Supermarché",
-    iconName: "Building2",
-    description: "Multi-rayons, code-barres, caisses multiples.",
-    hasQuickSale: true,
-    subSectors: [
-      { id: "supermarche", label: "Supermarché" },
-      { id: "superette", label: "Supérette / Mini-marché" },
-      { id: "alimentation", label: "Alimentation générale" },
-    ],
-    modules: [
-      { href: "/app", iconName: "LayoutDashboard", label: "Tableau de bord" },
-      { href: "/app/ventes", iconName: "ShoppingCart", label: "Caisses" },
-      { href: "/app/stock", iconName: "Package", label: "Rayons", badge: "alerts" },
-      ...sharedTail,
-    ],
-  },
-  restaurant: {
-    id: "restaurant",
-    label: "Restaurant",
-    iconName: "UtensilsCrossed",
-    description: "Tables, cuisine, serveurs.",
-    hasQuickSale: false,
-    subSectors: [
-      { id: "restaurant-classique", label: "Restaurant classique" },
-      { id: "fast-food", label: "Fast Food" },
-      { id: "bar", label: "Bar / Lounge" },
-      { id: "maquis", label: "Maquis" },
-      { id: "glacier", label: "Glacier / Pâtisserie" },
-    ],
-    modules: [
-      { href: "/app", iconName: "LayoutDashboard", label: "Tableau de bord" },
-      { href: "/app/resto/commandes", iconName: "ClipboardList", label: "Commandes" },
-      { href: "/app/resto/cuisine", iconName: "ChefHat", label: "Cuisine" },
-      { href: "/app/resto/tables", iconName: "Grid3x3", label: "Tables" },
-      { href: "/app/resto/menu", iconName: "UtensilsCrossed", label: "Menu" },
-      ...sharedTail,
-    ],
-  },
-  insurance: {
-    id: "insurance",
-    label: "Assurance",
-    iconName: "Shield",
-    description: "Contrats, sinistres, primes.",
-    hasQuickSale: false,
-    subSectors: [
-      { id: "auto", label: "Assurance automobile" },
-      { id: "sante", label: "Assurance santé" },
-      { id: "habitation", label: "Assurance habitation" },
-      { id: "entreprise", label: "Assurance entreprise" },
-    ],
-    modules: [
-      { href: "/app", iconName: "LayoutDashboard", label: "Tableau de bord" },
-      ...sharedTail,
-    ],
-  },
-  clinic: {
-    id: "clinic",
-    label: "Clinique / Pharmacie",
-    iconName: "Stethoscope",
-    description: "Patients, consultations, dossiers.",
-    hasQuickSale: false,
-    subSectors: [
-      { id: "cabinet", label: "Cabinet médical" },
-      { id: "clinique-privee", label: "Clinique privée" },
-      { id: "centre-sante", label: "Centre de santé" },
-      { id: "laboratoire", label: "Laboratoire d'analyses" },
-      { id: "pharmacie", label: "Pharmacie" },
-    ],
-    modules: [
-      { href: "/app", iconName: "LayoutDashboard", label: "Tableau de bord" },
-      ...sharedTail,
-    ],
-  },
-  school: {
-    id: "school",
-    label: "École / Formation",
-    iconName: "GraduationCap",
-    description: "Élèves, scolarité, paiements.",
-    hasQuickSale: false,
-    subSectors: [
-      { id: "primaire", label: "École primaire" },
-      { id: "college", label: "Collège" },
-      { id: "lycee", label: "Lycée" },
-      { id: "universite", label: "Université / Institut" },
-      { id: "formation", label: "Centre de formation" },
-    ],
-    modules: [
-      { href: "/app", iconName: "LayoutDashboard", label: "Tableau de bord" },
-      ...sharedTail,
-    ],
-  },
-  services: {
-    id: "services",
-    label: "Services / Conseil",
-    iconName: "Briefcase",
-    description: "Devis, factures, projets.",
-    hasQuickSale: true,
-    subSectors: [
-      { id: "conseil", label: "Cabinet de conseil" },
-      { id: "agence", label: "Agence (com, digital, design)" },
-      { id: "btp", label: "BTP / Construction" },
-      { id: "logistique", label: "Logistique / Transport" },
-      { id: "autres", label: "Autres services" },
-    ],
-    modules: [
-      { href: "/app", iconName: "LayoutDashboard", label: "Tableau de bord" },
-      ...sharedTail,
-    ],
+    subSectors: SUB_SECTORS_ARRAY.map((s) => ({ id: s.id, label: s.label })),
+    modules: [],
   },
 };
-
-export const getSectorConfig = (id?: string | null): SectorConfig =>
-  (id && (SECTORS as Record<string, SectorConfig>)[id]) || SECTORS.commerce;
+export const getSectorConfig = (_id?: string | null): SectorConfig => SECTORS.commerce;

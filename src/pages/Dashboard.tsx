@@ -1,13 +1,14 @@
 import { useGetCompany } from "@workspace/api-client-react";
 import { CommerceDashboard } from "./CommerceDashboard";
 import { RestaurantDashboard } from "./restaurant/RestaurantDashboard";
-import { SectorComingSoon } from "./SectorComingSoon";
-import { getSectorConfig } from "@/lib/sectors";
+import { VehiculesDashboard } from "./vehicules/VehiculesDashboard";
+import { ElectroDashboard } from "./electromenager/ElectroDashboard";
+import { getSubSectorConfig } from "@/lib/sectors";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Sector-aware dashboard router. Renders the dashboard adapted to the
- * sector chosen at signup. Each sector module owns its own dashboard.
+ * sub-sector chosen at signup.
  */
 export function Dashboard() {
   const { data: company, isLoading } = useGetCompany();
@@ -23,16 +24,17 @@ export function Dashboard() {
     );
   }
 
-  const sector = getSectorConfig(company.sectorId);
+  const sub = getSubSectorConfig(company.subSectorId);
 
-  switch (sector.id) {
+  switch (sub.id) {
     case "restaurant":
       return <RestaurantDashboard />;
-    case "commerce":
-    case "phones":
-    case "supermarket":
-      return <CommerceDashboard />;
+    case "vehicules":
+      return <VehiculesDashboard />;
+    case "electromenager":
+      return <ElectroDashboard />;
+    case "boutique":
     default:
-      return <SectorComingSoon sector={sector} />;
+      return <CommerceDashboard />;
   }
 }
