@@ -1,71 +1,52 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  ArrowRight, ArrowLeft, Check,
-  ShoppingBag, UtensilsCrossed, Stethoscope, GraduationCap,
-  Shield, Smartphone, Briefcase, Building2,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, ShoppingBag, Tv, Car, UtensilsCrossed, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import logoIcon from "@/assets/gestiopro-icon.png";
-import { SECTORS, type SectorConfig, type SectorId } from "@/lib/sectors";
+import { SUB_SECTORS_ARRAY, type SubSectorId } from "@/lib/sectors";
 import { useUpdateCompany } from "@workspace/api-client-react";
 
 export const Route = createFileRoute("/inscription")({
   head: () => ({
     meta: [
       { title: "Créer un compte — GestioPro" },
-      { name: "description", content: "Créez votre compte GestioPro en 3 étapes : secteur, sous-secteur, entreprise." },
+      { name: "description", content: "Créez votre compte GestioPro en 2 étapes : activité, infos entreprise." },
     ],
   }),
   component: SignupPage,
 });
 
-const SECTOR_ICONS: Record<SectorId, LucideIcon> = {
-  commerce: ShoppingBag,
-  phones: Smartphone,
-  supermarket: Building2,
+const SUB_ICONS: Record<SubSectorId, LucideIcon> = {
+  boutique: ShoppingBag,
+  electromenager: Tv,
+  vehicules: Car,
   restaurant: UtensilsCrossed,
-  insurance: Shield,
-  clinic: Stethoscope,
-  school: GraduationCap,
-  services: Briefcase,
 };
-
-const SECTORS_ARRAY: SectorConfig[] = Object.values(SECTORS);
 
 function SignupPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const updateCompany = useUpdateCompany();
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [sectorId, setSectorId] = useState<SectorId | null>(null);
-  const [subSectorId, setSubSectorId] = useState<string | null>(null);
+  const [step, setStep] = useState<1 | 2>(1);
+  const [subSectorId, setSubSectorId] = useState<SubSectorId | null>(null);
   const [form, setForm] = useState({
     company: "",
     fullName: "",
     email: "",
     phone: "",
+    address: "",
     password: "",
     country: "SN",
     city: "",
   });
 
-  const sector = sectorId ? SECTORS[sectorId] : null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sectorId || !subSectorId) {
-      toast.error("Veuillez compléter toutes les étapes");
-      return;
-    }
-    if (!form.company || !form.email || !form.password) {
-      toast.error("Veuillez remplir tous les champs requis");
-      return;
-    }
+    if (!subSectorId) { toast.error("Veuillez choisir votre activité"); return; }
+    if (!form.company || !form.email || !form.password) { toast.error("Champs requis manquants"); return; }
 
     await updateCompany.mutateAsync({
       data: {
@@ -75,42 +56,33 @@ function SignupPage() {
         phone: form.phone,
         country: form.country,
         city: form.city || "—",
-        sectorId,
+        sectorId: "commerce",
         subSectorId,
       },
     });
     await queryClient.invalidateQueries();
-
-    toast.success("Compte créé ! Redirection vers votre espace…");
-    setTimeout(() => navigate({ to: "/app" }), 600);
+    toast.success("Compte créé ! Bienvenue sur GestioPro.");
+    setTimeout(() => navigate({ to: "/app" }), 500);
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a1a] font-sans text-white">
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/2 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-indigo-600/20 blur-[120px]" />
-      </div>
-
-      <div className="relative mx-auto flex min-h-screen max-w-3xl flex-col px-4 py-8 sm:px-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 font-sans text-slate-900">
+      <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-4 py-8 sm:px-6">
         <Link to="/" className="inline-flex items-center gap-2.5 self-start">
-          <img src={logoIcon} alt="GestioPro" className="h-8 w-8 rounded-lg" />
+          <img src={logoIcon} alt="GestioPro" className="h-9 w-9 rounded-lg shadow-sm" />
           <span className="font-display text-lg font-bold">GestioPro</span>
         </Link>
 
         {/* Stepper */}
-        <div className="mx-auto mt-10 flex w-full max-w-md items-center gap-3">
-          {[1, 2, 3].map((s) => (
+        <div className="mx-auto mt-10 flex w-full max-w-sm items-center gap-3">
+          {[1, 2].map((s) => (
             <div key={s} className="flex flex-1 items-center gap-3">
-              <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition ${
-                  step >= s ? "bg-indigo-500 text-white" : "bg-white/10 text-white/50"
-                }`}
-              >
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition ${
+                step >= s ? "bg-primary text-white shadow-md shadow-primary/30" : "bg-slate-200 text-slate-400"
+              }`}>
                 {step > s ? <Check size={14} /> : s}
               </div>
-              {s < 3 && (
-                <div className={`h-0.5 flex-1 rounded-full ${step > s ? "bg-indigo-500" : "bg-white/10"}`} />
-              )}
+              {s < 2 && (<div className={`h-0.5 flex-1 rounded-full ${step > s ? "bg-primary" : "bg-slate-200"}`} />)}
             </div>
           ))}
         </div>
@@ -119,49 +91,39 @@ function SignupPage() {
           key={step}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.25 }}
           className="mx-auto mt-8 w-full"
         >
-          {/* ============ STEP 1 — Sector ============ */}
           {step === 1 && (
             <div>
               <div className="text-center">
-                <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
-                  Quel est votre secteur ?
-                </h1>
-                <p className="mt-3 text-sm text-white/60">
-                  Nous activerons les modules adaptés à votre activité.
-                </p>
+                <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Quelle est votre activité ?</h1>
+                <p className="mt-3 text-sm text-slate-500">GestioPro activera les modules métiers adaptés.</p>
               </div>
 
               <div className="mt-10 grid gap-3 sm:grid-cols-2">
-                {SECTORS_ARRAY.map((s) => {
-                  const Icon = SECTOR_ICONS[s.id];
-                  const active = sectorId === s.id;
+                {SUB_SECTORS_ARRAY.map((s) => {
+                  const Icon = SUB_ICONS[s.id];
+                  const active = subSectorId === s.id;
                   return (
                     <button
                       key={s.id}
                       type="button"
-                      onClick={() => {
-                        setSectorId(s.id);
-                        setSubSectorId(null);
-                      }}
-                      className={`group flex items-start gap-4 rounded-xl border p-4 text-left transition ${
+                      onClick={() => setSubSectorId(s.id)}
+                      className={`group flex items-start gap-4 rounded-xl border-2 p-5 text-left transition ${
                         active
-                          ? "border-indigo-400 bg-indigo-500/15 shadow-lg shadow-indigo-500/20"
-                          : "border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]"
+                          ? "border-primary bg-primary/5 shadow-md shadow-primary/10"
+                          : "border-slate-200 bg-white hover:border-primary/40 hover:bg-slate-50"
                       }`}
                     >
-                      <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition ${
-                          active ? "bg-indigo-500 text-white" : "bg-white/5 text-indigo-300"
-                        }`}
-                      >
-                        <Icon size={20} />
+                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition ${
+                        active ? "bg-primary text-white" : "bg-slate-100 text-primary"
+                      }`}>
+                        <Icon size={22} />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-display text-sm font-semibold">{s.label}</p>
-                        <p className="mt-0.5 text-xs text-white/50">{s.description}</p>
+                        <p className="font-display text-base font-semibold">{s.label}</p>
+                        <p className="mt-1 text-xs text-slate-500">{s.description}</p>
                       </div>
                     </button>
                   );
@@ -169,100 +131,42 @@ function SignupPage() {
               </div>
 
               <button
-                onClick={() => sectorId && setStep(2)}
-                disabled={!sectorId}
-                className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-6 py-3.5 text-sm font-semibold text-white shadow-xl shadow-indigo-500/30 transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/40 disabled:shadow-none"
-              >
-                Continuer <ArrowRight size={16} />
-              </button>
-            </div>
-          )}
-
-          {/* ============ STEP 2 — Sub-sector ============ */}
-          {step === 2 && sector && (
-            <div>
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="inline-flex items-center gap-1.5 text-sm text-white/60 transition hover:text-white"
-              >
-                <ArrowLeft size={14} /> Retour
-              </button>
-              <div className="mt-4 text-center">
-                <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
-                  Précisez votre activité
-                </h1>
-                <p className="mt-3 text-sm text-white/60">
-                  Catégorie au sein du secteur <strong className="text-white">{sector.label}</strong>.
-                </p>
-              </div>
-
-              <div className="mt-10 grid gap-2 sm:grid-cols-2">
-                {sector.subSectors.map((sub) => {
-                  const active = subSectorId === sub.id;
-                  return (
-                    <button
-                      key={sub.id}
-                      type="button"
-                      onClick={() => setSubSectorId(sub.id)}
-                      className={`flex items-center justify-between rounded-xl border px-4 py-3 text-left transition ${
-                        active
-                          ? "border-indigo-400 bg-indigo-500/15"
-                          : "border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]"
-                      }`}
-                    >
-                      <span className="text-sm font-medium">{sub.label}</span>
-                      {active && <Check size={16} className="text-indigo-300" />}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                onClick={() => subSectorId && setStep(3)}
+                onClick={() => subSectorId && setStep(2)}
                 disabled={!subSectorId}
-                className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-6 py-3.5 text-sm font-semibold text-white shadow-xl shadow-indigo-500/30 transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/40 disabled:shadow-none"
+                className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
               >
                 Continuer <ArrowRight size={16} />
               </button>
             </div>
           )}
 
-          {/* ============ STEP 3 — Company info ============ */}
-          {step === 3 && (
+          {step === 2 && (
             <form onSubmit={handleSubmit}>
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                className="inline-flex items-center gap-1.5 text-sm text-white/60 transition hover:text-white"
-              >
+              <button type="button" onClick={() => setStep(1)} className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-900">
                 <ArrowLeft size={14} /> Retour
               </button>
               <div className="mt-4 text-center">
-                <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
-                  Créez votre compte
-                </h1>
-                <p className="mt-3 text-sm text-white/60">
-                  Vos informations restent confidentielles.
-                </p>
+                <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Votre entreprise</h1>
+                <p className="mt-3 text-sm text-slate-500">Quelques infos pour configurer votre espace.</p>
               </div>
 
               <div className="mt-8 space-y-4">
-                <Field label="Nom de l'entreprise *" value={form.company} onChange={(v) => setForm({ ...form, company: v })} placeholder="Ex. Restaurant Le Baobab" />
+                <Field label="Nom de l'entreprise *" value={form.company} onChange={(v) => setForm({ ...form, company: v })} placeholder="Ex. Sankara Auto" />
                 <Field label="Votre nom complet" value={form.fullName} onChange={(v) => setForm({ ...form, fullName: v })} placeholder="Aminata Diop" />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Email *" type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} placeholder="vous@entreprise.com" />
-                  <Field label="Téléphone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+221 ..." />
+                  <Field label="Téléphone *" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+221 ..." />
                 </div>
+                <Field label="Adresse" value={form.address} onChange={(v) => setForm({ ...form, address: v })} placeholder="Avenue Bourguiba, Dakar" />
                 <Field label="Mot de passe *" type="password" value={form.password} onChange={(v) => setForm({ ...form, password: v })} placeholder="Min. 8 caractères" />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Ville" value={form.city} onChange={(v) => setForm({ ...form, city: v })} placeholder="Dakar" />
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/60">Pays</label>
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Pays</label>
                     <select
                       value={form.country}
                       onChange={(e) => setForm({ ...form, country: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-indigo-400 focus:bg-white/10"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
                     >
                       <option value="SN">🇸🇳 Sénégal</option>
                       <option value="CI">🇨🇮 Côte d'Ivoire</option>
@@ -280,15 +184,12 @@ function SignupPage() {
               <button
                 type="submit"
                 disabled={updateCompany.isPending}
-                className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-6 py-3.5 text-sm font-semibold text-white shadow-xl shadow-indigo-500/30 transition hover:bg-indigo-400 disabled:opacity-60"
+                className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary/90 disabled:opacity-60"
               >
                 {updateCompany.isPending ? "Création..." : "Créer mon compte"} <ArrowRight size={16} />
               </button>
-              <p className="mt-4 text-center text-xs text-white/50">
-                Déjà un compte ?{" "}
-                <Link to="/connexion" className="font-medium text-indigo-300 hover:text-indigo-200">
-                  Se connecter
-                </Link>
+              <p className="mt-4 text-center text-xs text-slate-500">
+                Déjà un compte ? <Link to="/connexion" className="font-medium text-primary hover:underline">Se connecter</Link>
               </p>
             </form>
           )}
@@ -298,22 +199,18 @@ function SignupPage() {
   );
 }
 
-function Field({
-  label, value, onChange, placeholder, type = "text",
-}: {
+function Field({ label, value, onChange, placeholder, type = "text" }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/60">
-        {label}
-      </label>
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-indigo-400 focus:bg-white/10"
+        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
       />
     </div>
   );
