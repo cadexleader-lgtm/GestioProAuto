@@ -14,15 +14,27 @@ import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppVentesRouteImport } from './routes/app.ventes'
+import { Route as AppTresorerieRouteImport } from './routes/app.tresorerie'
 import { Route as AppStockRouteImport } from './routes/app.stock'
 import { Route as AppRapportsRouteImport } from './routes/app.rapports'
+import { Route as AppPersonnelRouteImport } from './routes/app.personnel'
 import { Route as AppParametresRouteImport } from './routes/app.parametres'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
+import { Route as AppFournisseursRouteImport } from './routes/app.fournisseurs'
+import { Route as AppDocumentsRouteImport } from './routes/app.documents'
+import { Route as AppDepensesRouteImport } from './routes/app.depenses'
 import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppRestoTablesRouteImport } from './routes/app.resto.tables'
 import { Route as AppRestoMenuRouteImport } from './routes/app.resto.menu'
 import { Route as AppRestoCuisineRouteImport } from './routes/app.resto.cuisine'
 import { Route as AppRestoCommandesRouteImport } from './routes/app.resto.commandes'
+import { Route as AppElecGarantiesRouteImport } from './routes/app.elec.garanties'
+import { Route as AppElecFacturationRouteImport } from './routes/app.elec.facturation'
+import { Route as AppElecCreditsRouteImport } from './routes/app.elec.credits'
+import { Route as AppAutoVehiculesRouteImport } from './routes/app.auto.vehicules'
+import { Route as AppAutoLocationsRouteImport } from './routes/app.auto.locations'
+import { Route as AppAutoGpsRouteImport } from './routes/app.auto.gps'
+import { Route as AppAutoCreditsRouteImport } from './routes/app.auto.credits'
 
 const InscriptionRoute = InscriptionRouteImport.update({
   id: '/inscription',
@@ -49,6 +61,11 @@ const AppVentesRoute = AppVentesRouteImport.update({
   path: '/app/ventes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppTresorerieRoute = AppTresorerieRouteImport.update({
+  id: '/app/tresorerie',
+  path: '/app/tresorerie',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppStockRoute = AppStockRouteImport.update({
   id: '/app/stock',
   path: '/app/stock',
@@ -59,6 +76,11 @@ const AppRapportsRoute = AppRapportsRouteImport.update({
   path: '/app/rapports',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppPersonnelRoute = AppPersonnelRouteImport.update({
+  id: '/app/personnel',
+  path: '/app/personnel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppParametresRoute = AppParametresRouteImport.update({
   id: '/app/parametres',
   path: '/app/parametres',
@@ -67,6 +89,21 @@ const AppParametresRoute = AppParametresRouteImport.update({
 const AppOnboardingRoute = AppOnboardingRouteImport.update({
   id: '/app/onboarding',
   path: '/app/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppFournisseursRoute = AppFournisseursRouteImport.update({
+  id: '/app/fournisseurs',
+  path: '/app/fournisseurs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppDocumentsRoute = AppDocumentsRouteImport.update({
+  id: '/app/documents',
+  path: '/app/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppDepensesRoute = AppDepensesRouteImport.update({
+  id: '/app/depenses',
+  path: '/app/depenses',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppClientsRoute = AppClientsRouteImport.update({
@@ -94,18 +131,65 @@ const AppRestoCommandesRoute = AppRestoCommandesRouteImport.update({
   path: '/app/resto/commandes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppElecGarantiesRoute = AppElecGarantiesRouteImport.update({
+  id: '/app/elec/garanties',
+  path: '/app/elec/garanties',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppElecFacturationRoute = AppElecFacturationRouteImport.update({
+  id: '/app/elec/facturation',
+  path: '/app/elec/facturation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppElecCreditsRoute = AppElecCreditsRouteImport.update({
+  id: '/app/elec/credits',
+  path: '/app/elec/credits',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAutoVehiculesRoute = AppAutoVehiculesRouteImport.update({
+  id: '/app/auto/vehicules',
+  path: '/app/auto/vehicules',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAutoLocationsRoute = AppAutoLocationsRouteImport.update({
+  id: '/app/auto/locations',
+  path: '/app/auto/locations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAutoGpsRoute = AppAutoGpsRouteImport.update({
+  id: '/app/auto/gps',
+  path: '/app/auto/gps',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAutoCreditsRoute = AppAutoCreditsRouteImport.update({
+  id: '/app/auto/credits',
+  path: '/app/auto/credits',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
   '/app/clients': typeof AppClientsRoute
+  '/app/depenses': typeof AppDepensesRoute
+  '/app/documents': typeof AppDocumentsRoute
+  '/app/fournisseurs': typeof AppFournisseursRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/parametres': typeof AppParametresRoute
+  '/app/personnel': typeof AppPersonnelRoute
   '/app/rapports': typeof AppRapportsRoute
   '/app/stock': typeof AppStockRoute
+  '/app/tresorerie': typeof AppTresorerieRoute
   '/app/ventes': typeof AppVentesRoute
   '/app/': typeof AppIndexRoute
+  '/app/auto/credits': typeof AppAutoCreditsRoute
+  '/app/auto/gps': typeof AppAutoGpsRoute
+  '/app/auto/locations': typeof AppAutoLocationsRoute
+  '/app/auto/vehicules': typeof AppAutoVehiculesRoute
+  '/app/elec/credits': typeof AppElecCreditsRoute
+  '/app/elec/facturation': typeof AppElecFacturationRoute
+  '/app/elec/garanties': typeof AppElecGarantiesRoute
   '/app/resto/commandes': typeof AppRestoCommandesRoute
   '/app/resto/cuisine': typeof AppRestoCuisineRoute
   '/app/resto/menu': typeof AppRestoMenuRoute
@@ -116,12 +200,24 @@ export interface FileRoutesByTo {
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
   '/app/clients': typeof AppClientsRoute
+  '/app/depenses': typeof AppDepensesRoute
+  '/app/documents': typeof AppDocumentsRoute
+  '/app/fournisseurs': typeof AppFournisseursRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/parametres': typeof AppParametresRoute
+  '/app/personnel': typeof AppPersonnelRoute
   '/app/rapports': typeof AppRapportsRoute
   '/app/stock': typeof AppStockRoute
+  '/app/tresorerie': typeof AppTresorerieRoute
   '/app/ventes': typeof AppVentesRoute
   '/app': typeof AppIndexRoute
+  '/app/auto/credits': typeof AppAutoCreditsRoute
+  '/app/auto/gps': typeof AppAutoGpsRoute
+  '/app/auto/locations': typeof AppAutoLocationsRoute
+  '/app/auto/vehicules': typeof AppAutoVehiculesRoute
+  '/app/elec/credits': typeof AppElecCreditsRoute
+  '/app/elec/facturation': typeof AppElecFacturationRoute
+  '/app/elec/garanties': typeof AppElecGarantiesRoute
   '/app/resto/commandes': typeof AppRestoCommandesRoute
   '/app/resto/cuisine': typeof AppRestoCuisineRoute
   '/app/resto/menu': typeof AppRestoMenuRoute
@@ -133,12 +229,24 @@ export interface FileRoutesById {
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
   '/app/clients': typeof AppClientsRoute
+  '/app/depenses': typeof AppDepensesRoute
+  '/app/documents': typeof AppDocumentsRoute
+  '/app/fournisseurs': typeof AppFournisseursRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/parametres': typeof AppParametresRoute
+  '/app/personnel': typeof AppPersonnelRoute
   '/app/rapports': typeof AppRapportsRoute
   '/app/stock': typeof AppStockRoute
+  '/app/tresorerie': typeof AppTresorerieRoute
   '/app/ventes': typeof AppVentesRoute
   '/app/': typeof AppIndexRoute
+  '/app/auto/credits': typeof AppAutoCreditsRoute
+  '/app/auto/gps': typeof AppAutoGpsRoute
+  '/app/auto/locations': typeof AppAutoLocationsRoute
+  '/app/auto/vehicules': typeof AppAutoVehiculesRoute
+  '/app/elec/credits': typeof AppElecCreditsRoute
+  '/app/elec/facturation': typeof AppElecFacturationRoute
+  '/app/elec/garanties': typeof AppElecGarantiesRoute
   '/app/resto/commandes': typeof AppRestoCommandesRoute
   '/app/resto/cuisine': typeof AppRestoCuisineRoute
   '/app/resto/menu': typeof AppRestoMenuRoute
@@ -151,12 +259,24 @@ export interface FileRouteTypes {
     | '/connexion'
     | '/inscription'
     | '/app/clients'
+    | '/app/depenses'
+    | '/app/documents'
+    | '/app/fournisseurs'
     | '/app/onboarding'
     | '/app/parametres'
+    | '/app/personnel'
     | '/app/rapports'
     | '/app/stock'
+    | '/app/tresorerie'
     | '/app/ventes'
     | '/app/'
+    | '/app/auto/credits'
+    | '/app/auto/gps'
+    | '/app/auto/locations'
+    | '/app/auto/vehicules'
+    | '/app/elec/credits'
+    | '/app/elec/facturation'
+    | '/app/elec/garanties'
     | '/app/resto/commandes'
     | '/app/resto/cuisine'
     | '/app/resto/menu'
@@ -167,12 +287,24 @@ export interface FileRouteTypes {
     | '/connexion'
     | '/inscription'
     | '/app/clients'
+    | '/app/depenses'
+    | '/app/documents'
+    | '/app/fournisseurs'
     | '/app/onboarding'
     | '/app/parametres'
+    | '/app/personnel'
     | '/app/rapports'
     | '/app/stock'
+    | '/app/tresorerie'
     | '/app/ventes'
     | '/app'
+    | '/app/auto/credits'
+    | '/app/auto/gps'
+    | '/app/auto/locations'
+    | '/app/auto/vehicules'
+    | '/app/elec/credits'
+    | '/app/elec/facturation'
+    | '/app/elec/garanties'
     | '/app/resto/commandes'
     | '/app/resto/cuisine'
     | '/app/resto/menu'
@@ -183,12 +315,24 @@ export interface FileRouteTypes {
     | '/connexion'
     | '/inscription'
     | '/app/clients'
+    | '/app/depenses'
+    | '/app/documents'
+    | '/app/fournisseurs'
     | '/app/onboarding'
     | '/app/parametres'
+    | '/app/personnel'
     | '/app/rapports'
     | '/app/stock'
+    | '/app/tresorerie'
     | '/app/ventes'
     | '/app/'
+    | '/app/auto/credits'
+    | '/app/auto/gps'
+    | '/app/auto/locations'
+    | '/app/auto/vehicules'
+    | '/app/elec/credits'
+    | '/app/elec/facturation'
+    | '/app/elec/garanties'
     | '/app/resto/commandes'
     | '/app/resto/cuisine'
     | '/app/resto/menu'
@@ -200,12 +344,24 @@ export interface RootRouteChildren {
   ConnexionRoute: typeof ConnexionRoute
   InscriptionRoute: typeof InscriptionRoute
   AppClientsRoute: typeof AppClientsRoute
+  AppDepensesRoute: typeof AppDepensesRoute
+  AppDocumentsRoute: typeof AppDocumentsRoute
+  AppFournisseursRoute: typeof AppFournisseursRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppParametresRoute: typeof AppParametresRoute
+  AppPersonnelRoute: typeof AppPersonnelRoute
   AppRapportsRoute: typeof AppRapportsRoute
   AppStockRoute: typeof AppStockRoute
+  AppTresorerieRoute: typeof AppTresorerieRoute
   AppVentesRoute: typeof AppVentesRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppAutoCreditsRoute: typeof AppAutoCreditsRoute
+  AppAutoGpsRoute: typeof AppAutoGpsRoute
+  AppAutoLocationsRoute: typeof AppAutoLocationsRoute
+  AppAutoVehiculesRoute: typeof AppAutoVehiculesRoute
+  AppElecCreditsRoute: typeof AppElecCreditsRoute
+  AppElecFacturationRoute: typeof AppElecFacturationRoute
+  AppElecGarantiesRoute: typeof AppElecGarantiesRoute
   AppRestoCommandesRoute: typeof AppRestoCommandesRoute
   AppRestoCuisineRoute: typeof AppRestoCuisineRoute
   AppRestoMenuRoute: typeof AppRestoMenuRoute
@@ -249,6 +405,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVentesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/tresorerie': {
+      id: '/app/tresorerie'
+      path: '/app/tresorerie'
+      fullPath: '/app/tresorerie'
+      preLoaderRoute: typeof AppTresorerieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/stock': {
       id: '/app/stock'
       path: '/app/stock'
@@ -263,6 +426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRapportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/personnel': {
+      id: '/app/personnel'
+      path: '/app/personnel'
+      fullPath: '/app/personnel'
+      preLoaderRoute: typeof AppPersonnelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/parametres': {
       id: '/app/parametres'
       path: '/app/parametres'
@@ -275,6 +445,27 @@ declare module '@tanstack/react-router' {
       path: '/app/onboarding'
       fullPath: '/app/onboarding'
       preLoaderRoute: typeof AppOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/fournisseurs': {
+      id: '/app/fournisseurs'
+      path: '/app/fournisseurs'
+      fullPath: '/app/fournisseurs'
+      preLoaderRoute: typeof AppFournisseursRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/documents': {
+      id: '/app/documents'
+      path: '/app/documents'
+      fullPath: '/app/documents'
+      preLoaderRoute: typeof AppDocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/depenses': {
+      id: '/app/depenses'
+      path: '/app/depenses'
+      fullPath: '/app/depenses'
+      preLoaderRoute: typeof AppDepensesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/clients': {
@@ -312,6 +503,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRestoCommandesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/elec/garanties': {
+      id: '/app/elec/garanties'
+      path: '/app/elec/garanties'
+      fullPath: '/app/elec/garanties'
+      preLoaderRoute: typeof AppElecGarantiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/elec/facturation': {
+      id: '/app/elec/facturation'
+      path: '/app/elec/facturation'
+      fullPath: '/app/elec/facturation'
+      preLoaderRoute: typeof AppElecFacturationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/elec/credits': {
+      id: '/app/elec/credits'
+      path: '/app/elec/credits'
+      fullPath: '/app/elec/credits'
+      preLoaderRoute: typeof AppElecCreditsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/auto/vehicules': {
+      id: '/app/auto/vehicules'
+      path: '/app/auto/vehicules'
+      fullPath: '/app/auto/vehicules'
+      preLoaderRoute: typeof AppAutoVehiculesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/auto/locations': {
+      id: '/app/auto/locations'
+      path: '/app/auto/locations'
+      fullPath: '/app/auto/locations'
+      preLoaderRoute: typeof AppAutoLocationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/auto/gps': {
+      id: '/app/auto/gps'
+      path: '/app/auto/gps'
+      fullPath: '/app/auto/gps'
+      preLoaderRoute: typeof AppAutoGpsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/auto/credits': {
+      id: '/app/auto/credits'
+      path: '/app/auto/credits'
+      fullPath: '/app/auto/credits'
+      preLoaderRoute: typeof AppAutoCreditsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -320,12 +560,24 @@ const rootRouteChildren: RootRouteChildren = {
   ConnexionRoute: ConnexionRoute,
   InscriptionRoute: InscriptionRoute,
   AppClientsRoute: AppClientsRoute,
+  AppDepensesRoute: AppDepensesRoute,
+  AppDocumentsRoute: AppDocumentsRoute,
+  AppFournisseursRoute: AppFournisseursRoute,
   AppOnboardingRoute: AppOnboardingRoute,
   AppParametresRoute: AppParametresRoute,
+  AppPersonnelRoute: AppPersonnelRoute,
   AppRapportsRoute: AppRapportsRoute,
   AppStockRoute: AppStockRoute,
+  AppTresorerieRoute: AppTresorerieRoute,
   AppVentesRoute: AppVentesRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAutoCreditsRoute: AppAutoCreditsRoute,
+  AppAutoGpsRoute: AppAutoGpsRoute,
+  AppAutoLocationsRoute: AppAutoLocationsRoute,
+  AppAutoVehiculesRoute: AppAutoVehiculesRoute,
+  AppElecCreditsRoute: AppElecCreditsRoute,
+  AppElecFacturationRoute: AppElecFacturationRoute,
+  AppElecGarantiesRoute: AppElecGarantiesRoute,
   AppRestoCommandesRoute: AppRestoCommandesRoute,
   AppRestoCuisineRoute: AppRestoCuisineRoute,
   AppRestoMenuRoute: AppRestoMenuRoute,
