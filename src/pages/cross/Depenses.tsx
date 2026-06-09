@@ -1,14 +1,18 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { expenses, EXPENSE_CATEGORIES } from "@/lib/demo-data";
+import { useCollection } from "@/lib/demo-store";
+import { EXPENSE_CATEGORIES } from "@/lib/demo-data";
 import { formatFCFA } from "@/lib/format";
 import { Receipt, Plus, Image as ImageIcon } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { ExpenseDialog } from "@/components/forms/FinanceDialogs";
 
 const COLORS = ["hsl(221 83% 53%)","hsl(48 96% 53%)","hsl(142 71% 45%)","hsl(280 65% 60%)","hsl(340 75% 55%)","hsl(199 89% 48%)","hsl(25 95% 53%)","hsl(174 62% 47%)","hsl(258 75% 63%)","hsl(0 0% 60%)"];
 
 export function Depenses() {
+  const expenses = useCollection("expenses");
+  const [open, setOpen] = useState(false);
   const todayKey = new Date().toISOString().slice(0, 10);
   const monthKey = todayKey.slice(0, 7);
   const totalToday = expenses.filter(e => e.date.startsWith(todayKey)).reduce((s, e) => s + e.amount, 0);
@@ -18,7 +22,7 @@ export function Depenses() {
   const byCategory = useMemo(() => EXPENSE_CATEGORIES.map(cat => ({
     name: cat,
     value: expenses.filter(e => e.category === cat).reduce((s, e) => s + e.amount, 0),
-  })).filter(c => c.value > 0), []);
+  })).filter(c => c.value > 0), [expenses]);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -27,7 +31,7 @@ export function Depenses() {
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Dépenses</h1>
           <p className="text-muted-foreground mt-1">Centre de gestion financière, justificatifs & catégories.</p>
         </div>
-        <Button><Plus size={16} /> Ajouter dépense</Button>
+        <Button onClick={() => setOpen(true)}><Plus size={16} /> Ajouter dépense</Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -56,7 +60,7 @@ export function Depenses() {
         <Card className="shadow-sm lg:col-span-2">
           <CardContent className="p-0">
             <h3 className="font-display font-semibold p-6 pb-4">Dernières dépenses</h3>
-            <div className="border-t divide-y">
+            <div className="border-t divide-y max-h-[400px] overflow-y-auto">
               {expenses.map(e => (
                 <div key={e.id} className="flex items-center gap-4 px-6 py-3 hover:bg-muted/30">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -78,6 +82,8 @@ export function Depenses() {
           </CardContent>
         </Card>
       </div>
+
+      <ExpenseDialog open={open} onOpenChange={setOpen} />
     </div>
   );
 }

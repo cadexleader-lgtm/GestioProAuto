@@ -97,6 +97,7 @@ export const SUB_SECTORS: Record<SubSectorId, SubSectorConfig> = {
       { href: "/app/resto/commandes", iconName: "ClipboardList", label: "Commandes" },
       { href: "/app/resto/cuisine", iconName: "ChefHat", label: "Cuisine & Bar" },
       { href: "/app/resto/tables", iconName: "Grid3x3", label: "Tables" },
+      { href: "/app/resto/reservations", iconName: "CalendarDays", label: "Réservations" },
       { href: "/app/resto/menu", iconName: "UtensilsCrossed", label: "Menu" },
     ],
   },

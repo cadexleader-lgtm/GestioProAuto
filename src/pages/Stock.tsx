@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatFCFA } from "@/lib/format";
 import { Search, Plus, Package, Edit2, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ProductDialog } from "@/components/stock/ProductDialog";
+import { ProductDialogPro as ProductDialog } from "@/components/forms/ProductDialogPro";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";

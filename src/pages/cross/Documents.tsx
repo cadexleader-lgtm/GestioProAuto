@@ -1,29 +1,48 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { FileText, Download, Send, Printer, Mail, FileSpreadsheet, Receipt, ScrollText, FileSignature } from "lucide-react";
-import { proInvoices } from "@/lib/demo-data";
+import { useCollection, db } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
 import { toast } from "sonner";
 
 const TYPES = [
-  { id: "facture",  label: "Facture",          icon: FileSpreadsheet, color: "blue" },
-  { id: "proforma", label: "Proforma",         icon: FileText,        color: "indigo" },
-  { id: "bl",       label: "Bon de livraison", icon: ScrollText,      color: "amber" },
-  { id: "recu",     label: "Reçu",             icon: Receipt,         color: "emerald" },
-  { id: "contrat",  label: "Contrat",          icon: FileSignature,   color: "purple" },
-  { id: "rapport",  label: "Rapport",          icon: FileText,        color: "rose" },
-];
+  { id: "Facture",  label: "Facture",          icon: FileSpreadsheet, color: "blue", prefix: "FAC" },
+  { id: "Proforma", label: "Proforma",         icon: FileText,        color: "indigo", prefix: "PRO" },
+  { id: "Bon de livraison", label: "Bon de livraison", icon: ScrollText, color: "amber", prefix: "BL" },
+  { id: "Reçu",     label: "Reçu",             icon: Receipt,         color: "emerald", prefix: "REC" },
+  { id: "Contrat",  label: "Contrat",          icon: FileSignature,   color: "purple", prefix: "CTR" },
+  { id: "Rapport",  label: "Rapport",          icon: FileText,        color: "rose", prefix: "RPT" },
+] as const;
 
 const colorClass = (c: string) => ({
-  blue:    "bg-blue-50 text-blue-700",
-  indigo:  "bg-indigo-50 text-indigo-700",
-  amber:   "bg-amber-50 text-amber-700",
-  emerald: "bg-emerald-50 text-emerald-700",
-  purple:  "bg-purple-50 text-purple-700",
-  rose:    "bg-rose-50 text-rose-700",
+  blue:"bg-blue-50 text-blue-700", indigo:"bg-indigo-50 text-indigo-700", amber:"bg-amber-50 text-amber-700",
+  emerald:"bg-emerald-50 text-emerald-700", purple:"bg-purple-50 text-purple-700", rose:"bg-rose-50 text-rose-700",
 }[c] || "bg-slate-50 text-slate-700");
 
 export function Documents() {
+  const proInvoices = useCollection("proInvoices");
+  const [genType, setGenType] = useState<typeof TYPES[number] | null>(null);
+  const [form, setForm] = useState({ customer: "", total: 0 });
+
+  const handleGenerate = () => {
+    if (!genType || !form.customer) return toast.error("Client requis");
+    const seq = String(proInvoices.length + 1).padStart(4,"0");
+    db.add("proInvoices", {
+      number: `${genType.prefix}-${new Date().getFullYear()}-${seq}`,
+      type: genType.id as any,
+      customer: form.customer,
+      total: form.total,
+      date: new Date().toISOString().slice(0,10),
+      status: "draft",
+    });
+    toast.success(`${genType.label} créé(e)`);
+    setGenType(null); setForm({ customer: "", total: 0 });
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
@@ -35,7 +54,7 @@ export function Documents() {
         {TYPES.map(t => {
           const Icon = t.icon;
           return (
-            <Card key={t.id} className="hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer">
+            <Card key={t.id} onClick={() => setGenType(t)} className="hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer">
               <CardContent className="p-5 text-center">
                 <div className={`w-12 h-12 rounded-xl ${colorClass(t.color)} flex items-center justify-center mx-auto mb-2`}>
                   <Icon size={20} />
@@ -50,7 +69,7 @@ export function Documents() {
       <Card className="shadow-sm">
         <CardContent className="p-0">
           <h3 className="font-display font-semibold p-6 pb-4">Documents récents</h3>
-          <div className="border-t divide-y">
+          <div className="border-t divide-y max-h-[500px] overflow-y-auto">
             {proInvoices.map(p => (
               <div key={p.id} className="flex items-center gap-4 px-6 py-4 hover:bg-muted/30">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -62,9 +81,9 @@ export function Documents() {
                 </div>
                 <p className="font-bold text-sm hidden sm:block">{formatFCFA(p.total)}</p>
                 <div className="flex gap-1">
-                  <Button size="icon" variant="ghost" onClick={() => toast.success(`Téléchargement PDF ${p.number}`)} title="Télécharger"><Download size={14} /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => toast.success(`Impression ${p.number}`)} title="Imprimer"><Printer size={14} /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => toast.success(`Envoyé par WhatsApp`)} title="WhatsApp"><Send size={14} /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => toast.success(`PDF ${p.number} téléchargé`)} title="Télécharger"><Download size={14} /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => { window.print(); }} title="Imprimer"><Printer size={14} /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => { window.open(`https://wa.me/?text=${encodeURIComponent(`Document ${p.number} (${formatFCFA(p.total)})`)}`,"_blank"); toast.success("WhatsApp ouvert"); }} title="WhatsApp"><Send size={14} /></Button>
                   <Button size="icon" variant="ghost" onClick={() => toast.success(`Envoyé par email`)} title="Email"><Mail size={14} /></Button>
                 </div>
               </div>
@@ -72,6 +91,20 @@ export function Documents() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!genType} onOpenChange={(v)=>!v && setGenType(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Générer un(e) {genType?.label.toLowerCase()}</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-4">
+            <div><Label>Client *</Label><Input value={form.customer} onChange={e=>setForm({...form,customer:e.target.value})} placeholder="Nom du client" /></div>
+            <div><Label>Montant total (FCFA)</Label><Input type="number" value={form.total} onChange={e=>setForm({...form,total:+e.target.value})} /></div>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={()=>setGenType(null)}>Annuler</Button>
+            <Button onClick={handleGenerate}>Générer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
