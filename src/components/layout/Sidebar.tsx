@@ -1,7 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import {
   LayoutDashboard, ShoppingCart, Package, Users, FileText, Settings, X,
-  UtensilsCrossed, Grid3x3, ChefHat, ClipboardList,
+  UtensilsCrossed, Grid3x3, ChefHat, ClipboardList, CalendarDays,
   ShoppingBag, Building2, Stethoscope, Smartphone,
   Truck, Users2, Receipt, Wallet, BarChart3,
   Car, KeyRound, MapPin, CreditCard, ShieldCheck, FileSpreadsheet, Tv,
@@ -19,7 +19,7 @@ interface SidebarProps {
 
 const ICON_MAP: Record<string, LucideIcon> = {
   LayoutDashboard, ShoppingCart, Package, Users, FileText, Settings,
-  UtensilsCrossed, Grid3x3, ChefHat, ClipboardList,
+  UtensilsCrossed, Grid3x3, ChefHat, ClipboardList, CalendarDays,
   ShoppingBag, Building2, Stethoscope, Smartphone,
   Truck, Users2, Receipt, Wallet, BarChart3,
   Car, KeyRound, MapPin, CreditCard, ShieldCheck, FileSpreadsheet, Tv,
