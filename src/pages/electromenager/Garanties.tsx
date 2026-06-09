@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { warranties } from "@/lib/demo-data";
-import { ShieldCheck, AlertTriangle, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useCollection } from "@/lib/demo-store";
+import { ShieldCheck, AlertTriangle, Calendar, Plus } from "lucide-react";
+import { WarrantyDialog } from "@/components/forms/SectorDialogs";
 
 const STATUS: Record<string, { label: string; cls: string; icon: any }> = {
   active:  { label: "Active",       cls: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: ShieldCheck },
@@ -9,11 +12,16 @@ const STATUS: Record<string, { label: string; cls: string; icon: any }> = {
 };
 
 export function Garanties() {
+  const warranties = useCollection("warranties");
+  const [open, setOpen] = useState(false);
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Garanties & SAV</h1>
-        <p className="text-muted-foreground mt-1">Suivez toutes les garanties actives et les SAV en cours.</p>
+      <div className="flex items-start justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Garanties & SAV</h1>
+          <p className="text-muted-foreground mt-1">Suivez toutes les garanties actives et les SAV en cours.</p>
+        </div>
+        <Button onClick={()=>setOpen(true)}><Plus size={16}/> Nouvelle garantie</Button>
       </div>
 
       <Card className="shadow-sm">
@@ -56,6 +64,8 @@ export function Garanties() {
           </table>
         </CardContent>
       </Card>
+
+      <WarrantyDialog open={open} onOpenChange={setOpen} />
     </div>
   );
 }

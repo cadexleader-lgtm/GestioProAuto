@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { suppliers } from "@/lib/demo-data";
+import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
 import { Truck, Plus, Mail, Phone, MapPin, AlertCircle } from "lucide-react";
+import { SupplierDialog } from "@/components/forms/SupplierDialog";
 
 export function Fournisseurs() {
+  const suppliers = useCollection("suppliers");
+  const [open, setOpen] = useState(false);
   const totalDebt = suppliers.reduce((s, x) => s + x.outstandingDebt, 0);
   const totalPurchased = suppliers.reduce((s, x) => s + x.totalPurchases, 0);
   const ordersInProgress = suppliers.reduce((s, x) => s + x.ordersInProgress, 0);
@@ -16,7 +20,7 @@ export function Fournisseurs() {
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Fournisseurs</h1>
           <p className="text-muted-foreground mt-1">Gérez vos achats, dettes et commandes en cours.</p>
         </div>
-        <Button><Plus size={16} /> Ajouter un fournisseur</Button>
+        <Button onClick={() => setOpen(true)}><Plus size={16} /> Ajouter un fournisseur</Button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -65,6 +69,8 @@ export function Fournisseurs() {
           </Card>
         ))}
       </div>
+
+      <SupplierDialog open={open} onOpenChange={setOpen} />
     </div>
   );
 }

@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Car, Fuel, Gauge, Calendar } from "lucide-react";
 import { formatFCFA } from "@/lib/format";
-import { vehicles, vehicleCost, vehicleMargin } from "@/lib/demo-data";
+import { vehicleCost, vehicleMargin } from "@/lib/demo-data";
+import { useCollection } from "@/lib/demo-store";
+import { VehicleDialog } from "@/components/forms/SectorDialogs";
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   available:   { label: "Disponible",   cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
@@ -15,7 +17,9 @@ const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
 };
 
 export function VehiculesList() {
+  const vehicles = useCollection("vehicles");
   const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
   const filtered = vehicles.filter(v =>
     `${v.brand} ${v.model} ${v.plate} ${v.vin}`.toLowerCase().includes(q.toLowerCase())
   );
@@ -26,7 +30,7 @@ export function VehiculesList() {
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Parc véhicules</h1>
           <p className="text-muted-foreground mt-1">{vehicles.length} véhicules · pilotez l'état, le financier et la documentation.</p>
         </div>
-        <Button><Plus size={16} /> Ajouter un véhicule</Button>
+        <Button onClick={() => setOpen(true)}><Plus size={16} /> Ajouter un véhicule</Button>
       </div>
 
       <div className="flex items-center gap-2">
@@ -74,6 +78,8 @@ export function VehiculesList() {
           );
         })}
       </div>
+
+      <VehicleDialog open={open} onOpenChange={setOpen} />
     </div>
   );
 }
