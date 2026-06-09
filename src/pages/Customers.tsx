@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Plus, Users, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CustomerDialog } from "@/components/customers/CustomerDialog";
+import { CustomerDialogPro as CustomerDialog } from "@/components/forms/CustomerDialogPro";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDate } from "@/lib/format";
