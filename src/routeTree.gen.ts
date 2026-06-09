@@ -25,6 +25,7 @@ import { Route as AppDocumentsRouteImport } from './routes/app.documents'
 import { Route as AppDepensesRouteImport } from './routes/app.depenses'
 import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppRestoTablesRouteImport } from './routes/app.resto.tables'
+import { Route as AppRestoReservationsRouteImport } from './routes/app.resto.reservations'
 import { Route as AppRestoMenuRouteImport } from './routes/app.resto.menu'
 import { Route as AppRestoCuisineRouteImport } from './routes/app.resto.cuisine'
 import { Route as AppRestoCommandesRouteImport } from './routes/app.resto.commandes'
@@ -116,6 +117,11 @@ const AppRestoTablesRoute = AppRestoTablesRouteImport.update({
   path: '/app/resto/tables',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRestoReservationsRoute = AppRestoReservationsRouteImport.update({
+  id: '/app/resto/reservations',
+  path: '/app/resto/reservations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRestoMenuRoute = AppRestoMenuRouteImport.update({
   id: '/app/resto/menu',
   path: '/app/resto/menu',
@@ -193,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/app/resto/commandes': typeof AppRestoCommandesRoute
   '/app/resto/cuisine': typeof AppRestoCuisineRoute
   '/app/resto/menu': typeof AppRestoMenuRoute
+  '/app/resto/reservations': typeof AppRestoReservationsRoute
   '/app/resto/tables': typeof AppRestoTablesRoute
 }
 export interface FileRoutesByTo {
@@ -221,6 +228,7 @@ export interface FileRoutesByTo {
   '/app/resto/commandes': typeof AppRestoCommandesRoute
   '/app/resto/cuisine': typeof AppRestoCuisineRoute
   '/app/resto/menu': typeof AppRestoMenuRoute
+  '/app/resto/reservations': typeof AppRestoReservationsRoute
   '/app/resto/tables': typeof AppRestoTablesRoute
 }
 export interface FileRoutesById {
@@ -250,6 +258,7 @@ export interface FileRoutesById {
   '/app/resto/commandes': typeof AppRestoCommandesRoute
   '/app/resto/cuisine': typeof AppRestoCuisineRoute
   '/app/resto/menu': typeof AppRestoMenuRoute
+  '/app/resto/reservations': typeof AppRestoReservationsRoute
   '/app/resto/tables': typeof AppRestoTablesRoute
 }
 export interface FileRouteTypes {
@@ -280,6 +289,7 @@ export interface FileRouteTypes {
     | '/app/resto/commandes'
     | '/app/resto/cuisine'
     | '/app/resto/menu'
+    | '/app/resto/reservations'
     | '/app/resto/tables'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -308,6 +318,7 @@ export interface FileRouteTypes {
     | '/app/resto/commandes'
     | '/app/resto/cuisine'
     | '/app/resto/menu'
+    | '/app/resto/reservations'
     | '/app/resto/tables'
   id:
     | '__root__'
@@ -336,6 +347,7 @@ export interface FileRouteTypes {
     | '/app/resto/commandes'
     | '/app/resto/cuisine'
     | '/app/resto/menu'
+    | '/app/resto/reservations'
     | '/app/resto/tables'
   fileRoutesById: FileRoutesById
 }
@@ -365,6 +377,7 @@ export interface RootRouteChildren {
   AppRestoCommandesRoute: typeof AppRestoCommandesRoute
   AppRestoCuisineRoute: typeof AppRestoCuisineRoute
   AppRestoMenuRoute: typeof AppRestoMenuRoute
+  AppRestoReservationsRoute: typeof AppRestoReservationsRoute
   AppRestoTablesRoute: typeof AppRestoTablesRoute
 }
 
@@ -482,6 +495,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRestoTablesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/resto/reservations': {
+      id: '/app/resto/reservations'
+      path: '/app/resto/reservations'
+      fullPath: '/app/resto/reservations'
+      preLoaderRoute: typeof AppRestoReservationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/resto/menu': {
       id: '/app/resto/menu'
       path: '/app/resto/menu'
@@ -581,6 +601,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRestoCommandesRoute: AppRestoCommandesRoute,
   AppRestoCuisineRoute: AppRestoCuisineRoute,
   AppRestoMenuRoute: AppRestoMenuRoute,
+  AppRestoReservationsRoute: AppRestoReservationsRoute,
   AppRestoTablesRoute: AppRestoTablesRoute,
 }
 export const routeTree = rootRouteImport
