@@ -24,6 +24,7 @@ import { Route as AppFournisseursRouteImport } from './routes/app.fournisseurs'
 import { Route as AppDocumentsRouteImport } from './routes/app.documents'
 import { Route as AppDepensesRouteImport } from './routes/app.depenses'
 import { Route as AppClientsRouteImport } from './routes/app.clients'
+import { Route as AppCategoriesRouteImport } from './routes/app.categories'
 import { Route as AppRestoTablesRouteImport } from './routes/app.resto.tables'
 import { Route as AppRestoReservationsRouteImport } from './routes/app.resto.reservations'
 import { Route as AppRestoMenuRouteImport } from './routes/app.resto.menu'
@@ -112,6 +113,11 @@ const AppClientsRoute = AppClientsRouteImport.update({
   path: '/app/clients',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppCategoriesRoute = AppCategoriesRouteImport.update({
+  id: '/app/categories',
+  path: '/app/categories',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRestoTablesRoute = AppRestoTablesRouteImport.update({
   id: '/app/resto/tables',
   path: '/app/resto/tables',
@@ -177,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
+  '/app/categories': typeof AppCategoriesRoute
   '/app/clients': typeof AppClientsRoute
   '/app/depenses': typeof AppDepensesRoute
   '/app/documents': typeof AppDocumentsRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
+  '/app/categories': typeof AppCategoriesRoute
   '/app/clients': typeof AppClientsRoute
   '/app/depenses': typeof AppDepensesRoute
   '/app/documents': typeof AppDocumentsRoute
@@ -236,6 +244,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
+  '/app/categories': typeof AppCategoriesRoute
   '/app/clients': typeof AppClientsRoute
   '/app/depenses': typeof AppDepensesRoute
   '/app/documents': typeof AppDocumentsRoute
@@ -267,6 +276,7 @@ export interface FileRouteTypes {
     | '/'
     | '/connexion'
     | '/inscription'
+    | '/app/categories'
     | '/app/clients'
     | '/app/depenses'
     | '/app/documents'
@@ -296,6 +306,7 @@ export interface FileRouteTypes {
     | '/'
     | '/connexion'
     | '/inscription'
+    | '/app/categories'
     | '/app/clients'
     | '/app/depenses'
     | '/app/documents'
@@ -325,6 +336,7 @@ export interface FileRouteTypes {
     | '/'
     | '/connexion'
     | '/inscription'
+    | '/app/categories'
     | '/app/clients'
     | '/app/depenses'
     | '/app/documents'
@@ -355,6 +367,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ConnexionRoute: typeof ConnexionRoute
   InscriptionRoute: typeof InscriptionRoute
+  AppCategoriesRoute: typeof AppCategoriesRoute
   AppClientsRoute: typeof AppClientsRoute
   AppDepensesRoute: typeof AppDepensesRoute
   AppDocumentsRoute: typeof AppDocumentsRoute
@@ -488,6 +501,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClientsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/categories': {
+      id: '/app/categories'
+      path: '/app/categories'
+      fullPath: '/app/categories'
+      preLoaderRoute: typeof AppCategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/resto/tables': {
       id: '/app/resto/tables'
       path: '/app/resto/tables'
@@ -579,6 +599,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ConnexionRoute: ConnexionRoute,
   InscriptionRoute: InscriptionRoute,
+  AppCategoriesRoute: AppCategoriesRoute,
   AppClientsRoute: AppClientsRoute,
   AppDepensesRoute: AppDepensesRoute,
   AppDocumentsRoute: AppDocumentsRoute,

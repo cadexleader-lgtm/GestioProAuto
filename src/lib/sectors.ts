@@ -49,7 +49,9 @@ export const SUB_SECTORS: Record<SubSectorId, SubSectorConfig> = {
       { href: "/app", iconName: "LayoutDashboard", label: "Tableau de bord" },
       { href: "/app/ventes", iconName: "ShoppingCart", label: "Ventes" },
       { href: "/app/stock", iconName: "Package", label: "Produits & Stock", badge: "alerts" },
+      { href: "/app/categories", iconName: "Tags", label: "Catégories" },
     ],
+
   },
   electromenager: {
     id: "electromenager",
