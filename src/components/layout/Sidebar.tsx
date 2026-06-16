@@ -4,9 +4,10 @@ import {
   UtensilsCrossed, Grid3x3, ChefHat, ClipboardList, CalendarDays,
   ShoppingBag, Building2, Stethoscope, Smartphone,
   Truck, Users2, Receipt, Wallet, BarChart3,
-  Car, KeyRound, MapPin, CreditCard, ShieldCheck, FileSpreadsheet, Tv,
+  Car, KeyRound, MapPin, CreditCard, ShieldCheck, FileSpreadsheet, Tv, Tags,
   type LucideIcon,
 } from "lucide-react";
+
 import { useGetCompany, useGetDashboard } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import { getSubSectorConfig, CROSS_MODULES } from "@/lib/sectors";
@@ -22,8 +23,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   UtensilsCrossed, Grid3x3, ChefHat, ClipboardList, CalendarDays,
   ShoppingBag, Building2, Stethoscope, Smartphone,
   Truck, Users2, Receipt, Wallet, BarChart3,
-  Car, KeyRound, MapPin, CreditCard, ShieldCheck, FileSpreadsheet, Tv,
+  Car, KeyRound, MapPin, CreditCard, ShieldCheck, FileSpreadsheet, Tv, Tags,
 };
+
 
 export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const location = useLocation({ select: (s) => s.pathname });

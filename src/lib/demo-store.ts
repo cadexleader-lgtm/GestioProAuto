@@ -13,6 +13,9 @@ import {
   type Vehicle, type VehicleCredit, type Rental,
   type ApplianceProduct, type Warranty, type ProInvoice, type ApplianceCredit,
 } from "./demo-data";
+import { seedCategories, type Category } from "./categories-data";
+export type { Category, ProductAttribute, AttributeType } from "./categories-data";
+
 
 // ===== Extended entities =====
 export interface Attendance {
@@ -107,7 +110,9 @@ type CollectionMap = {
   maintenance: MaintenanceRecord;
   promotions: Promotion;
   inventories: InventoryCount;
+  categories: Category;
 };
+
 
 const STORAGE_PREFIX = "gestiopro.v2.";
 
@@ -138,7 +143,9 @@ const seeds: { [K in keyof CollectionMap]: CollectionMap[K][] } = {
     { id: "pr1", name: "Soldes d'été -20%", type: "percent", value: 20, startDate: "2026-06-01", endDate: "2026-06-30", active: true },
   ],
   inventories: [],
+  categories: seedCategories,
 };
+
 
 const stores: { [K in keyof CollectionMap]?: CollectionMap[K][] } = {};
 const listeners: { [K in keyof CollectionMap]?: Set<() => void> } = {};
