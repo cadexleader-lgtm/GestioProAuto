@@ -143,7 +143,9 @@ const seeds: { [K in keyof CollectionMap]: CollectionMap[K][] } = {
     { id: "pr1", name: "Soldes d'été -20%", type: "percent", value: 20, startDate: "2026-06-01", endDate: "2026-06-30", active: true },
   ],
   inventories: [],
+  categories: seedCategories,
 };
+
 
 const stores: { [K in keyof CollectionMap]?: CollectionMap[K][] } = {};
 const listeners: { [K in keyof CollectionMap]?: Set<() => void> } = {};
