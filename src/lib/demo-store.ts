@@ -13,6 +13,9 @@ import {
   type Vehicle, type VehicleCredit, type Rental,
   type ApplianceProduct, type Warranty, type ProInvoice, type ApplianceCredit,
 } from "./demo-data";
+import { seedCategories, type Category } from "./categories-data";
+export type { Category, ProductAttribute, AttributeType } from "./categories-data";
+
 
 // ===== Extended entities =====
 export interface Attendance {
