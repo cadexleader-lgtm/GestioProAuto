@@ -110,7 +110,9 @@ type CollectionMap = {
   maintenance: MaintenanceRecord;
   promotions: Promotion;
   inventories: InventoryCount;
+  categories: Category;
 };
+
 
 const STORAGE_PREFIX = "gestiopro.v2.";
 
