@@ -28,6 +28,7 @@ export function Sales() {
                 <tr className="bg-muted/50 text-muted-foreground text-xs uppercase tracking-wider">
                   <th className="px-6 py-4 font-semibold">Référence</th>
                   <th className="px-6 py-4 font-semibold">Date</th>
+                  <th className="px-6 py-4 font-semibold">Produits</th>
                   <th className="px-6 py-4 font-semibold">Montant</th>
                   <th className="px-6 py-4 font-semibold">Paiement</th>
                   <th className="px-6 py-4 font-semibold text-right">Action</th>
@@ -39,6 +40,7 @@ export function Sales() {
                     <tr key={i}>
                       <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
                       <td className="px-6 py-4"><Skeleton className="h-4 w-32" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-4 w-40" /></td>
                       <td className="px-6 py-4"><Skeleton className="h-4 w-20" /></td>
                       <td className="px-6 py-4"><Skeleton className="h-6 w-16 rounded-full" /></td>
                       <td className="px-6 py-4 text-right"><Skeleton className="h-8 w-8 inline-block" /></td>
@@ -46,7 +48,7 @@ export function Sales() {
                   ))
                 ) : sales?.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
+                    <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
                       <div className="flex flex-col items-center justify-center">
                         <Receipt className="w-12 h-12 mb-4 opacity-20" />
                         <p>Aucune vente trouvée.</p>
@@ -54,23 +56,39 @@ export function Sales() {
                     </td>
                   </tr>
                 ) : (
-                  sales?.map((sale) => (
-                    <tr key={sale.id} className="hover:bg-muted/30 transition-colors cursor-pointer group" onClick={() => setSelectedSale(sale)}>
-                      <td className="px-6 py-4 font-medium text-primary">{sale.reference || "-"}</td>
-                      <td className="px-6 py-4 text-muted-foreground">{formatDate(sale.createdAt)}</td>
-                      <td className="px-6 py-4 font-bold">{formatFCFA(sale.total)}</td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-secondary text-secondary-foreground">
-                          {sale.paymentMethod}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
-                          <Receipt size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  sales?.map((sale) => {
+                    const items = sale.items || [];
+                    const totalQty = items.reduce((s: number, it: any) => s + (it.quantity || 0), 0);
+                    const summary = items.length === 0
+                      ? "-"
+                      : items.length === 1
+                        ? `${items[0].quantity}× ${items[0].productName}`
+                        : `${items[0].quantity}× ${items[0].productName} +${items.length - 1} autre${items.length - 1 > 1 ? 's' : ''}`;
+                    const fullList = items.map((it: any) => `${it.quantity}× ${it.productName}`).join(", ");
+                    return (
+                      <tr key={sale.id} className="hover:bg-muted/30 transition-colors cursor-pointer group" onClick={() => setSelectedSale(sale)}>
+                        <td className="px-6 py-4 font-medium text-primary">{sale.reference || "-"}</td>
+                        <td className="px-6 py-4 text-muted-foreground">{formatDate(sale.createdAt)}</td>
+                        <td className="px-6 py-4 max-w-xs">
+                          <div className="truncate font-medium text-foreground" title={fullList}>{summary}</div>
+                          {items.length > 0 && (
+                            <div className="text-xs text-muted-foreground">{totalQty} article{totalQty > 1 ? 's' : ''}</div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 font-bold">{formatFCFA(sale.total)}</td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-secondary text-secondary-foreground">
+                            {sale.paymentMethod}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+                            <Receipt size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
