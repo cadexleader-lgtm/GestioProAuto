@@ -1,98 +1,176 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCollection, db } from "@/lib/demo-store";
+import { useCollection, startRental, returnRental, isRentalOverdue } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { KeyRound, Plus } from "lucide-react";
+import { KeyRound, Plus, AlertTriangle, Calendar, CheckCircle2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { RentVehicleDialog, ReturnRentalDialog } from "@/components/vehicles/VehicleActionsDialogs";
+import type { Rental } from "@/lib/demo-data";
 
-const STATUS: Record<string, { label: string; cls: string }> = {
-  active:   { label: "En cours",  cls: "bg-indigo-50 text-indigo-700 border-indigo-200" },
-  returned: { label: "Retourné",  cls: "bg-slate-100 text-slate-600 border-slate-200" },
-  overdue:  { label: "En retard", cls: "bg-rose-50 text-rose-700 border-rose-200" },
+const STATUS: Record<Rental["status"], { label: string; cls: string }> = {
+  reserved:  { label: "Réservé",   cls: "bg-blue-50 text-blue-700 border-blue-200" },
+  active:    { label: "En cours",  cls: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+  returned:  { label: "Retourné",  cls: "bg-slate-100 text-slate-600 border-slate-200" },
+  overdue:   { label: "En retard", cls: "bg-rose-50 text-rose-700 border-rose-200" },
+  cancelled: { label: "Annulé",    cls: "bg-slate-100 text-slate-600 border-slate-200" },
 };
 
 export function VehiculesLocations() {
   const rentals = useCollection("rentals");
   const vehicles = useCollection("vehicles");
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<any>({});
+  const [openQuick, setOpenQuick] = useState(false);
+  const [quickForm, setQuickForm] = useState<any>({});
+  const [returnId, setReturnId] = useState<string | null>(null);
+  const [rentVehicleId, setRentVehicleId] = useState<string | null>(null);
 
-  const openNew = () => {
-    setForm({ vehicleId: vehicles.find(v=>v.status==="available")?.id || vehicles[0]?.id, customer:"", startDate:new Date().toISOString().slice(0,10), endDate:new Date(Date.now()+7*86400000).toISOString().slice(0,10), dailyRate:35000, deposit:200000, status:"active" });
-    setOpen(true);
+  // Auto-detect overdue and reflect in display (do not mutate)
+  const enriched = useMemo(() => rentals.map((r) => ({
+    ...r,
+    displayStatus: r.status === "active" && isRentalOverdue(r) ? ("overdue" as const) : r.status,
+  })), [rentals]);
+
+  const today = enriched.filter((r) => r.displayStatus === "active" || r.displayStatus === "overdue");
+  const overdueCount = enriched.filter((r) => r.displayStatus === "overdue").length;
+  const revenueMonth = enriched
+    .filter((r) => new Date(r.startDate).getMonth() === new Date().getMonth())
+    .reduce((s, r) => {
+      const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / 86400000));
+      return s + days * r.dailyRate;
+    }, 0);
+
+  const openQuickNew = () => {
+    const dispo = vehicles.find((v) => v.status === "available");
+    if (!dispo) { toast.error("Aucun véhicule disponible"); return; }
+    setQuickForm({
+      vehicleId: dispo.id, customer: "", phone: "",
+      startDate: new Date().toISOString().slice(0, 10),
+      endDate: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+      dailyRate: 35000, deposit: 200000,
+    });
+    setOpenQuick(true);
   };
-  const submit = () => {
-    if (!form.customer) return toast.error("Client requis");
-    db.add("rentals", form);
-    toast.success("Contrat de location créé");
-    setOpen(false);
+
+  const submitQuick = () => {
+    if (!quickForm.customer) return toast.error("Client requis");
+    startRental({ ...quickForm, status: "active" });
+    toast.success("Contrat créé — véhicule passé en 'Loué'");
+    setOpenQuick(false);
   };
+
+  const handleReturn = (id: string) => setReturnId(id);
+  const confirmReturn = (data: any) => {
+    if (!returnId) return;
+    returnRental(returnId, data);
+    toast.success("Véhicule retourné — disponible à nouveau");
+  };
+
+  const rentVehicle = rentVehicleId ? vehicles.find((v) => v.id === rentVehicleId) ?? null : null;
+  const returnRentalObj = returnId ? rentals.find((r) => r.id === returnId) : null;
+  const returnVehicle = returnRentalObj ? vehicles.find((v) => v.id === returnRentalObj.vehicleId) ?? null : null;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Locations</h1>
-          <p className="text-muted-foreground mt-1">Contrats actifs, dépôts de garantie et historique.</p>
+          <p className="text-muted-foreground mt-1 text-sm">Contrats, retours, dépôts et alertes de retard.</p>
         </div>
-        <Button onClick={openNew}><Plus size={16} /> Nouveau contrat</Button>
+        <Button onClick={openQuickNew}><Plus size={16} /> Nouveau contrat</Button>
       </div>
 
-      <div className="grid gap-4">
-        {rentals.map(r => {
-          const v = vehicles.find(x => x.id === r.vehicleId);
+      {/* KPI */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Kpi label="En cours" value={today.length} icon={<KeyRound className="text-indigo-600" size={18} />} />
+        <Kpi label="En retard" value={overdueCount} icon={<AlertTriangle className="text-rose-600" size={18} />} tone={overdueCount > 0 ? "rose" : undefined} />
+        <Kpi label="Dispo" value={vehicles.filter((v) => v.status === "available").length} icon={<CheckCircle2 className="text-emerald-600" size={18} />} />
+        <Kpi label="Revenus du mois" valueText={formatFCFA(revenueMonth)} icon={<Calendar className="text-violet-600" size={18} />} />
+      </div>
+
+      {/* List */}
+      <div className="grid gap-3">
+        {enriched.map((r) => {
+          const v = vehicles.find((x) => x.id === r.vehicleId);
           if (!v) return null;
-          const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / (1000*60*60*24)));
+          const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / 86400000));
           const total = days * r.dailyRate;
-          const st = STATUS[r.status];
+          const st = STATUS[r.displayStatus];
+          const lateDays = r.displayStatus === "overdue" ? Math.round((Date.now() - +new Date(r.endDate)) / 86400000) : 0;
           return (
-            <Card key={r.id} className="shadow-sm">
-              <CardContent className="p-6 flex flex-col md:flex-row items-start md:items-center gap-6">
-                <div className="text-4xl">{v.photo}</div>
+            <Card key={r.id} className={`shadow-sm overflow-hidden ${r.displayStatus === "overdue" ? "border-rose-300" : ""}`}>
+              <CardContent className="p-4 sm:p-6 flex flex-col md:flex-row items-start md:items-center gap-4">
+                <div className="text-4xl shrink-0">{v.image ? <img src={v.image} alt="" className="w-14 h-14 rounded-lg object-cover" /> : v.photo}</div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-display font-bold">{v.brand} {v.model}</h3>
                     <span className={`text-[10px] font-bold px-2 py-1 rounded-md border ${st.cls}`}>{st.label}</span>
+                    {lateDays > 0 && <span className="text-[10px] font-bold px-2 py-1 rounded-md bg-rose-100 text-rose-700">+{lateDays}j</span>}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1"><KeyRound size={12} className="inline mr-1" /> {r.customer}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Du {new Date(r.startDate).toLocaleDateString("fr-FR")} au {new Date(r.endDate).toLocaleDateString("fr-FR")} · <strong>{days}</strong> jours
-                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">{r.customer} {r.phone ? `· ${r.phone}` : ""}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(r.startDate).toLocaleDateString("fr-FR")} → {new Date(r.endDate).toLocaleDateString("fr-FR")} · <strong>{days}j</strong></p>
                 </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-3 gap-3 text-sm w-full md:w-auto">
                   <div><p className="text-[10px] uppercase font-bold text-muted-foreground">Tarif</p><p className="font-semibold">{formatFCFA(r.dailyRate)}/j</p></div>
-                  <div><p className="text-[10px] uppercase font-bold text-muted-foreground">Dépôt</p><p className="font-semibold">{formatFCFA(r.deposit)}</p></div>
+                  <div><p className="text-[10px] uppercase font-bold text-muted-foreground">Caution</p><p className="font-semibold">{formatFCFA(r.deposit)}</p></div>
                   <div><p className="text-[10px] uppercase font-bold text-muted-foreground">Total</p><p className="font-bold text-primary">{formatFCFA(total)}</p></div>
                 </div>
+                {(r.displayStatus === "active" || r.displayStatus === "overdue") && (
+                  <Button size="sm" variant="outline" onClick={() => handleReturn(r.id)}><RotateCcw size={14} /> Retourner</Button>
+                )}
               </CardContent>
             </Card>
           );
         })}
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Nouveau contrat de location</DialogTitle></DialogHeader>
-          <div className="space-y-3 mt-4 grid grid-cols-2 gap-3">
+      {/* Quick new */}
+      <Dialog open={openQuick} onOpenChange={setOpenQuick}>
+        <DialogContent className="max-w-lg backdrop-blur-xl bg-white/90">
+          <DialogHeader>
+            <DialogTitle>Nouveau contrat (rapide)</DialogTitle>
+            <DialogDescription>Le véhicule passe automatiquement en "Loué".</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 mt-2">
             <div className="col-span-2"><Label>Véhicule</Label>
-              <Select value={form.vehicleId} onValueChange={v=>setForm({...form,vehicleId:v})}><SelectTrigger><SelectValue/></SelectTrigger>
-                <SelectContent>{vehicles.map(v=><SelectItem key={v.id} value={v.id}>{v.brand} {v.model} — {v.plate}</SelectItem>)}</SelectContent>
+              <Select value={quickForm.vehicleId} onValueChange={(v) => setQuickForm({ ...quickForm, vehicleId: v })}><SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{vehicles.filter((x) => x.status === "available").map((x) => <SelectItem key={x.id} value={x.id}>{x.brand} {x.model} — {x.plate}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="col-span-2"><Label>Client *</Label><Input value={form.customer||""} onChange={e=>setForm({...form,customer:e.target.value})}/></div>
-            <div><Label>Du</Label><Input type="date" value={form.startDate||""} onChange={e=>setForm({...form,startDate:e.target.value})}/></div>
-            <div><Label>Au</Label><Input type="date" value={form.endDate||""} onChange={e=>setForm({...form,endDate:e.target.value})}/></div>
-            <div><Label>Tarif / jour</Label><Input type="number" value={form.dailyRate||0} onChange={e=>setForm({...form,dailyRate:+e.target.value})}/></div>
-            <div><Label>Dépôt de garantie</Label><Input type="number" value={form.deposit||0} onChange={e=>setForm({...form,deposit:+e.target.value})}/></div>
+            <div className="col-span-2"><Label>Client *</Label><Input value={quickForm.customer || ""} onChange={(e) => setQuickForm({ ...quickForm, customer: e.target.value })} /></div>
+            <div><Label>Téléphone</Label><Input value={quickForm.phone || ""} onChange={(e) => setQuickForm({ ...quickForm, phone: e.target.value })} /></div>
+            <div><Label>Tarif / jour</Label><Input type="number" value={quickForm.dailyRate || 0} onChange={(e) => setQuickForm({ ...quickForm, dailyRate: +e.target.value })} /></div>
+            <div><Label>Du</Label><Input type="date" value={quickForm.startDate || ""} onChange={(e) => setQuickForm({ ...quickForm, startDate: e.target.value })} /></div>
+            <div><Label>Au</Label><Input type="date" value={quickForm.endDate || ""} onChange={(e) => setQuickForm({ ...quickForm, endDate: e.target.value })} /></div>
+            <div className="col-span-2"><Label>Caution</Label><Input type="number" value={quickForm.deposit || 0} onChange={(e) => setQuickForm({ ...quickForm, deposit: +e.target.value })} /></div>
           </div>
-          <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>setOpen(false)}>Annuler</Button><Button onClick={submit}>Créer le contrat</Button></DialogFooter>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setOpenQuick(false)}>Annuler</Button>
+            <Button onClick={submitQuick}>Créer</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <RentVehicleDialog vehicle={rentVehicle} open={!!rentVehicleId} onOpenChange={(o) => !o && setRentVehicleId(null)} />
+      <ReturnRentalDialog rentalId={returnId} vehicle={returnVehicle} open={!!returnId} onOpenChange={(o) => !o && setReturnId(null)} onConfirm={confirmReturn} />
+    </div>
+  );
+}
+
+function Kpi({ label, value, valueText, icon, tone }: { label: string; value?: number; valueText?: string; icon: React.ReactNode; tone?: "rose" }) {
+  const cls = tone === "rose"
+    ? "bg-gradient-to-br from-rose-50 to-rose-100/60 border-rose-200"
+    : "bg-white/70 border-slate-200/60";
+  return (
+    <div className={`rounded-2xl border p-4 backdrop-blur-xl ${cls}`}>
+      <div className="flex items-center gap-2 mb-1.5">
+        <div className="w-7 h-7 rounded-lg bg-white/80 flex items-center justify-center shadow-sm">{icon}</div>
+        <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">{label}</p>
+      </div>
+      <p className="font-display font-bold text-xl tabular-nums">{valueText ?? value}</p>
     </div>
   );
 }

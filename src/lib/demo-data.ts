@@ -115,6 +115,12 @@ export interface Vehicle {
   sellingPrice: number;
   status: "available" | "sold" | "rented" | "maintenance";
   photo: string;
+  image?: string;
+  notes?: string;
+  purchaseDate?: string;
+  insuranceExpiry?: string;
+  techControlExpiry?: string;
+  carteGrise?: string;
 }
 
 export const vehicles: Vehicle[] = [
@@ -158,16 +164,29 @@ export interface Rental {
   id: string;
   vehicleId: string;
   customer: string;
+  phone?: string;
+  address?: string;
+  idDocument?: string;
+  licenseNumber?: string;
   startDate: string;
   endDate: string;
+  startTime?: string;
+  endTime?: string;
   dailyRate: number;
   deposit: number;
-  status: "active" | "returned" | "overdue";
+  advance?: number;
+  totalAmount?: number;
+  remaining?: number;
+  returnedAt?: string;
+  returnKm?: number;
+  fuelLevel?: string;
+  conditionNote?: string;
+  status: "reserved" | "active" | "returned" | "overdue" | "cancelled";
 }
 export const rentals: Rental[] = [
-  { id: "r1", vehicleId: "v4", customer: "Touriste Mr. Dupont",     startDate: "2026-06-04", endDate: "2026-06-12", dailyRate: 35_000, deposit: 200_000, status: "active" },
-  { id: "r2", vehicleId: "v2", customer: "Sopra Steria mission",    startDate: "2026-05-28", endDate: "2026-06-08", dailyRate: 65_000, deposit: 400_000, status: "active" },
-  { id: "r3", vehicleId: "v1", customer: "Aïcha Bâ",                 startDate: "2026-05-15", endDate: "2026-05-22", dailyRate: 30_000, deposit: 150_000, status: "returned" },
+  { id: "r1", vehicleId: "v4", customer: "Touriste Mr. Dupont", phone: "+221 77 000 11 22", startDate: "2026-06-04", endDate: "2026-06-12", dailyRate: 35_000, deposit: 200_000, status: "active" },
+  { id: "r2", vehicleId: "v2", customer: "Sopra Steria mission", phone: "+221 33 800 12 12", startDate: "2026-05-28", endDate: "2026-06-08", dailyRate: 65_000, deposit: 400_000, status: "active" },
+  { id: "r3", vehicleId: "v1", customer: "Aïcha Bâ", phone: "+221 78 234 45 67", startDate: "2026-05-15", endDate: "2026-05-22", dailyRate: 30_000, deposit: 150_000, status: "returned", returnedAt: "2026-05-22" },
 ];
 
 export interface GPSTrack {
