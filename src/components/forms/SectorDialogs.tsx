@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 export function VehicleDialog({ open, onOpenChange }: { open:boolean; onOpenChange:(v:boolean)=>void }) {
   const [form, setForm] = useState<any>({});
-  useEffect(()=>{ setForm({ brand:"", model:"", year:new Date().getFullYear(), color:"Blanc", vin:"", plate:"", mileageKm:0, fuel:"Essence", transmission:"Manuelle", purchasePrice:0, importFees:0, customsFees:0, repairFees:0, maintenanceFees:0, sellingPrice:0, status:"available", photo:"🚗", insuranceExpiry:"", techControlExpiry:"", carteGrise:"" }); },[open]);
+  useEffect(()=>{ setForm({ brand:"", model:"", year:new Date().getFullYear(), color:"Blanc", vin:"", plate:"", mileageKm:0, fuel:"Essence", transmission:"Manuelle", purchasePrice:0, importFees:0, customsFees:0, repairFees:0, maintenanceFees:0, sellingPrice:0, status:"available", photo:"🚗", insuranceExpiry:"", techControlExpiry:"", carteGrise:"", image:"", notes:"" }); },[open]);
   const total = (form.purchasePrice||0)+(form.importFees||0)+(form.customsFees||0)+(form.repairFees||0)+(form.maintenanceFees||0);
   const margin = (form.sellingPrice||0)-total;
   const submit = () => {
@@ -19,11 +19,29 @@ export function VehicleDialog({ open, onOpenChange }: { open:boolean; onOpenChan
     toast.success("Véhicule ajouté");
     onOpenChange(false);
   };
+  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2_500_000) { toast.error("Image trop volumineuse (max 2.5 Mo)"); return; }
+    const reader = new FileReader();
+    reader.onload = () => setForm((f: any) => ({ ...f, image: reader.result as string }));
+    reader.readAsDataURL(file);
+  };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
       <DialogHeader><DialogTitle>Nouveau véhicule</DialogTitle></DialogHeader>
       <Tabs defaultValue="g"><TabsList className="grid grid-cols-4"><TabsTrigger value="g">Général</TabsTrigger><TabsTrigger value="t">Technique</TabsTrigger><TabsTrigger value="f">Finances</TabsTrigger><TabsTrigger value="d">Documents</TabsTrigger></TabsList>
         <TabsContent value="g" className="grid grid-cols-3 gap-3 mt-4">
+          <div className="col-span-3">
+            <Label>Photo du véhicule</Label>
+            <div className="flex items-center gap-3 mt-1">
+              <div className="w-20 h-20 rounded-lg bg-muted overflow-hidden flex items-center justify-center text-3xl shrink-0">
+                {form.image ? <img src={form.image} alt="" className="w-full h-full object-cover" /> : form.photo}
+              </div>
+              <Input type="file" accept="image/*" onChange={handleImage} />
+              {form.image && <Button type="button" variant="outline" size="sm" onClick={()=>setForm({...form, image:""})}>Retirer</Button>}
+            </div>
+          </div>
           <div><Label>Marque *</Label><Input value={form.brand} onChange={e=>setForm({...form,brand:e.target.value})}/></div>
           <div><Label>Modèle *</Label><Input value={form.model} onChange={e=>setForm({...form,model:e.target.value})}/></div>
           <div><Label>Année</Label><Input type="number" value={form.year} onChange={e=>setForm({...form,year:+e.target.value})}/></div>
@@ -35,7 +53,7 @@ export function VehicleDialog({ open, onOpenChange }: { open:boolean; onOpenChan
               <SelectContent><SelectItem value="available">Disponible</SelectItem><SelectItem value="sold">Vendu</SelectItem><SelectItem value="rented">Loué</SelectItem><SelectItem value="maintenance">Maintenance</SelectItem></SelectContent>
             </Select>
           </div>
-          <div><Label>Icône</Label><Input className="text-2xl text-center" value={form.photo} onChange={e=>setForm({...form,photo:e.target.value})}/></div>
+          <div><Label>Emoji (fallback)</Label><Input className="text-2xl text-center" value={form.photo} onChange={e=>setForm({...form,photo:e.target.value})}/></div>
         </TabsContent>
         <TabsContent value="t" className="grid grid-cols-3 gap-3 mt-4">
           <div><Label>Kilométrage</Label><Input type="number" value={form.mileageKm} onChange={e=>setForm({...form,mileageKm:+e.target.value})}/></div>

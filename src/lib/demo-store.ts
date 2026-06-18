@@ -90,6 +90,42 @@ export interface InventoryCount {
   lines: { productId: string; productName: string; expected: number; counted: number }[];
 }
 
+export interface VehicleMaintenance {
+  id: string;
+  vehicleId: string;
+  motif: string;
+  type: string;
+  garage: string;
+  priority: "low" | "medium" | "high";
+  dateIn: string;
+  dateOut?: string;
+  status: "pending" | "diagnostic" | "repair" | "parts_wait" | "done";
+  partsCost: number;
+  laborCost: number;
+  otherCost: number;
+  notes?: string;
+}
+
+export interface VehiclePayment {
+  id: string;
+  creditId: string;
+  amount: number;
+  date: string;
+  method: "Cash" | "Wave" | "Orange Money" | "Virement" | "Chèque";
+  note?: string;
+}
+
+export interface VehicleSale {
+  id: string;
+  vehicleId: string;
+  customer: string;
+  phone?: string;
+  amount: number;
+  date: string;
+  payment: "cash" | "credit";
+  creditId?: string;
+}
+
 // ===== Collection registry =====
 type CollectionMap = {
   suppliers: Supplier;
@@ -111,6 +147,9 @@ type CollectionMap = {
   promotions: Promotion;
   inventories: InventoryCount;
   categories: Category;
+  vehicleMaintenances: VehicleMaintenance;
+  vehiclePayments: VehiclePayment;
+  vehicleSales: VehicleSale;
 };
 
 
@@ -144,6 +183,9 @@ const seeds: { [K in keyof CollectionMap]: CollectionMap[K][] } = {
   ],
   inventories: [],
   categories: seedCategories,
+  vehicleMaintenances: [],
+  vehiclePayments: [],
+  vehicleSales: [],
 };
 
 
