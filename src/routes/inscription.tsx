@@ -226,10 +226,21 @@ function SignupPage() {
 
               <button
                 type="submit"
-                disabled={updateCompany.isPending}
+                disabled={submitting}
                 className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary/90 disabled:opacity-60"
               >
-                {updateCompany.isPending ? "Création..." : "Créer mon compte"} <ArrowRight size={16} />
+                {submitting ? "Création..." : "Créer mon compte"} <ArrowRight size={16} />
+              </button>
+              <div className="my-4 flex items-center gap-3 text-[10px] uppercase tracking-wider text-slate-400">
+                <div className="h-px flex-1 bg-slate-200" /> ou <div className="h-px flex-1 bg-slate-200" />
+              </div>
+              <button
+                type="button"
+                onClick={handleGoogle}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .55 4.1 1.6l3-3C17.2 1.7 14.8.7 12 .7 7.4.7 3.5 3.4 1.6 7.3l3.5 2.7C6.1 7 8.8 5 12 5z"/><path fill="#4285F4" d="M23.3 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.4c-.3 1.5-1.1 2.7-2.4 3.5l3.7 2.9c2.2-2 3.6-5 3.6-8.5z"/><path fill="#FBBC05" d="M5.1 14.3c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2L1.6 7.3C.6 9 0 11 0 12.3s.6 3.3 1.6 5l3.5-3z"/><path fill="#34A853" d="M12 24c3.2 0 6-1 8-2.9l-3.7-2.9c-1 .7-2.4 1.1-4.3 1.1-3.2 0-5.9-2-6.9-4.9l-3.5 2.7C3.5 20.6 7.4 24 12 24z"/></svg>
+                Continuer avec Google
               </button>
               <p className="mt-4 text-center text-xs text-slate-500">
                 Déjà un compte ? <Link to="/connexion" className="font-medium text-primary hover:underline">Se connecter</Link>
