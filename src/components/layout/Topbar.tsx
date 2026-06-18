@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { Menu, Search, Bell, Plus, User, Settings, LogOut, HelpCircle, Maximize2, Moon, FileText, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { useGetCompany, useGetDashboard } from "@workspace/api-client-react";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -24,6 +26,7 @@ export function Topbar({ onMenuClick, onNewSale, showQuickSale = true }: TopbarP
   const { data: company } = useGetCompany();
   const { data: dashboard } = useGetDashboard();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -34,9 +37,12 @@ export function Topbar({ onMenuClick, onNewSale, showQuickSale = true }: TopbarP
   const alertsCount = dashboard?.lowStock?.length || 0;
   const initial = company?.ownerName?.charAt(0)?.toUpperCase() || "G";
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
     toast.success("Déconnexion réussie");
-    setTimeout(() => navigate({ to: "/connexion" }), 400);
+    navigate({ to: "/connexion", replace: true });
   };
 
   const handleFullscreen = () => {
