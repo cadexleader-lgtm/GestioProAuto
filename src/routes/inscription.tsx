@@ -7,6 +7,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import logoIcon from "@/assets/gestiopro-icon.png";
 import { SUB_SECTORS_ARRAY, type SubSectorId } from "@/lib/sectors";
 import { useUpdateCompany } from "@workspace/api-client-react";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/inscription")({
   head: () => ({
@@ -43,26 +45,67 @@ function SignupPage() {
     city: "",
   });
 
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleGoogle = async () => {
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin + "/app",
+    });
+    if (result.error) { toast.error("Inscription Google impossible"); return; }
+    if (result.redirected) return;
+    navigate({ to: "/app" });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subSectorId) { toast.error("Veuillez choisir votre activité"); return; }
     if (!form.company || !form.email || !form.password) { toast.error("Champs requis manquants"); return; }
+    if (form.password.length < 8) { toast.error("Mot de passe : 8 caractères minimum"); return; }
 
-    await updateCompany.mutateAsync({
-      data: {
-        name: form.company,
-        ownerName: form.fullName || form.company,
-        email: form.email,
-        phone: form.phone,
-        country: form.country,
-        city: form.city || "—",
-        sectorId: "commerce",
-        subSectorId,
+    setSubmitting(true);
+    const { data, error } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/app`,
+        data: {
+          full_name: form.fullName || form.company,
+          company_name: form.company,
+        },
       },
     });
-    await queryClient.invalidateQueries();
+    if (error) {
+      setSubmitting(false);
+      toast.error(error.message);
+      return;
+    }
+
+    // Save company profile in local store (demo data)
+    try {
+      await updateCompany.mutateAsync({
+        data: {
+          name: form.company,
+          ownerName: form.fullName || form.company,
+          email: form.email,
+          phone: form.phone,
+          country: form.country,
+          city: form.city || "—",
+          sectorId: "commerce",
+          subSectorId,
+        },
+      });
+      await queryClient.invalidateQueries();
+    } catch { /* non-blocking */ }
+
+    setSubmitting(false);
+
+    if (!data.session) {
+      toast.success("Compte créé. Vérifiez votre email pour confirmer.");
+      navigate({ to: "/connexion" });
+      return;
+    }
     toast.success("Compte créé ! Bienvenue sur GestioPro.");
-    setTimeout(() => navigate({ to: "/app" }), 500);
+    navigate({ to: "/app" });
   };
 
   return (
