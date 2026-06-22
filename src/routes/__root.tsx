@@ -84,6 +84,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:site_name", content: "GestioPro" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { property: "og:title", content: "GestioPro — Gestion modulaire pour PME africaines" },
+      { name: "twitter:title", content: "GestioPro — Gestion modulaire pour PME africaines" },
+      { property: "og:description", content: "GestioPro : la plateforme tout-en-un pour piloter votre PME (ventes, stock, clients, finances) — adaptée à chaque secteur." },
+      { name: "twitter:description", content: "GestioPro : la plateforme tout-en-un pour piloter votre PME (ventes, stock, clients, finances) — adaptée à chaque secteur." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/d7194376-cf82-4375-ac46-eb12ccae0eb8" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/d7194376-cf82-4375-ac46-eb12ccae0eb8" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
