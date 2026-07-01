@@ -265,3 +265,129 @@ export function useHydrated() {
   useEffect(() => setH(true), []);
   return h;
 }
+
+/* ==============================================================
+ * VEHICLE SYNC HELPERS — single source of truth for status changes.
+ * ============================================================== */
+
+export function startRental(payload: Omit<Rental, "id">): Rental {
+  const r = db.add("rentals", payload);
+  db.update("vehicles", payload.vehicleId, { status: "rented" } as any);
+  return r;
+}
+
+export function returnRental(
+  rentalId: string,
+  data: { returnedAt: string; returnKm?: number; fuelLevel?: string; conditionNote?: string },
+) {
+  const r = db.list("rentals").find((x) => x.id === rentalId);
+  if (!r) return;
+  db.update("rentals", rentalId, { ...data, status: "returned" } as any);
+  const patch: any = { status: "available" };
+  if (data.returnKm && data.returnKm > 0) patch.mileageKm = data.returnKm;
+  db.update("vehicles", r.vehicleId, patch);
+}
+
+export function isRentalOverdue(r: Rental): boolean {
+  if (r.status !== "active") return false;
+  return +new Date(r.endDate) < Date.now();
+}
+
+export function sellVehicle(payload: {
+  vehicleId: string; customer: string; phone?: string;
+  amount: number; payment: "cash" | "credit";
+}): VehicleSale {
+  const sale = db.add("vehicleSales", {
+    vehicleId: payload.vehicleId,
+    customer: payload.customer,
+    phone: payload.phone,
+    amount: payload.amount,
+    payment: payload.payment,
+    date: new Date().toISOString().slice(0, 10),
+  });
+  db.update("vehicles", payload.vehicleId, { status: "sold" } as any);
+  if (payload.payment === "cash") {
+    db.add("cash", {
+      type: "in",
+      label: `Vente véhicule — ${payload.customer}`,
+      amount: payload.amount,
+      date: new Date().toISOString(),
+      source: "Vente auto",
+    });
+  }
+  return sale;
+}
+
+export function startVehicleMaintenance(payload: Omit<VehicleMaintenance, "id">): VehicleMaintenance {
+  const m = db.add("vehicleMaintenances", payload);
+  db.update("vehicles", payload.vehicleId, { status: "maintenance" } as any);
+  return m;
+}
+
+export function completeVehicleMaintenance(maintId: string) {
+  const m = db.list("vehicleMaintenances").find((x) => x.id === maintId);
+  if (!m) return;
+  db.update("vehicleMaintenances", maintId, {
+    status: "done",
+    dateOut: new Date().toISOString().slice(0, 10),
+  } as any);
+  const cost = (m.partsCost || 0) + (m.laborCost || 0) + (m.otherCost || 0);
+  if (cost > 0) {
+    db.add("expenses", {
+      label: `Maintenance véhicule — ${m.motif}`,
+      amount: cost,
+      date: new Date().toISOString().slice(0, 10),
+      category: "Maintenance",
+      paidBy: m.garage || "—",
+    } as any);
+  }
+  db.update("vehicles", m.vehicleId, { status: "available" } as any);
+}
+
+export function addVehicleCreditPayment(
+  creditId: string,
+  payload: { amount: number; date: string; method: VehiclePayment["method"]; note?: string },
+) {
+  const credit = db.list("vehicleCredits").find((c) => c.id === creditId);
+  if (!credit) return;
+  db.add("vehiclePayments", { creditId, ...payload });
+  const totalPaid = credit.downPayment
+    + db.list("vehiclePayments").filter((p) => p.creditId === creditId)
+        .reduce((s, p) => s + p.amount, 0);
+  const paidMonths = credit.monthlyPayment > 0
+    ? Math.min(credit.totalMonths, Math.floor(totalPaid / credit.monthlyPayment))
+    : credit.paidMonths;
+  const isDone = totalPaid >= credit.total;
+  const nextDue = new Date(payload.date);
+  nextDue.setMonth(nextDue.getMonth() + 1);
+  db.update("vehicleCredits", creditId, {
+    paidMonths,
+    status: isDone ? "ok" : (+new Date(credit.nextDueDate) < Date.now() ? "late" : "ok"),
+    nextDueDate: isDone ? credit.nextDueDate : nextDue.toISOString().slice(0, 10),
+  } as any);
+  db.add("cash", {
+    type: "in",
+    label: `Paiement crédit — ${credit.customer}`,
+    amount: payload.amount,
+    date: new Date().toISOString(),
+    source: payload.method,
+  });
+}
+
+export function vehicleProfitability(vehicleId: string) {
+  const v = db.list("vehicles").find((x) => x.id === vehicleId);
+  if (!v) return null;
+  const rentals = db.list("rentals").filter((r) => r.vehicleId === vehicleId);
+  const sales = db.list("vehicleSales").filter((s) => s.vehicleId === vehicleId);
+  const maints = db.list("vehicleMaintenances").filter((m) => m.vehicleId === vehicleId);
+  const rentalRevenue = rentals.reduce((s, r) => {
+    const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / 86400000));
+    return s + days * r.dailyRate;
+  }, 0);
+  const saleRevenue = sales.reduce((s, x) => s + x.amount, 0);
+  const maintCost = maints.reduce((s, m) => s + (m.partsCost || 0) + (m.laborCost || 0) + (m.otherCost || 0), 0);
+  const baseCost = v.purchasePrice + v.importFees + v.customsFees + v.repairFees + v.maintenanceFees;
+  const totalCost = baseCost + maintCost;
+  const profit = rentalRevenue + saleRevenue - totalCost;
+  return { rentalRevenue, saleRevenue, maintCost, totalCost, profit };
+}
