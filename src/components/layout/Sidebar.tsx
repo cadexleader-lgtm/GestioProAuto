@@ -5,7 +5,7 @@ import {
   UtensilsCrossed, Grid3x3, ChefHat, ClipboardList, CalendarDays,
   ShoppingBag, Building2, Stethoscope, Smartphone,
   Truck, Users2, Receipt, Wallet, BarChart3,
-  Car, KeyRound, MapPin, CreditCard, ShieldCheck, FileSpreadsheet, Tv, Tags,
+  Car, KeyRound, MapPin, CreditCard, ShieldCheck, FileSpreadsheet, Tv, Tags, Wrench,
   type LucideIcon,
 } from "lucide-react";
 
