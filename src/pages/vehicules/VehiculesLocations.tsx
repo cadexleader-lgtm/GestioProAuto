@@ -7,9 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCollection, startRental, returnRental, isRentalOverdue } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { KeyRound, Plus, AlertTriangle, Calendar, CheckCircle2, RotateCcw } from "lucide-react";
+import { KeyRound, Plus, AlertTriangle, Calendar, CheckCircle2, RotateCcw, FileText, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { RentVehicleDialog, ReturnRentalDialog } from "@/components/vehicles/VehicleActionsDialogs";
+import { generateRentalContract, sendWhatsApp } from "@/lib/vehicle-pdf";
 import type { Rental } from "@/lib/demo-data";
 
 const STATUS: Record<Rental["status"], { label: string; cls: string }> = {
