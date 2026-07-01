@@ -151,6 +151,17 @@ export function VehiculesCredits() {
                   <span className="inline-flex items-center gap-1.5"><TrendingDown size={14} /> Statut</span>
                   <Badge variant={openDetail.status === "late" ? "destructive" : "secondary"}>{openDetail.status === "late" ? "En retard" : "À jour"}</Badge>
                 </div>
+
+                <div className="mt-4 flex gap-2 flex-wrap">
+                  <Button variant="outline" size="sm" onClick={() => { if (v) { generateCreditSchedule(openDetail, v, credPays); toast.success("Échéancier PDF généré"); } }}>
+                    <FileText size={14} /> Échéancier PDF
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => {
+                    sendWhatsApp("", `Bonjour ${openDetail.customer}, votre solde de crédit véhicule est de ${formatFCFA(remaining)}. Prochaine échéance le ${openDetail.nextDueDate}. — GestioPro`);
+                  }}>
+                    <MessageCircle size={14} /> Rappel WhatsApp
+                  </Button>
+                </div>
               </>
             );
           })()}
