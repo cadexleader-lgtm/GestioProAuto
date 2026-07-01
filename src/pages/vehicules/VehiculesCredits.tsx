@@ -6,8 +6,10 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { CreditCard, AlertTriangle, Plus, Wallet, TrendingDown } from "lucide-react";
+import { CreditCard, AlertTriangle, Plus, Wallet, TrendingDown, FileText, MessageCircle } from "lucide-react";
 import { CreditPaymentDialog } from "@/components/vehicles/VehicleActionsDialogs";
+import { generateCreditSchedule, sendWhatsApp } from "@/lib/vehicle-pdf";
+import { toast } from "sonner";
 import type { VehicleCredit } from "@/lib/demo-data";
 
 export function VehiculesCredits() {
