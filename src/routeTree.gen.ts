@@ -34,7 +34,9 @@ import { Route as AppRestoCommandesRouteImport } from './routes/app.resto.comman
 import { Route as AppElecGarantiesRouteImport } from './routes/app.elec.garanties'
 import { Route as AppElecFacturationRouteImport } from './routes/app.elec.facturation'
 import { Route as AppElecCreditsRouteImport } from './routes/app.elec.credits'
+import { Route as AppAutoVentesRouteImport } from './routes/app.auto.ventes'
 import { Route as AppAutoVehiculesRouteImport } from './routes/app.auto.vehicules'
+import { Route as AppAutoMaintenanceRouteImport } from './routes/app.auto.maintenance'
 import { Route as AppAutoLocationsRouteImport } from './routes/app.auto.locations'
 import { Route as AppAutoGpsRouteImport } from './routes/app.auto.gps'
 import { Route as AppAutoCreditsRouteImport } from './routes/app.auto.credits'
@@ -164,9 +166,19 @@ const AppElecCreditsRoute = AppElecCreditsRouteImport.update({
   path: '/elec/credits',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAutoVentesRoute = AppAutoVentesRouteImport.update({
+  id: '/auto/ventes',
+  path: '/auto/ventes',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAutoVehiculesRoute = AppAutoVehiculesRouteImport.update({
   id: '/auto/vehicules',
   path: '/auto/vehicules',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAutoMaintenanceRoute = AppAutoMaintenanceRouteImport.update({
+  id: '/auto/maintenance',
+  path: '/auto/maintenance',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAutoLocationsRoute = AppAutoLocationsRouteImport.update({
@@ -206,7 +218,9 @@ export interface FileRoutesByFullPath {
   '/app/auto/credits': typeof AppAutoCreditsRoute
   '/app/auto/gps': typeof AppAutoGpsRoute
   '/app/auto/locations': typeof AppAutoLocationsRoute
+  '/app/auto/maintenance': typeof AppAutoMaintenanceRoute
   '/app/auto/vehicules': typeof AppAutoVehiculesRoute
+  '/app/auto/ventes': typeof AppAutoVentesRoute
   '/app/elec/credits': typeof AppElecCreditsRoute
   '/app/elec/facturation': typeof AppElecFacturationRoute
   '/app/elec/garanties': typeof AppElecGarantiesRoute
@@ -236,7 +250,9 @@ export interface FileRoutesByTo {
   '/app/auto/credits': typeof AppAutoCreditsRoute
   '/app/auto/gps': typeof AppAutoGpsRoute
   '/app/auto/locations': typeof AppAutoLocationsRoute
+  '/app/auto/maintenance': typeof AppAutoMaintenanceRoute
   '/app/auto/vehicules': typeof AppAutoVehiculesRoute
+  '/app/auto/ventes': typeof AppAutoVentesRoute
   '/app/elec/credits': typeof AppElecCreditsRoute
   '/app/elec/facturation': typeof AppElecFacturationRoute
   '/app/elec/garanties': typeof AppElecGarantiesRoute
@@ -268,7 +284,9 @@ export interface FileRoutesById {
   '/app/auto/credits': typeof AppAutoCreditsRoute
   '/app/auto/gps': typeof AppAutoGpsRoute
   '/app/auto/locations': typeof AppAutoLocationsRoute
+  '/app/auto/maintenance': typeof AppAutoMaintenanceRoute
   '/app/auto/vehicules': typeof AppAutoVehiculesRoute
+  '/app/auto/ventes': typeof AppAutoVentesRoute
   '/app/elec/credits': typeof AppElecCreditsRoute
   '/app/elec/facturation': typeof AppElecFacturationRoute
   '/app/elec/garanties': typeof AppElecGarantiesRoute
@@ -301,7 +319,9 @@ export interface FileRouteTypes {
     | '/app/auto/credits'
     | '/app/auto/gps'
     | '/app/auto/locations'
+    | '/app/auto/maintenance'
     | '/app/auto/vehicules'
+    | '/app/auto/ventes'
     | '/app/elec/credits'
     | '/app/elec/facturation'
     | '/app/elec/garanties'
@@ -331,7 +351,9 @@ export interface FileRouteTypes {
     | '/app/auto/credits'
     | '/app/auto/gps'
     | '/app/auto/locations'
+    | '/app/auto/maintenance'
     | '/app/auto/vehicules'
+    | '/app/auto/ventes'
     | '/app/elec/credits'
     | '/app/elec/facturation'
     | '/app/elec/garanties'
@@ -362,7 +384,9 @@ export interface FileRouteTypes {
     | '/app/auto/credits'
     | '/app/auto/gps'
     | '/app/auto/locations'
+    | '/app/auto/maintenance'
     | '/app/auto/vehicules'
+    | '/app/auto/ventes'
     | '/app/elec/credits'
     | '/app/elec/facturation'
     | '/app/elec/garanties'
@@ -557,11 +581,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppElecCreditsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/auto/ventes': {
+      id: '/app/auto/ventes'
+      path: '/auto/ventes'
+      fullPath: '/app/auto/ventes'
+      preLoaderRoute: typeof AppAutoVentesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/auto/vehicules': {
       id: '/app/auto/vehicules'
       path: '/auto/vehicules'
       fullPath: '/app/auto/vehicules'
       preLoaderRoute: typeof AppAutoVehiculesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/auto/maintenance': {
+      id: '/app/auto/maintenance'
+      path: '/auto/maintenance'
+      fullPath: '/app/auto/maintenance'
+      preLoaderRoute: typeof AppAutoMaintenanceRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/auto/locations': {
@@ -605,7 +643,9 @@ interface AppRouteChildren {
   AppAutoCreditsRoute: typeof AppAutoCreditsRoute
   AppAutoGpsRoute: typeof AppAutoGpsRoute
   AppAutoLocationsRoute: typeof AppAutoLocationsRoute
+  AppAutoMaintenanceRoute: typeof AppAutoMaintenanceRoute
   AppAutoVehiculesRoute: typeof AppAutoVehiculesRoute
+  AppAutoVentesRoute: typeof AppAutoVentesRoute
   AppElecCreditsRoute: typeof AppElecCreditsRoute
   AppElecFacturationRoute: typeof AppElecFacturationRoute
   AppElecGarantiesRoute: typeof AppElecGarantiesRoute
@@ -633,7 +673,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppAutoCreditsRoute: AppAutoCreditsRoute,
   AppAutoGpsRoute: AppAutoGpsRoute,
   AppAutoLocationsRoute: AppAutoLocationsRoute,
+  AppAutoMaintenanceRoute: AppAutoMaintenanceRoute,
   AppAutoVehiculesRoute: AppAutoVehiculesRoute,
+  AppAutoVentesRoute: AppAutoVentesRoute,
   AppElecCreditsRoute: AppElecCreditsRoute,
   AppElecFacturationRoute: AppElecFacturationRoute,
   AppElecGarantiesRoute: AppElecGarantiesRoute,
@@ -655,13 +697,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

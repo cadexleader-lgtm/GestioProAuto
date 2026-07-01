@@ -81,8 +81,10 @@ export const SUB_SECTORS: Record<SubSectorId, SubSectorConfig> = {
     metierModules: [
       { href: "/app", iconName: "LayoutDashboard", label: "Tableau de bord" },
       { href: "/app/auto/vehicules", iconName: "Car", label: "Parc véhicules" },
+      { href: "/app/auto/ventes", iconName: "ShoppingCart", label: "Ventes" },
       { href: "/app/auto/credits", iconName: "CreditCard", label: "Ventes à crédit" },
       { href: "/app/auto/locations", iconName: "KeyRound", label: "Locations" },
+      { href: "/app/auto/maintenance", iconName: "Wrench", label: "Maintenance" },
       { href: "/app/auto/gps", iconName: "MapPin", label: "Suivi GPS" },
     ],
   },

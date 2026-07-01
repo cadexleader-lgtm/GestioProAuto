@@ -6,8 +6,10 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { CreditCard, AlertTriangle, Plus, Wallet, TrendingDown } from "lucide-react";
+import { CreditCard, AlertTriangle, Plus, Wallet, TrendingDown, FileText, MessageCircle } from "lucide-react";
 import { CreditPaymentDialog } from "@/components/vehicles/VehicleActionsDialogs";
+import { generateCreditSchedule, sendWhatsApp } from "@/lib/vehicle-pdf";
+import { toast } from "sonner";
 import type { VehicleCredit } from "@/lib/demo-data";
 
 export function VehiculesCredits() {
@@ -148,6 +150,17 @@ export function VehiculesCredits() {
                 <div className="mt-4 p-3 rounded-lg bg-muted/40 text-sm flex items-center justify-between">
                   <span className="inline-flex items-center gap-1.5"><TrendingDown size={14} /> Statut</span>
                   <Badge variant={openDetail.status === "late" ? "destructive" : "secondary"}>{openDetail.status === "late" ? "En retard" : "À jour"}</Badge>
+                </div>
+
+                <div className="mt-4 flex gap-2 flex-wrap">
+                  <Button variant="outline" size="sm" onClick={() => { if (v) { generateCreditSchedule(openDetail, v, credPays); toast.success("Échéancier PDF généré"); } }}>
+                    <FileText size={14} /> Échéancier PDF
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => {
+                    sendWhatsApp("", `Bonjour ${openDetail.customer}, votre solde de crédit véhicule est de ${formatFCFA(remaining)}. Prochaine échéance le ${openDetail.nextDueDate}. — GestioPro`);
+                  }}>
+                    <MessageCircle size={14} /> Rappel WhatsApp
+                  </Button>
                 </div>
               </>
             );
