@@ -34,6 +34,7 @@ import { Route as AppRestoCommandesRouteImport } from './routes/app.resto.comman
 import { Route as AppElecGarantiesRouteImport } from './routes/app.elec.garanties'
 import { Route as AppElecFacturationRouteImport } from './routes/app.elec.facturation'
 import { Route as AppElecCreditsRouteImport } from './routes/app.elec.credits'
+import { Route as AppAutoVentesRouteImport } from './routes/app.auto.ventes'
 import { Route as AppAutoVehiculesRouteImport } from './routes/app.auto.vehicules'
 import { Route as AppAutoLocationsRouteImport } from './routes/app.auto.locations'
 import { Route as AppAutoGpsRouteImport } from './routes/app.auto.gps'
@@ -164,6 +165,11 @@ const AppElecCreditsRoute = AppElecCreditsRouteImport.update({
   path: '/elec/credits',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAutoVentesRoute = AppAutoVentesRouteImport.update({
+  id: '/auto/ventes',
+  path: '/auto/ventes',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAutoVehiculesRoute = AppAutoVehiculesRouteImport.update({
   id: '/auto/vehicules',
   path: '/auto/vehicules',
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/app/auto/gps': typeof AppAutoGpsRoute
   '/app/auto/locations': typeof AppAutoLocationsRoute
   '/app/auto/vehicules': typeof AppAutoVehiculesRoute
+  '/app/auto/ventes': typeof AppAutoVentesRoute
   '/app/elec/credits': typeof AppElecCreditsRoute
   '/app/elec/facturation': typeof AppElecFacturationRoute
   '/app/elec/garanties': typeof AppElecGarantiesRoute
@@ -237,6 +244,7 @@ export interface FileRoutesByTo {
   '/app/auto/gps': typeof AppAutoGpsRoute
   '/app/auto/locations': typeof AppAutoLocationsRoute
   '/app/auto/vehicules': typeof AppAutoVehiculesRoute
+  '/app/auto/ventes': typeof AppAutoVentesRoute
   '/app/elec/credits': typeof AppElecCreditsRoute
   '/app/elec/facturation': typeof AppElecFacturationRoute
   '/app/elec/garanties': typeof AppElecGarantiesRoute
@@ -269,6 +277,7 @@ export interface FileRoutesById {
   '/app/auto/gps': typeof AppAutoGpsRoute
   '/app/auto/locations': typeof AppAutoLocationsRoute
   '/app/auto/vehicules': typeof AppAutoVehiculesRoute
+  '/app/auto/ventes': typeof AppAutoVentesRoute
   '/app/elec/credits': typeof AppElecCreditsRoute
   '/app/elec/facturation': typeof AppElecFacturationRoute
   '/app/elec/garanties': typeof AppElecGarantiesRoute
@@ -302,6 +311,7 @@ export interface FileRouteTypes {
     | '/app/auto/gps'
     | '/app/auto/locations'
     | '/app/auto/vehicules'
+    | '/app/auto/ventes'
     | '/app/elec/credits'
     | '/app/elec/facturation'
     | '/app/elec/garanties'
@@ -332,6 +342,7 @@ export interface FileRouteTypes {
     | '/app/auto/gps'
     | '/app/auto/locations'
     | '/app/auto/vehicules'
+    | '/app/auto/ventes'
     | '/app/elec/credits'
     | '/app/elec/facturation'
     | '/app/elec/garanties'
@@ -363,6 +374,7 @@ export interface FileRouteTypes {
     | '/app/auto/gps'
     | '/app/auto/locations'
     | '/app/auto/vehicules'
+    | '/app/auto/ventes'
     | '/app/elec/credits'
     | '/app/elec/facturation'
     | '/app/elec/garanties'
@@ -557,6 +569,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppElecCreditsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/auto/ventes': {
+      id: '/app/auto/ventes'
+      path: '/auto/ventes'
+      fullPath: '/app/auto/ventes'
+      preLoaderRoute: typeof AppAutoVentesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/auto/vehicules': {
       id: '/app/auto/vehicules'
       path: '/auto/vehicules'
@@ -606,6 +625,7 @@ interface AppRouteChildren {
   AppAutoGpsRoute: typeof AppAutoGpsRoute
   AppAutoLocationsRoute: typeof AppAutoLocationsRoute
   AppAutoVehiculesRoute: typeof AppAutoVehiculesRoute
+  AppAutoVentesRoute: typeof AppAutoVentesRoute
   AppElecCreditsRoute: typeof AppElecCreditsRoute
   AppElecFacturationRoute: typeof AppElecFacturationRoute
   AppElecGarantiesRoute: typeof AppElecGarantiesRoute
@@ -634,6 +654,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAutoGpsRoute: AppAutoGpsRoute,
   AppAutoLocationsRoute: AppAutoLocationsRoute,
   AppAutoVehiculesRoute: AppAutoVehiculesRoute,
+  AppAutoVentesRoute: AppAutoVentesRoute,
   AppElecCreditsRoute: AppElecCreditsRoute,
   AppElecFacturationRoute: AppElecFacturationRoute,
   AppElecGarantiesRoute: AppElecGarantiesRoute,
