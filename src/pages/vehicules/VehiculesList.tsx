@@ -132,7 +132,7 @@ export function VehiculesList() {
                         </>
                       )}
                       <DropdownMenuItem onClick={() => setMaintFor(v)} disabled={v.status === "sold"}><Wrench size={14} className="mr-2" /> Maintenance</DropdownMenuItem>
-                      <DropdownMenuItem><Pencil size={14} className="mr-2" /> Modifier</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setEditFor(v)}><Pencil size={14} className="mr-2" /> Modifier</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
