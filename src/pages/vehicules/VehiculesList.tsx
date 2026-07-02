@@ -35,6 +35,7 @@ export function VehiculesList() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [openAdd, setOpenAdd] = useState(false);
+  const [editFor, setEditFor] = useState<Vehicle | null>(null);
   const [rentFor, setRentFor] = useState<Vehicle | null>(null);
   const [sellFor, setSellFor] = useState<Vehicle | null>(null);
   const [maintFor, setMaintFor] = useState<Vehicle | null>(null);
