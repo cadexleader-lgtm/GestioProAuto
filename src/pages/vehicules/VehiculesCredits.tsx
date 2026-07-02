@@ -8,6 +8,7 @@ import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
 import { CreditCard, AlertTriangle, Plus, Wallet, TrendingDown, FileText, MessageCircle } from "lucide-react";
 import { CreditPaymentDialog } from "@/components/vehicles/VehicleActionsDialogs";
+import { NewCreditSaleDialog } from "@/components/vehicles/NewCreditSaleDialog";
 import { generateCreditSchedule, sendWhatsApp } from "@/lib/vehicle-pdf";
 import { toast } from "sonner";
 import type { VehicleCredit } from "@/lib/demo-data";
@@ -18,6 +19,7 @@ export function VehiculesCredits() {
   const payments = useCollection("vehiclePayments");
   const [openDetail, setOpenDetail] = useState<VehicleCredit | null>(null);
   const [openPay, setOpenPay] = useState<VehicleCredit | null>(null);
+  const [openNew, setOpenNew] = useState(false);
 
   const stats = useMemo(() => {
     const totalDue = credits.reduce((s, c) => {
