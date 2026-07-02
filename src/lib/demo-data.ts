@@ -121,6 +121,7 @@ export interface Vehicle {
   insuranceExpiry?: string;
   techControlExpiry?: string;
   carteGrise?: string;
+  documents?: { id: string; name: string; type: string; dataUrl: string; uploadedAt: string; size: number }[];
 }
 
 export const vehicles: Vehicle[] = [
