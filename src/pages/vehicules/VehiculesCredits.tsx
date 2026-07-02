@@ -8,6 +8,7 @@ import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
 import { CreditCard, AlertTriangle, Plus, Wallet, TrendingDown, FileText, MessageCircle } from "lucide-react";
 import { CreditPaymentDialog } from "@/components/vehicles/VehicleActionsDialogs";
+import { NewCreditSaleDialog } from "@/components/vehicles/NewCreditSaleDialog";
 import { generateCreditSchedule, sendWhatsApp } from "@/lib/vehicle-pdf";
 import { toast } from "sonner";
 import type { VehicleCredit } from "@/lib/demo-data";
@@ -18,6 +19,7 @@ export function VehiculesCredits() {
   const payments = useCollection("vehiclePayments");
   const [openDetail, setOpenDetail] = useState<VehicleCredit | null>(null);
   const [openPay, setOpenPay] = useState<VehicleCredit | null>(null);
+  const [openNew, setOpenNew] = useState(false);
 
   const stats = useMemo(() => {
     const totalDue = credits.reduce((s, c) => {
@@ -30,9 +32,14 @@ export function VehiculesCredits() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Ventes à crédit</h1>
-        <p className="text-muted-foreground mt-1 text-sm">Suivi des échéances, paiements et alertes.</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Ventes à crédit</h1>
+          <p className="text-muted-foreground mt-1 text-sm">Suivi des échéances, paiements et alertes.</p>
+        </div>
+        <Button onClick={() => setOpenNew(true)} className="shadow-lg shadow-primary/20">
+          <Plus size={16} /> Nouvelle vente à crédit
+        </Button>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
@@ -169,6 +176,7 @@ export function VehiculesCredits() {
       </Dialog>
 
       <CreditPaymentDialog credit={openPay} open={!!openPay} onOpenChange={(o) => !o && setOpenPay(null)} />
+      <NewCreditSaleDialog open={openNew} onOpenChange={setOpenNew} />
     </div>
   );
 }

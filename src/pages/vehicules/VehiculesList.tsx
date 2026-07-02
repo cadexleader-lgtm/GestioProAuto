@@ -35,6 +35,7 @@ export function VehiculesList() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [openAdd, setOpenAdd] = useState(false);
+  const [editFor, setEditFor] = useState<Vehicle | null>(null);
   const [rentFor, setRentFor] = useState<Vehicle | null>(null);
   const [sellFor, setSellFor] = useState<Vehicle | null>(null);
   const [maintFor, setMaintFor] = useState<Vehicle | null>(null);
@@ -131,7 +132,7 @@ export function VehiculesList() {
                         </>
                       )}
                       <DropdownMenuItem onClick={() => setMaintFor(v)} disabled={v.status === "sold"}><Wrench size={14} className="mr-2" /> Maintenance</DropdownMenuItem>
-                      <DropdownMenuItem><Pencil size={14} className="mr-2" /> Modifier</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setEditFor(v)}><Pencil size={14} className="mr-2" /> Modifier</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -171,6 +172,7 @@ export function VehiculesList() {
       </div>
 
       <VehicleDialog open={openAdd} onOpenChange={setOpenAdd} />
+      <VehicleDialog vehicle={editFor} open={!!editFor} onOpenChange={(o) => !o && setEditFor(null)} />
       <RentVehicleDialog vehicle={rentFor} open={!!rentFor} onOpenChange={(o) => !o && setRentFor(null)} />
       <SellVehicleDialog vehicle={sellFor} open={!!sellFor} onOpenChange={(o) => !o && setSellFor(null)} />
       <MaintenanceVehicleDialog vehicle={maintFor} open={!!maintFor} onOpenChange={(o) => !o && setMaintFor(null)} />
