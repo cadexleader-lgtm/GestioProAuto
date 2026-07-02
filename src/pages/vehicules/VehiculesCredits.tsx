@@ -176,6 +176,7 @@ export function VehiculesCredits() {
       </Dialog>
 
       <CreditPaymentDialog credit={openPay} open={!!openPay} onOpenChange={(o) => !o && setOpenPay(null)} />
+      <NewCreditSaleDialog open={openNew} onOpenChange={setOpenNew} />
     </div>
   );
 }
