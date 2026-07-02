@@ -172,6 +172,7 @@ export function VehiculesList() {
       </div>
 
       <VehicleDialog open={openAdd} onOpenChange={setOpenAdd} />
+      <VehicleDialog vehicle={editFor} open={!!editFor} onOpenChange={(o) => !o && setEditFor(null)} />
       <RentVehicleDialog vehicle={rentFor} open={!!rentFor} onOpenChange={(o) => !o && setRentFor(null)} />
       <SellVehicleDialog vehicle={sellFor} open={!!sellFor} onOpenChange={(o) => !o && setSellFor(null)} />
       <MaintenanceVehicleDialog vehicle={maintFor} open={!!maintFor} onOpenChange={(o) => !o && setMaintFor(null)} />
