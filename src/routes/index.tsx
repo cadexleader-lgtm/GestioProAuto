@@ -56,11 +56,13 @@ function Nav() {
           <a href="#tarifs" className="text-sm text-slate-600 transition hover:text-slate-900">Tarifs</a>
         </nav>
         <div className="flex items-center gap-2">
-          <Link to="/connexion" className="hidden rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition hover:text-slate-900 sm:inline-flex">
+          <Link to="/connexion" className="inline-flex rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 sm:px-4">
             Connexion
           </Link>
-          <Link to="/inscription" className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition hover:bg-primary/90">
-            Essai gratuit <ArrowRight size={14} />
+          <Link to="/inscription" className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition hover:bg-primary/90 sm:px-4">
+            <span className="hidden sm:inline">Essai gratuit</span>
+            <span className="sm:hidden">Essai</span>
+            <ArrowRight size={14} />
           </Link>
         </div>
       </div>
