@@ -12,6 +12,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect } from "react";
 import { SUB_SECTORS_ARRAY } from "@/lib/sectors";
+import { db } from "@/lib/demo-store";
+import { Database, Trash2, Sparkles } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 
 const schema = z.object({
   name: z.string().min(1, "Requis"),
