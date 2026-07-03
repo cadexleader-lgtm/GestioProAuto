@@ -164,7 +164,7 @@ function LandingPage() {
           </div>
         </motion.div>
       </section>
-      <div className="hidden">{/* --- end hero --- */}</div>
+      
 
 
       {/* SOUS-SECTEURS */}
