@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { MobileBottomNav } from "./MobileBottomNav";
 import { NewSaleSheet } from "../sales/NewSaleSheet";
 import { useGetCompany } from "@workspace/api-client-react";
 import { getSubSectorConfig } from "@/lib/sectors";
@@ -16,7 +17,7 @@ export function AppShell({ children }: AppShellProps) {
   const sub = getSubSectorConfig(company?.subSectorId);
 
   return (
-    <div className="min-h-[100dvh] text-foreground font-sans overflow-hidden relative flex">
+    <div className="min-h-[100dvh] text-foreground font-sans overflow-hidden relative flex bg-gradient-to-br from-slate-50 via-white to-blue-50/40 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute -top-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-primary/[0.06] blur-[120px]" />
         <div className="absolute top-[40%] -left-[10%] w-[50%] h-[50%] rounded-full bg-accent/[0.05] blur-[100px]" />
@@ -32,11 +33,13 @@ export function AppShell({ children }: AppShellProps) {
         />
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
-          <div className="max-w-7xl mx-auto pb-24">
+          <div className="max-w-7xl mx-auto pb-32 md:pb-24">
             {children}
           </div>
         </main>
       </div>
+
+      <MobileBottomNav />
 
       {sub.hasQuickSale && (
         <NewSaleSheet
