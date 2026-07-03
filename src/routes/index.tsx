@@ -98,7 +98,74 @@ function LandingPage() {
           </div>
           <p className="mt-4 text-xs text-slate-400">14 jours d'essai · Sans carte bancaire · Configuration en 5 minutes</p>
         </motion.div>
+
+        {/* HERO MOCKUP — floating dashboard preview */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2 }}
+          className="relative mx-auto mt-16 max-w-5xl [perspective:2000px]"
+        >
+          <div className="absolute inset-x-4 -bottom-8 h-24 rounded-[50%] bg-primary/25 blur-3xl" />
+          <div
+            className="relative rounded-3xl border border-slate-200/70 bg-white/80 p-3 shadow-[0_30px_80px_-20px_rgba(15,23,42,0.35)] backdrop-blur-xl"
+            style={{ transform: "rotateX(8deg)" }}
+          >
+            {/* mock topbar */}
+            <div className="flex items-center gap-2 rounded-t-2xl border-b border-slate-100 bg-slate-50/70 px-4 py-2.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+              <span className="ml-3 text-[11px] font-medium text-slate-500">app.gestiopro.com/tableau-de-bord</span>
+            </div>
+            <div className="grid gap-3 p-4 sm:grid-cols-12 sm:p-6">
+              {/* sidebar */}
+              <div className="hidden sm:col-span-2 sm:flex sm:flex-col sm:gap-2">
+                <div className="h-8 rounded-lg bg-primary/15" />
+                <div className="h-6 rounded-lg bg-slate-100" />
+                <div className="h-6 rounded-lg bg-slate-100" />
+                <div className="h-6 rounded-lg bg-slate-100" />
+                <div className="h-6 rounded-lg bg-slate-100" />
+              </div>
+              {/* main */}
+              <div className="sm:col-span-10 space-y-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {[
+                    { l: "CA du mois", v: "12 480 000", c: "from-primary/15 to-primary/5" },
+                    { l: "Ventes", v: "348", c: "from-emerald-500/15 to-emerald-500/5" },
+                    { l: "Clients", v: "1 204", c: "from-blue-500/15 to-blue-500/5" },
+                    { l: "Marge", v: "34 %", c: "from-violet-500/15 to-violet-500/5" },
+                  ].map((k) => (
+                    <div key={k.l} className={`rounded-xl bg-gradient-to-br ${k.c} p-3 border border-white`}>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">{k.l}</p>
+                      <p className="mt-1 font-display text-sm font-bold text-slate-900 sm:text-base">{k.v}</p>
+                    </div>
+                  ))}
+                </div>
+                {/* chart placeholder */}
+                <div className="rounded-xl border border-slate-100 bg-white p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-xs font-semibold text-slate-700">Évolution des revenus</p>
+                    <span className="text-[10px] font-medium text-emerald-600">+18,4 %</span>
+                  </div>
+                  <svg viewBox="0 0 400 100" className="w-full h-16">
+                    <defs>
+                      <linearGradient id="lg" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0" stopColor="hsl(var(--primary))" stopOpacity="0.35" />
+                        <stop offset="1" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M0,80 C40,60 70,70 100,50 C140,25 180,55 220,35 C260,18 300,45 340,25 C370,10 390,20 400,15 L400,100 L0,100 Z" fill="url(#lg)" />
+                    <path d="M0,80 C40,60 70,70 100,50 C140,25 180,55 220,35 C260,18 300,45 340,25 C370,10 390,20 400,15" fill="none" stroke="hsl(var(--primary))" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </section>
+      <div className="hidden">{/* --- end hero --- */}</div>
+
 
       {/* SOUS-SECTEURS */}
       <section id="activites" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
