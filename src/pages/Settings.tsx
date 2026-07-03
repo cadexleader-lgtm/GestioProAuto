@@ -149,6 +149,62 @@ export function Settings() {
           </Form>
         </CardContent>
       </Card>
+
+      <Card className="shadow-sm border-slate-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Database size={18}/> Données de démonstration</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            GestioPro peut être chargé avec un jeu de données fictives pour vos présentations,
+            ou totalement vidé pour démarrer sur une base propre en production.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => {
+                db.loadDemo();
+                toast.success("Données de démonstration chargées");
+              }}
+            >
+              <Sparkles size={16} /> Charger les données de démo
+            </Button>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="destructive" className="rounded-xl">
+                  <Trash2 size={16} /> Vider toutes les données
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Vider toutes les données ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action supprime définitivement tous les véhicules, ventes, crédits,
+                    dépenses, clients et documents stockés localement. Votre profil d'entreprise
+                    est conservé. Cette action est irréversible.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="rounded-xl">Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => {
+                      db.wipeAll();
+                      toast.success("Toutes les données ont été effacées");
+                    }}
+                  >
+                    Oui, tout vider
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
