@@ -257,6 +257,20 @@ export const db = {
     stores[name] = [...seeds[name]] as any;
     persist(name);
   },
+  /** Wipe ALL collections — used by "Vider toutes les données" in Settings. */
+  wipeAll(): void {
+    (Object.keys(seeds) as Array<keyof CollectionMap>).forEach((k) => {
+      stores[k] = [] as any;
+      persist(k);
+    });
+  },
+  /** Load full demo dataset from the seed constants. */
+  loadDemo(): void {
+    (Object.keys(seeds) as Array<keyof CollectionMap>).forEach((k) => {
+      stores[k] = [...seeds[k]] as any;
+      persist(k);
+    });
+  },
 };
 
 // Hydration check (avoid SSR mismatch by re-reading after mount)
