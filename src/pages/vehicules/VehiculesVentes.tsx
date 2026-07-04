@@ -5,15 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { ShoppingCart, Search, FileText, MessageCircle, TrendingUp, Wallet, Package } from "lucide-react";
+import { ShoppingCart, Search, FileText, MessageCircle, TrendingUp, Wallet, Package, Plus, Bell } from "lucide-react";
 import { generateSaleInvoice, sendWhatsApp } from "@/lib/vehicle-pdf";
 import { toast } from "sonner";
+import { SaleWorkflowDialog } from "@/components/vehicles/SaleWorkflowDialog";
 
 export function VehiculesVentes() {
   const sales = useCollection("vehicleSales");
   const vehicles = useCollection("vehicles");
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | "cash" | "credit">("all");
+  const [workflowOpen, setWorkflowOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return sales
@@ -59,6 +61,9 @@ export function VehiculesVentes() {
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Ventes de véhicules</h1>
           <p className="text-muted-foreground mt-1 text-sm">Historique complet des ventes cash et à crédit.</p>
         </div>
+        <Button onClick={() => setWorkflowOpen(true)} size="lg" className="shadow-lg">
+          <Plus size={18} /> Nouveau dossier de vente
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
