@@ -5,15 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { ShoppingCart, Search, FileText, MessageCircle, TrendingUp, Wallet, Package } from "lucide-react";
+import { ShoppingCart, Search, FileText, MessageCircle, TrendingUp, Wallet, Package, Plus, Bell } from "lucide-react";
 import { generateSaleInvoice, sendWhatsApp } from "@/lib/vehicle-pdf";
 import { toast } from "sonner";
+import { SaleWorkflowDialog } from "@/components/vehicles/SaleWorkflowDialog";
 
 export function VehiculesVentes() {
   const sales = useCollection("vehicleSales");
   const vehicles = useCollection("vehicles");
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | "cash" | "credit">("all");
+  const [workflowOpen, setWorkflowOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return sales
@@ -59,6 +61,9 @@ export function VehiculesVentes() {
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Ventes de véhicules</h1>
           <p className="text-muted-foreground mt-1 text-sm">Historique complet des ventes cash et à crédit.</p>
         </div>
+        <Button onClick={() => setWorkflowOpen(true)} size="lg" className="shadow-lg">
+          <Plus size={18} /> Nouveau dossier de vente
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -101,6 +106,13 @@ export function VehiculesVentes() {
                   </div>
                   <p className="text-sm text-muted-foreground mt-0.5">{s.customer} {s.phone ? `· ${s.phone}` : ""}</p>
                   <p className="text-xs text-muted-foreground">{new Date(s.date).toLocaleDateString("fr-FR")} · {v.plate}</p>
+                  {(s.reminders?.insuranceExpiry || s.reminders?.techControlExpiry || s.documents?.length) && (
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      {!!s.documents?.length && <Badge variant="outline" className="text-[10px]"><FileText size={10} className="mr-1"/>{s.documents.length} doc</Badge>}
+                      {s.reminders?.insuranceExpiry && <Badge variant="outline" className="text-[10px]"><Bell size={10} className="mr-1"/>Assurance {new Date(s.reminders.insuranceExpiry).toLocaleDateString("fr-FR")}</Badge>}
+                      {s.reminders?.techControlExpiry && <Badge variant="outline" className="text-[10px]"><Bell size={10} className="mr-1"/>CT {new Date(s.reminders.techControlExpiry).toLocaleDateString("fr-FR")}</Badge>}
+                    </div>
+                  )}
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Montant</p>
@@ -122,6 +134,8 @@ export function VehiculesVentes() {
           </div>
         )}
       </div>
+
+      <SaleWorkflowDialog open={workflowOpen} onOpenChange={setWorkflowOpen} />
     </div>
   );
 }
