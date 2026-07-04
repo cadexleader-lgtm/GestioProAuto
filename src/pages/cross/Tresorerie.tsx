@@ -5,6 +5,7 @@ import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
 import { ArrowDownLeft, ArrowUpRight, Wallet, ArrowLeftRight } from "lucide-react";
 import { CashMovementDialog } from "@/components/forms/FinanceDialogs";
+import { RevenueEvolutionChart } from "@/components/analytics/RevenueEvolutionChart";
 
 export function Tresorerie() {
   const cashMovements = useCollection("cash");
@@ -41,6 +42,8 @@ export function Tresorerie() {
           <p className="font-display font-bold text-2xl text-primary">{formatFCFA(balance)}</p>
         </CardContent></Card>
       </div>
+
+      <RevenueEvolutionChart title="Flux financiers (temps réel)" />
 
       <Card className="shadow-sm">
         <CardContent className="p-0">
