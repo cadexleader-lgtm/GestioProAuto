@@ -327,6 +327,7 @@ export function sellVehicle(payload: {
     amount: payload.amount,
     payment: payload.payment,
     date: new Date().toISOString().slice(0, 10),
+    status: "done",
   });
   db.update("vehicles", payload.vehicleId, { status: "sold" } as any);
   if (payload.payment === "cash") {
