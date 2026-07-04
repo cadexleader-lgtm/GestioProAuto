@@ -120,11 +120,20 @@ export interface VehicleSale {
   vehicleId: string;
   customer: string;
   phone?: string;
+  address?: string;
+  cin?: string;
   amount: number;
   date: string;
   payment: "cash" | "credit";
+  method?: "Cash" | "Wave" | "Orange Money" | "Virement" | "Chèque";
+  downPayment?: number;
   creditId?: string;
+  documents?: { id: string; name: string; type: string; dataUrl: string; uploadedAt: string; size: number }[];
+  delivery?: { date: string; km: number; fuelLevel: string; conditionNote?: string; signed: boolean };
+  reminders?: { insuranceExpiry?: string; techControlExpiry?: string; nextDueDate?: string };
+  status: "draft" | "documents" | "sale" | "payment" | "delivery" | "done";
 }
+
 
 // ===== Collection registry =====
 type CollectionMap = {
