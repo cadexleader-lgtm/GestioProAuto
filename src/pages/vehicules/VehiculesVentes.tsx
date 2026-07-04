@@ -106,6 +106,13 @@ export function VehiculesVentes() {
                   </div>
                   <p className="text-sm text-muted-foreground mt-0.5">{s.customer} {s.phone ? `· ${s.phone}` : ""}</p>
                   <p className="text-xs text-muted-foreground">{new Date(s.date).toLocaleDateString("fr-FR")} · {v.plate}</p>
+                  {(s.reminders?.insuranceExpiry || s.reminders?.techControlExpiry || s.documents?.length) && (
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      {!!s.documents?.length && <Badge variant="outline" className="text-[10px]"><FileText size={10} className="mr-1"/>{s.documents.length} doc</Badge>}
+                      {s.reminders?.insuranceExpiry && <Badge variant="outline" className="text-[10px]"><Bell size={10} className="mr-1"/>Assurance {new Date(s.reminders.insuranceExpiry).toLocaleDateString("fr-FR")}</Badge>}
+                      {s.reminders?.techControlExpiry && <Badge variant="outline" className="text-[10px]"><Bell size={10} className="mr-1"/>CT {new Date(s.reminders.techControlExpiry).toLocaleDateString("fr-FR")}</Badge>}
+                    </div>
+                  )}
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Montant</p>
@@ -127,6 +134,8 @@ export function VehiculesVentes() {
           </div>
         )}
       </div>
+
+      <SaleWorkflowDialog open={workflowOpen} onOpenChange={setWorkflowOpen} />
     </div>
   );
 }
