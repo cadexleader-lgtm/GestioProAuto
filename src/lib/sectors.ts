@@ -86,6 +86,8 @@ export const SUB_SECTORS: Record<SubSectorId, SubSectorConfig> = {
       { href: "/app/auto/locations", iconName: "KeyRound", label: "Locations" },
       { href: "/app/auto/maintenance", iconName: "Wrench", label: "Maintenance" },
       { href: "/app/auto/gps", iconName: "MapPin", label: "Suivi GPS" },
+      { href: "/app/auto/clients", iconName: "Users", label: "Clients auto" },
+      { href: "/app/auto/rapports", iconName: "BarChart3", label: "Rapports auto" },
     ],
   },
   restaurant: {
