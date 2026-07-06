@@ -5,6 +5,7 @@ import { MobileBottomNav } from "./MobileBottomNav";
 import { NewSaleSheet } from "../sales/NewSaleSheet";
 import { useGetCompany } from "@workspace/api-client-react";
 import { getSubSectorConfig } from "@/lib/sectors";
+import { NotificationCenter } from "@/lib/notifications";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -40,6 +41,7 @@ export function AppShell({ children }: AppShellProps) {
       </div>
 
       <MobileBottomNav />
+      <NotificationCenter />
 
       {sub.hasQuickSale && (
         <NewSaleSheet
