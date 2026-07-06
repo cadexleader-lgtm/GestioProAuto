@@ -154,6 +154,10 @@ export function Settings() {
         </CardContent>
       </Card>
 
+      <RolesAndAlertsCard />
+
+
+
       <Card className="shadow-sm border-slate-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Database size={18}/> Données de démonstration</CardTitle>
