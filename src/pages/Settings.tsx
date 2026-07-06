@@ -216,3 +216,48 @@ export function Settings() {
   );
 }
 
+function RolesAndAlertsCard() {
+  const role = useRole();
+  const [sound, setSound] = useState(isSoundEnabled());
+  return (
+    <Card className="shadow-sm border-slate-200">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Shield size={18}/> Rôles & notifications</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div>
+          <p className="text-sm font-semibold mb-3">Rôle actif sur cet appareil</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {ROLES.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => { setRole(r.id); toast.success(`Rôle : ${r.label}`); }}
+                className={`text-left rounded-2xl border-2 p-4 transition-all ${role === r.id ? "border-primary bg-primary/5 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}
+              >
+                <p className="font-display font-bold">{r.label}</p>
+                <p className="text-xs text-muted-foreground mt-1">{r.description}</p>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            Le rôle limite les actions dans l'interface (suppressions, finances). Pour une sécurité serveur complète, activez l'authentification Cloud.
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between rounded-2xl border border-slate-200 p-4">
+          <div className="flex items-start gap-3">
+            <Volume2 size={20} className="text-primary mt-0.5"/>
+            <div>
+              <p className="font-semibold text-sm">Alertes sonores</p>
+              <p className="text-xs text-muted-foreground">Bip court à chaque nouvelle vente, retard de crédit ou stock bas.</p>
+            </div>
+          </div>
+          <Switch checked={sound} onCheckedChange={(v) => { setSound(v); setSoundEnabled(v); }} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+
