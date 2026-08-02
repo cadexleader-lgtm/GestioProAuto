@@ -14,6 +14,12 @@ import {
   type ApplianceProduct, type Warranty, type ProInvoice, type ApplianceCredit,
 } from "./demo-data";
 import { seedCategories, type Category } from "./categories-data";
+import {
+  seedProducts, seedCustomers, seedSales, seedDishes, seedTables, seedOrders,
+  type Product, type Customer, type Sale, type Dish, type RestaurantTable,
+  type RestaurantOrder, type ArchivedDocument,
+} from "./commerce-data";
+export type { Product, Customer, Sale, SaleItem, Dish, RestaurantTable, RestaurantOrder, OrderItem, OrderStatus, ArchivedDocument } from "./commerce-data";
 export type { Category, ProductAttribute, AttributeType } from "./categories-data";
 
 
@@ -206,6 +212,13 @@ const seeds: { [K in keyof CollectionMap]: CollectionMap[K][] } = {
   vehicleMaintenances: [],
   vehiclePayments: [],
   vehicleSales: [],
+  products: seedProducts,
+  customers: seedCustomers,
+  sales: seedSales,
+  dishes: seedDishes,
+  restoTables: seedTables,
+  orders: seedOrders,
+  documents: [],
 };
 
 
@@ -233,6 +246,13 @@ const TABLES: Record<keyof CollectionMap, string> = {
   vehicleMaintenances: "vehicle_maintenances",
   vehiclePayments: "vehicle_payments",
   vehicleSales: "vehicle_sales",
+  products: "products",
+  customers: "customers",
+  sales: "sales",
+  dishes: "dishes",
+  restoTables: "resto_tables",
+  orders: "orders",
+  documents: "documents",
 };
 
 const ALL_KEYS = Object.keys(TABLES) as Array<keyof CollectionMap>;
