@@ -173,8 +173,9 @@ export function Settings() {
               variant="outline"
               className="rounded-xl"
               onClick={() => {
-                db.loadDemo();
-                toast.success("Données de démonstration chargées");
+                void db.loadDemo().then(() =>
+                  toast.success("Données de démonstration chargées"),
+                );
               }}
             >
               <Sparkles size={16} /> Charger les données de démo
@@ -191,7 +192,7 @@ export function Settings() {
                   <AlertDialogTitle>Vider toutes les données ?</AlertDialogTitle>
                   <AlertDialogDescription>
                     Cette action supprime définitivement tous les véhicules, ventes, crédits,
-                    dépenses, clients et documents stockés localement. Votre profil d'entreprise
+                    dépenses, clients et documents enregistrés pour votre entreprise. Votre profil d'entreprise
                     est conservé. Cette action est irréversible.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
@@ -200,8 +201,9 @@ export function Settings() {
                   <AlertDialogAction
                     className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     onClick={() => {
-                      db.wipeAll();
-                      toast.success("Toutes les données ont été effacées");
+                      void db.wipeAll().then(() =>
+                        toast.success("Toutes les données ont été effacées"),
+                      );
                     }}
                   >
                     Oui, tout vider
