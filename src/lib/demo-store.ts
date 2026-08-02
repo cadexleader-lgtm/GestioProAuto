@@ -198,24 +198,45 @@ const seeds: { [K in keyof CollectionMap]: CollectionMap[K][] } = {
 };
 
 
+/** Collection key -> Postgres table name (all tenant-scoped, RLS protected). */
+const TABLES: Record<keyof CollectionMap, string> = {
+  suppliers: "suppliers",
+  employees: "employees",
+  expenses: "expenses",
+  cash: "cash_movements",
+  vehicles: "vehicles",
+  vehicleCredits: "vehicle_credits",
+  rentals: "rentals",
+  appliances: "appliances",
+  warranties: "warranties",
+  proInvoices: "pro_invoices",
+  applianceCredits: "appliance_credits",
+  attendance: "attendance",
+  payslips: "payslips",
+  reservations: "reservations",
+  serials: "serials",
+  maintenance: "maintenance",
+  promotions: "promotions",
+  inventories: "inventories",
+  categories: "categories",
+  vehicleMaintenances: "vehicle_maintenances",
+  vehiclePayments: "vehicle_payments",
+  vehicleSales: "vehicle_sales",
+};
+
+const ALL_KEYS = Object.keys(TABLES) as Array<keyof CollectionMap>;
+
 const stores: { [K in keyof CollectionMap]?: CollectionMap[K][] } = {};
 const listeners: { [K in keyof CollectionMap]?: Set<() => void> } = {};
+const EMPTY: any[] = [];
 
-function load<K extends keyof CollectionMap>(name: K): CollectionMap[K][] {
-  if (stores[name]) return stores[name] as CollectionMap[K][];
-  if (typeof window === "undefined") return seeds[name];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_PREFIX + name);
-    stores[name] = raw ? JSON.parse(raw) : [...seeds[name]] as any;
-  } catch {
-    stores[name] = [...seeds[name]] as any;
-  }
-  return stores[name] as CollectionMap[K][];
-}
+let companyId: string | null = null;
+let ready = false;
+const readyListeners = new Set<() => void>();
 
-function persist<K extends keyof CollectionMap>(name: K) {
-  if (typeof window === "undefined") return;
-  try { window.localStorage.setItem(STORAGE_PREFIX + name, JSON.stringify(stores[name])); } catch {}
+function notify<K extends keyof CollectionMap>(name: K) {
+  // new array identity so useSyncExternalStore sees the change
+  stores[name] = [...(stores[name] ?? [])] as any;
   listeners[name]?.forEach((l) => l());
 }
 
@@ -225,13 +246,58 @@ function subscribe<K extends keyof CollectionMap>(name: K, cb: () => void) {
   return () => listeners[name]!.delete(cb);
 }
 
+function load<K extends keyof CollectionMap>(name: K): CollectionMap[K][] {
+  return (stores[name] ?? EMPTY) as CollectionMap[K][];
+}
+
+/** Fetch every collection for the active company. Called once after sign-in. */
+export async function bindCompany(id: string) {
+  companyId = id;
+  ready = false;
+  readyListeners.forEach((l) => l());
+  const results = await Promise.all(
+    ALL_KEYS.map(async (key) => {
+      const { data, error } = await sb.from(TABLES[key]).select("id, data").eq("company_id", id);
+      if (error) return [key, []] as const;
+      const rows = (data ?? []).map((r: any) => ({ ...(r.data ?? {}), id: r.id }));
+      return [key, rows] as const;
+    }),
+  );
+  results.forEach(([key, rows]) => {
+    stores[key] = rows as any;
+  });
+  ready = true;
+  ALL_KEYS.forEach(notify);
+  readyListeners.forEach((l) => l());
+}
+
+export function unbindCompany() {
+  companyId = null;
+  ready = false;
+  ALL_KEYS.forEach((k) => {
+    stores[k] = [] as any;
+    notify(k);
+  });
+  readyListeners.forEach((l) => l());
+}
+
+/** True once the company data has been fetched from the backend. */
+export function useDataReady(): boolean {
+  return useSyncExternalStore(
+    (cb) => {
+      readyListeners.add(cb);
+      return () => readyListeners.delete(cb);
+    },
+    () => ready,
+    () => false,
+  );
+}
+
 export function useCollection<K extends keyof CollectionMap>(name: K): CollectionMap[K][] {
-  // ensure loaded
-  load(name);
   return useSyncExternalStore(
     (cb) => subscribe(name, cb),
-    () => stores[name] as CollectionMap[K][],
-    () => seeds[name] as CollectionMap[K][],
+    () => (stores[name] ?? EMPTY) as CollectionMap[K][],
+    () => EMPTY as CollectionMap[K][],
   );
 }
 
@@ -239,48 +305,80 @@ function uid(prefix: string) {
   return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 }
 
+function row(id: string, item: any) {
+  const { id: _drop, ...rest } = item ?? {};
+  return { id, company_id: companyId, data: rest };
+}
+
+function fireAndForget(p: Promise<any>) {
+  p.then((res: any) => {
+    if (res?.error) console.error("[gestiopro] sync error", res.error.message ?? res.error);
+  }).catch((e) => console.error("[gestiopro] sync error", e));
+}
+
 export const db = {
   list<K extends keyof CollectionMap>(name: K): CollectionMap[K][] {
     return load(name);
   },
+  /** Optimistic insert: UI updates instantly, the row is persisted in the background. */
   add<K extends keyof CollectionMap>(name: K, item: Omit<CollectionMap[K], "id"> & { id?: string }): CollectionMap[K] {
-    const list = load(name);
-    const withId = { ...(item as any), id: (item as any).id ?? uid(String(name).slice(0, 2)) } as CollectionMap[K];
-    list.unshift(withId);
-    persist(name);
+    const id = (item as any).id ?? uid(String(name).slice(0, 2));
+    const withId = { ...(item as any), id } as CollectionMap[K];
+    stores[name] = [withId, ...(stores[name] ?? [])] as any;
+    notify(name);
+    if (companyId) fireAndForget(sb.from(TABLES[name]).insert(row(id, withId)));
     return withId;
   },
   update<K extends keyof CollectionMap>(name: K, id: string, patch: Partial<CollectionMap[K]>): void {
-    const list = load(name);
+    const list = [...(stores[name] ?? [])] as any[];
     const idx = list.findIndex((it: any) => it.id === id);
-    if (idx >= 0) list[idx] = { ...list[idx], ...patch } as CollectionMap[K];
-    persist(name);
+    if (idx < 0) return;
+    const next = { ...list[idx], ...patch };
+    list[idx] = next;
+    stores[name] = list as any;
+    notify(name);
+    if (companyId) {
+      fireAndForget(
+        sb.from(TABLES[name]).update({ data: row(id, next).data }).eq("company_id", companyId).eq("id", id),
+      );
+    }
   },
   remove<K extends keyof CollectionMap>(name: K, id: string): void {
-    const list = load(name);
-    const idx = list.findIndex((it: any) => it.id === id);
-    if (idx >= 0) list.splice(idx, 1);
-    persist(name);
+    stores[name] = ((stores[name] ?? []) as any[]).filter((it: any) => it.id !== id) as any;
+    notify(name);
+    if (companyId) {
+      fireAndForget(sb.from(TABLES[name]).delete().eq("company_id", companyId).eq("id", id));
+    }
   },
   reset<K extends keyof CollectionMap>(name: K): void {
-    stores[name] = [...seeds[name]] as any;
-    persist(name);
+    db.replaceAll(name, seeds[name] as any);
   },
-  /** Wipe ALL collections — used by "Vider toutes les données" in Settings. */
-  wipeAll(): void {
-    (Object.keys(seeds) as Array<keyof CollectionMap>).forEach((k) => {
+  /** Replace a whole collection (local + backend). */
+  async replaceAll<K extends keyof CollectionMap>(name: K, items: CollectionMap[K][]) {
+    stores[name] = [...items] as any;
+    notify(name);
+    if (!companyId) return;
+    await sb.from(TABLES[name]).delete().eq("company_id", companyId);
+    if (items.length) {
+      await sb.from(TABLES[name]).insert(items.map((it: any) => row(it.id ?? uid("s"), it)));
+    }
+  },
+  /** Wipe ALL collections for the current company. */
+  async wipeAll(): Promise<void> {
+    for (const k of ALL_KEYS) {
       stores[k] = [] as any;
-      persist(k);
-    });
+      notify(k);
+      if (companyId) await sb.from(TABLES[k]).delete().eq("company_id", companyId);
+    }
   },
-  /** Load full demo dataset from the seed constants. */
-  loadDemo(): void {
-    (Object.keys(seeds) as Array<keyof CollectionMap>).forEach((k) => {
-      stores[k] = [...seeds[k]] as any;
-      persist(k);
-    });
+  /** Load the full demo dataset into the current company. */
+  async loadDemo(): Promise<void> {
+    for (const k of ALL_KEYS) {
+      await db.replaceAll(k, [...(seeds[k] as any[])] as any);
+    }
   },
 };
+
 
 // Hydration check (avoid SSR mismatch by re-reading after mount)
 export function useHydrated() {
