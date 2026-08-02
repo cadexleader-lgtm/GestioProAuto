@@ -5,6 +5,10 @@
 import { useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+// Generated DB types are refreshed asynchronously; use an untyped handle for the
+// tenant tables so the app builds regardless of type-generation timing.
+const sb = supabase as any;
+
 export type AppRole = "patron" | "manager" | "terrain";
 
 export interface Company {
@@ -59,7 +63,7 @@ export async function loadTenant(): Promise<TenantState> {
     return state;
   }
 
-  const { data: membership } = await supabase
+  const { data: membership } = await sb
     .from("company_members")
     .select("role, company_id, companies(*)")
     .eq("user_id", user.id)
@@ -92,7 +96,7 @@ export async function createCompany(input: {
   const user = userRes.user;
   if (!user) throw new Error("Vous devez être connecté.");
 
-  const { data: company, error } = await supabase
+  const { data: company, error } = await sb
     .from("companies")
     .insert({
       name: input.name,
@@ -107,12 +111,12 @@ export async function createCompany(input: {
     .single();
   if (error) throw error;
 
-  const { error: memberError } = await supabase
+  const { error: memberError } = await sb
     .from("company_members")
     .insert({ company_id: (company as any).id, user_id: user.id, role: "patron" });
   if (memberError) throw memberError;
 
-  await supabase
+  await sb
     .from("profiles")
     .upsert({ id: user.id, full_name: input.fullName ?? user.email ?? null });
 
@@ -122,7 +126,7 @@ export async function createCompany(input: {
 
 export async function updateCompany(patch: Partial<Company>) {
   if (!state.company) return;
-  const { error } = await supabase.from("companies").update(patch as any).eq("id", state.company.id);
+  const { error } = await sb.from("companies").update(patch as any).eq("id", state.company.id);
   if (error) throw error;
   await loadTenant();
 }
