@@ -40,10 +40,13 @@ export function Topbar({ onMenuClick, onNewSale, showQuickSale = true }: TopbarP
   const handleLogout = async () => {
     await queryClient.cancelQueries();
     queryClient.clear();
+    unbindCompany();
+    resetTenant();
     await supabase.auth.signOut();
     toast.success("Déconnexion réussie");
     navigate({ to: "/connexion", replace: true });
   };
+
 
   const handleFullscreen = () => {
     if (!document.fullscreenElement) {
