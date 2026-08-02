@@ -5,6 +5,7 @@ import { ArrowRight, ArrowLeft, Check, ShoppingBag, Tv, Car, UtensilsCrossed, ty
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import logoIcon from "@/assets/gestiopro-icon.png";
+import { createCompany } from "@/lib/tenant";
 import { SUB_SECTORS_ARRAY, type SubSectorId } from "@/lib/sectors";
 import { useUpdateCompany } from "@workspace/api-client-react";
 import { supabase } from "@/integrations/supabase/client";

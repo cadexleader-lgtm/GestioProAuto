@@ -61,12 +61,20 @@ function TenantGate() {
   return <Outlet />;
 }
 
+function readPending() {
+  try {
+    const raw = window.localStorage.getItem("gestiopro.pendingCompany");
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
 function CreateCompanyScreen() {
-  const [name, setName] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [sector, setSector] = useState("commerce");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const pending = readPending();
+  const [name, setName] = useState(pending?.name ?? "");
+  const [fullName, setFullName] = useState(pending?.fullName ?? "");
+  const [sector, setSector] = useState(pending?.sector ?? "commerce");
+  const [phone, setPhone] = useState(pending?.phone ?? "");
+  const [address, setAddress] = useState(pending?.address ?? "");
   const [saving, setSaving] = useState(false);
 
   async function submit(e: React.FormEvent) {
@@ -74,7 +82,8 @@ function CreateCompanyScreen() {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await createCompany({ name: name.trim(), sector, phone, address, fullName });
+      await createCompany({ name: name.trim(), sector, subSector: pending?.subSector, phone, address, fullName });
+      window.localStorage.removeItem("gestiopro.pendingCompany");
       toast.success("Entreprise créée", { description: "Votre espace sécurisé est prêt." });
     } catch (err: any) {
       toast.error("Création impossible", { description: err.message });
