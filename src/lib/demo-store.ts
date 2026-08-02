@@ -162,7 +162,11 @@ type CollectionMap = {
 };
 
 
-const STORAGE_PREFIX = "gestiopro.v2.";
+import { supabase } from "@/integrations/supabase/client";
+
+// Untyped handle: generated DB types are refreshed asynchronously.
+const sb = supabase as any;
+
 
 const seeds: { [K in keyof CollectionMap]: CollectionMap[K][] } = {
   suppliers: seedSuppliers,
