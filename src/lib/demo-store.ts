@@ -159,6 +159,13 @@ type CollectionMap = {
   vehicleMaintenances: VehicleMaintenance;
   vehiclePayments: VehiclePayment;
   vehicleSales: VehicleSale;
+  products: Product;
+  customers: Customer;
+  sales: Sale;
+  dishes: Dish;
+  restoTables: RestaurantTable;
+  orders: RestaurantOrder;
+  documents: ArchivedDocument;
 };
 
 
