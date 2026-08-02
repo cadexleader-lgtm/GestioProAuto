@@ -1,3 +1,5 @@
+import { unbindCompany } from "@/lib/demo-store";
+import { resetTenant } from "@/lib/tenant";
 import { useState, useEffect } from "react";
 import { Menu, Search, Bell, Plus, User, Settings, LogOut, HelpCircle, Maximize2, Moon, FileText, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -40,10 +42,13 @@ export function Topbar({ onMenuClick, onNewSale, showQuickSale = true }: TopbarP
   const handleLogout = async () => {
     await queryClient.cancelQueries();
     queryClient.clear();
+    unbindCompany();
+    resetTenant();
     await supabase.auth.signOut();
     toast.success("Déconnexion réussie");
     navigate({ to: "/connexion", replace: true });
   };
+
 
   const handleFullscreen = () => {
     if (!document.fullscreenElement) {
