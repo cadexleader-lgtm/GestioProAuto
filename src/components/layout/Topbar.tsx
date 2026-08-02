@@ -1,3 +1,5 @@
+import { unbindCompany } from "@/lib/demo-store";
+import { resetTenant } from "@/lib/tenant";
 import { useState, useEffect } from "react";
 import { Menu, Search, Bell, Plus, User, Settings, LogOut, HelpCircle, Maximize2, Moon, FileText, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
