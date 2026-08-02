@@ -11,8 +11,8 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "GestioPro — L'ERP des PME africaines (Commerce, Restaurant, Véhicules, Électroménager)" },
       { name: "description", content: "GestioPro : la plateforme tout-en-un pour gérer ventes, stock, clients, fournisseurs, personnel et finances. Pensée pour le commerce africain." },
-      { property: "og:title", content: "GestioPro — L'ERP moderne des PME africaines" },
-      { property: "og:description", content: "Shopify + Odoo + Zoho, pensé pour l'Afrique." },
+      { property: "og:title", content: "GestioPro — L'ERP des PME africaines (Commerce, Restaurant, Véhicules, Électroménager)" },
+      { property: "og:description", content: "GestioPro : la plateforme tout-en-un pour gérer ventes, stock, clients, fournisseurs, personnel et finances. Pensée pour le commerce africain." },
       { property: "og:type", content: "website" },
     ],
     links: [{ rel: "canonical", href: "/" }],
