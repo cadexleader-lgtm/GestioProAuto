@@ -80,32 +80,41 @@ function SignupPage() {
       return;
     }
 
-    // Save company profile in local store (demo data)
-    try {
-      await updateCompany.mutateAsync({
-        data: {
-          name: form.company,
-          ownerName: form.fullName || form.company,
-          email: form.email,
-          phone: form.phone,
-          country: form.country,
-          city: form.city || "—",
-          sectorId: "commerce",
-          subSectorId,
-        },
-      });
-      await queryClient.invalidateQueries();
-    } catch { /* non-blocking */ }
+    const sector = subSectorId.startsWith("auto")
+      ? "auto"
+      : subSectorId.startsWith("resto")
+        ? "resto"
+        : "commerce";
 
-    setSubmitting(false);
+    const pending = {
+      name: form.company,
+      sector,
+      subSector: subSectorId,
+      phone: form.phone,
+      address: [form.address, form.city].filter(Boolean).join(", "),
+      fullName: form.fullName || form.company,
+    };
+    try { window.localStorage.setItem("gestiopro.pendingCompany", JSON.stringify(pending)); } catch { /* ignore */ }
 
     if (!data.session) {
+      setSubmitting(false);
       toast.success("Compte créé. Vérifiez votre email pour confirmer.");
       navigate({ to: "/connexion" });
       return;
     }
+
+    // Session available: provision the secured company workspace right away.
+    try {
+      await createCompany(pending);
+      window.localStorage.removeItem("gestiopro.pendingCompany");
+    } catch (err: any) {
+      toast.error("Espace non créé", { description: err.message });
+    }
+    await queryClient.invalidateQueries();
+    setSubmitting(false);
     toast.success("Compte créé ! Bienvenue sur GestioPro.");
     navigate({ to: "/app" });
+
   };
 
   return (
