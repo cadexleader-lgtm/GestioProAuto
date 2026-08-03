@@ -24,28 +24,35 @@ export function VehicleDetailSheet({ vehicle, open, onOpenChange }: { vehicle: V
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0">
-        <div className="relative h-56 bg-gradient-to-br from-slate-100 to-slate-300 flex items-center justify-center overflow-hidden">
+      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0 rounded-l-2xl">
+        <div className="relative h-44 sm:h-56 bg-gradient-to-br from-slate-100 to-slate-300 flex items-center justify-center overflow-hidden">
           {vehicle.image ? (
             <img src={vehicle.image} alt={`${vehicle.brand} ${vehicle.model}`} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-8xl">{vehicle.photo}</span>
+            <span className="text-7xl sm:text-8xl">{vehicle.photo}</span>
           )}
-          <span className={`absolute top-4 left-4 text-xs font-bold px-3 py-1.5 rounded-full ${st.cls} backdrop-blur`}>{st.label}</span>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 backdrop-blur px-3 py-1.5 text-xs font-semibold shadow-md hover:bg-white transition"
+          >
+            <ArrowLeft size={14} /> Retour
+          </button>
+          <span className={`absolute top-3 right-12 sm:right-14 text-[11px] font-bold px-3 py-1.5 rounded-full ${st.cls} backdrop-blur`}>{st.label}</span>
         </div>
-        <SheetHeader className="px-6 pt-6">
-          <SheetTitle className="text-2xl font-display">{vehicle.brand} {vehicle.model}</SheetTitle>
+        <SheetHeader className="px-4 sm:px-6 pt-5">
+          <SheetTitle className="text-xl sm:text-2xl font-display">{vehicle.brand} {vehicle.model}</SheetTitle>
           <SheetDescription>{vehicle.year} · {vehicle.color} · {vehicle.plate}</SheetDescription>
         </SheetHeader>
 
-        <div className="px-6 pt-4">
+        <div className="px-4 sm:px-6 pt-4">
           <Tabs defaultValue="info">
-            <TabsList className="grid grid-cols-4 w-full">
-              <TabsTrigger value="info">Infos</TabsTrigger>
-              <TabsTrigger value="history">Historique</TabsTrigger>
-              <TabsTrigger value="maint">Maintenance</TabsTrigger>
-              <TabsTrigger value="prof">Rentabilité</TabsTrigger>
+            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto gap-1 p-1">
+              <TabsTrigger value="info" className="text-xs sm:text-sm py-2 px-1">Infos</TabsTrigger>
+              <TabsTrigger value="history" className="text-xs sm:text-sm py-2 px-1">Historique</TabsTrigger>
+              <TabsTrigger value="maint" className="text-xs sm:text-sm py-2 px-1">Maintenance</TabsTrigger>
+              <TabsTrigger value="prof" className="text-xs sm:text-sm py-2 px-1">Rentabilité</TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="info" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-3">
