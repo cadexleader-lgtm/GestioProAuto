@@ -5,7 +5,7 @@ import { Menu, Search, Plus, User, Settings, LogOut, HelpCircle, Maximize2, Moon
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { useGetCompany, useGetDashboard } from "@workspace/api-client-react";
+import { useGetCompany } from "@workspace/api-client-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { NotificationsBell } from "./NotificationsBell";
@@ -27,7 +27,6 @@ interface TopbarProps {
 export function Topbar({ onMenuClick, onNewSale, showQuickSale = true }: TopbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const { data: company } = useGetCompany();
-  const { data: dashboard } = useGetDashboard();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
