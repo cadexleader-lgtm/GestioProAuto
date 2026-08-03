@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCollection, startRental, returnRental, isRentalOverdue } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { KeyRound, Plus, AlertTriangle, Calendar, CheckCircle2, RotateCcw, FileText, MessageCircle } from "lucide-react";
+import { KeyRound, Plus, AlertTriangle, Calendar, CheckCircle2, RotateCcw, FileText, MessageCircle, Archive, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { RentVehicleDialog, ReturnRentalDialog } from "@/components/vehicles/VehicleActionsDialogs";
 import { generateRentalContract, sendWhatsApp } from "@/lib/vehicle-pdf";
@@ -24,10 +24,11 @@ const STATUS: Record<Rental["status"], { label: string; cls: string }> = {
 export function VehiculesLocations() {
   const rentals = useCollection("rentals");
   const vehicles = useCollection("vehicles");
-  const [openQuick, setOpenQuick] = useState(false);
-  const [quickForm, setQuickForm] = useState<any>({});
+  const [openPicker, setOpenPicker] = useState(false);
+  const [pickedId, setPickedId] = useState<string>("");
   const [returnId, setReturnId] = useState<string | null>(null);
   const [rentVehicleId, setRentVehicleId] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Auto-detect overdue and reflect in display (do not mutate)
   const enriched = useMemo(() => rentals.map((r) => ({
@@ -35,6 +36,8 @@ export function VehiculesLocations() {
     displayStatus: r.status === "active" && isRentalOverdue(r) ? ("overdue" as const) : r.status,
   })), [rentals]);
 
+  const active = enriched.filter((r) => r.displayStatus === "active" || r.displayStatus === "overdue" || r.displayStatus === "reserved");
+  const history = enriched.filter((r) => r.displayStatus === "returned" || r.displayStatus === "cancelled");
   const today = enriched.filter((r) => r.displayStatus === "active" || r.displayStatus === "overdue");
   const overdueCount = enriched.filter((r) => r.displayStatus === "overdue").length;
   const revenueMonth = enriched
@@ -44,23 +47,18 @@ export function VehiculesLocations() {
       return s + days * r.dailyRate;
     }, 0);
 
-  const openQuickNew = () => {
-    const dispo = vehicles.find((v) => v.status === "available");
-    if (!dispo) { toast.error("Aucun véhicule disponible"); return; }
-    setQuickForm({
-      vehicleId: dispo.id, customer: "", phone: "",
-      startDate: new Date().toISOString().slice(0, 10),
-      endDate: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
-      dailyRate: 35000, deposit: 200000,
-    });
-    setOpenQuick(true);
+  const availableVehicles = vehicles.filter((v) => v.status === "available");
+
+  const openNewContract = () => {
+    if (availableVehicles.length === 0) { toast.error("Aucun véhicule disponible"); return; }
+    setPickedId(availableVehicles[0].id);
+    setOpenPicker(true);
   };
 
-  const submitQuick = () => {
-    if (!quickForm.customer) return toast.error("Client requis");
-    startRental({ ...quickForm, status: "active" });
-    toast.success("Contrat créé — véhicule passé en 'Loué'");
-    setOpenQuick(false);
+  const confirmPick = () => {
+    if (!pickedId) return toast.error("Sélectionnez un véhicule");
+    setOpenPicker(false);
+    setRentVehicleId(pickedId);
   };
 
   const handleReturn = (id: string) => setReturnId(id);
@@ -81,7 +79,7 @@ export function VehiculesLocations() {
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Locations</h1>
           <p className="text-muted-foreground mt-1 text-sm">Contrats, retours, dépôts et alertes de retard.</p>
         </div>
-        <Button onClick={openQuickNew}><Plus size={16} /> Nouveau contrat</Button>
+        <Button onClick={openNewContract} className="shadow-lg shadow-primary/20"><Plus size={16} /> Nouveau contrat</Button>
       </div>
 
       {/* KPI */}
@@ -92,9 +90,15 @@ export function VehiculesLocations() {
         <Kpi label="Revenus du mois" valueText={formatFCFA(revenueMonth)} icon={<Calendar className="text-violet-600" size={18} />} />
       </div>
 
-      {/* List */}
+      {/* Contrats en cours */}
       <div className="grid gap-3">
-        {enriched.map((r) => {
+        {active.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground rounded-2xl border border-dashed">
+            <KeyRound size={40} className="mx-auto opacity-30 mb-3" />
+            <p className="text-sm">Aucune location en cours</p>
+          </div>
+        )}
+        {active.map((r) => {
           const v = vehicles.find((x) => x.id === r.vehicleId);
           if (!v) return null;
           const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / 86400000));
@@ -138,29 +142,64 @@ export function VehiculesLocations() {
         })}
       </div>
 
-      {/* Quick new */}
-      <Dialog open={openQuick} onOpenChange={setOpenQuick}>
-        <DialogContent className="max-w-lg backdrop-blur-xl bg-white/90">
-          <DialogHeader>
-            <DialogTitle>Nouveau contrat (rapide)</DialogTitle>
-            <DialogDescription>Le véhicule passe automatiquement en "Loué".</DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-3 mt-2">
-            <div className="col-span-2"><Label>Véhicule</Label>
-              <Select value={quickForm.vehicleId} onValueChange={(v) => setQuickForm({ ...quickForm, vehicleId: v })}><SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{vehicles.filter((x) => x.status === "available").map((x) => <SelectItem key={x.id} value={x.id}>{x.brand} {x.model} — {x.plate}</SelectItem>)}</SelectContent>
-              </Select>
+      {/* Historique des locations */}
+      {history.length > 0 && (
+        <div className="rounded-2xl border bg-white/60 backdrop-blur-xl overflow-hidden">
+          <button
+            onClick={() => setShowHistory((v) => !v)}
+            className="w-full flex items-center justify-between px-4 sm:px-6 py-4 hover:bg-muted/40 transition"
+          >
+            <span className="inline-flex items-center gap-2 font-display font-semibold text-sm">
+              <Archive size={16} className="text-muted-foreground" />
+              Historique des locations ({history.length})
+            </span>
+            <ChevronDown size={16} className={`text-muted-foreground transition-transform ${showHistory ? "rotate-180" : ""}`} />
+          </button>
+          {showHistory && (
+            <div className="border-t divide-y">
+              {history.slice().reverse().map((r) => {
+                const v = vehicles.find((x) => x.id === r.vehicleId);
+                const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / 86400000));
+                return (
+                  <div key={r.id} className="flex items-center gap-3 px-4 sm:px-6 py-3">
+                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0 text-lg">{v?.photo ?? "🚗"}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{v ? `${v.brand} ${v.model}` : "Véhicule"} · {r.customer}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(r.startDate).toLocaleDateString("fr-FR")} → {new Date(r.endDate).toLocaleDateString("fr-FR")}
+                        {r.returnedAt ? ` · retourné le ${new Date(r.returnedAt).toLocaleDateString("fr-FR")}` : ""}
+                      </p>
+                    </div>
+                    <span className="font-bold text-sm shrink-0">{formatFCFA(days * r.dailyRate)}</span>
+                  </div>
+                );
+              })}
             </div>
-            <div className="col-span-2"><Label>Client *</Label><Input value={quickForm.customer || ""} onChange={(e) => setQuickForm({ ...quickForm, customer: e.target.value })} /></div>
-            <div><Label>Téléphone</Label><Input value={quickForm.phone || ""} onChange={(e) => setQuickForm({ ...quickForm, phone: e.target.value })} /></div>
-            <div><Label>Tarif / jour</Label><Input type="number" value={quickForm.dailyRate || 0} onChange={(e) => setQuickForm({ ...quickForm, dailyRate: +e.target.value })} /></div>
-            <div><Label>Du</Label><Input type="date" value={quickForm.startDate || ""} onChange={(e) => setQuickForm({ ...quickForm, startDate: e.target.value })} /></div>
-            <div><Label>Au</Label><Input type="date" value={quickForm.endDate || ""} onChange={(e) => setQuickForm({ ...quickForm, endDate: e.target.value })} /></div>
-            <div className="col-span-2"><Label>Caution</Label><Input type="number" value={quickForm.deposit || 0} onChange={(e) => setQuickForm({ ...quickForm, deposit: +e.target.value })} /></div>
+          )}
+        </div>
+      )}
+
+      {/* Sélection du véhicule puis contrat complet */}
+      <Dialog open={openPicker} onOpenChange={setOpenPicker}>
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Nouveau contrat de location</DialogTitle>
+            <DialogDescription>Choisissez le véhicule à louer, puis complétez le contrat détaillé.</DialogDescription>
+          </DialogHeader>
+          <div className="mt-2">
+            <Label>Véhicule disponible</Label>
+            <Select value={pickedId} onValueChange={setPickedId}>
+              <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+              <SelectContent>
+                {availableVehicles.map((x) => (
+                  <SelectItem key={x.id} value={x.id}>{x.brand} {x.model} — {x.plate}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setOpenQuick(false)}>Annuler</Button>
-            <Button onClick={submitQuick}>Créer</Button>
+            <Button variant="outline" onClick={() => setOpenPicker(false)}>Retour</Button>
+            <Button onClick={confirmPick}>Continuer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
