@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { CreditCard, AlertTriangle, Plus, Wallet, TrendingDown, FileText, MessageCircle } from "lucide-react";
+import { CreditCard, AlertTriangle, Plus, Wallet, TrendingDown, FileText, MessageCircle, Archive, ChevronDown, CheckCircle2 } from "lucide-react";
 import { CreditPaymentDialog } from "@/components/vehicles/VehicleActionsDialogs";
 import { NewCreditSaleDialog } from "@/components/vehicles/NewCreditSaleDialog";
 import { generateCreditSchedule, sendWhatsApp } from "@/lib/vehicle-pdf";
@@ -20,14 +20,23 @@ export function VehiculesCredits() {
   const [openDetail, setOpenDetail] = useState<VehicleCredit | null>(null);
   const [openPay, setOpenPay] = useState<VehicleCredit | null>(null);
   const [openNew, setOpenNew] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const paidOf = (c: VehicleCredit) =>
+    c.downPayment + payments.filter(p => p.creditId === c.id).reduce((x, p) => x + p.amount, 0);
+  const isSettled = (c: VehicleCredit) => paidOf(c) >= c.total;
+
+  const activeCredits = credits.filter(c => !isSettled(c));
+  const settledCredits = credits.filter(isSettled);
 
   const stats = useMemo(() => {
-    const totalDue = credits.reduce((s, c) => {
+    const open = credits.filter(c => (c.downPayment + payments.filter(p => p.creditId === c.id).reduce((x, p) => x + p.amount, 0)) < c.total);
+    const totalDue = open.reduce((s, c) => {
       const paid = c.downPayment + payments.filter(p => p.creditId === c.id).reduce((x, p) => x + p.amount, 0);
       return s + Math.max(0, c.total - paid);
     }, 0);
-    const late = credits.filter(c => c.status === "late").length;
-    return { active: credits.length, totalDue, late };
+    const late = open.filter(c => c.status === "late").length;
+    return { active: open.length, totalDue, late, settled: credits.length - open.length };
   }, [credits, payments]);
 
   return (
@@ -49,7 +58,13 @@ export function VehiculesCredits() {
       </div>
 
       <div className="grid gap-4">
-        {credits.map(c => {
+        {activeCredits.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground rounded-2xl border border-dashed">
+            <CreditCard size={40} className="mx-auto opacity-30 mb-3" />
+            <p className="text-sm">Aucun crédit en cours</p>
+          </div>
+        )}
+        {activeCredits.map(c => {
           const v = vehicles.find(x => x.id === c.vehicleId);
           if (!v) return null;
           const credPays = payments.filter(p => p.creditId === c.id);
@@ -101,6 +116,35 @@ export function VehiculesCredits() {
         })}
       </div>
 
+      {/* Historique — contrats soldés */}
+      {settledCredits.length > 0 && (
+        <div className="rounded-2xl border bg-white/60 backdrop-blur-xl overflow-hidden">
+          <button onClick={() => setShowHistory(v => !v)} className="w-full flex items-center justify-between px-4 sm:px-6 py-4 hover:bg-muted/40 transition">
+            <span className="inline-flex items-center gap-2 font-display font-semibold text-sm">
+              <Archive size={16} className="text-muted-foreground" /> Contrats soldés ({settledCredits.length})
+            </span>
+            <ChevronDown size={16} className={`text-muted-foreground transition-transform ${showHistory ? "rotate-180" : ""}`} />
+          </button>
+          {showHistory && (
+            <div className="border-t divide-y">
+              {settledCredits.map(c => {
+                const v = vehicles.find(x => x.id === c.vehicleId);
+                return (
+                  <div key={c.id} className="flex items-center gap-3 px-4 sm:px-6 py-3 cursor-pointer hover:bg-muted/30" onClick={() => setOpenDetail(c)}>
+                    <span className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0"><CheckCircle2 size={16} /></span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{c.customer} · {v ? `${v.brand} ${v.model}` : "Véhicule"}</p>
+                      <p className="text-xs text-muted-foreground">Contrat terminé · {c.totalMonths} mensualités</p>
+                    </div>
+                    <span className="font-bold text-sm text-emerald-700 shrink-0">{formatFCFA(c.total)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Detail glassmorphism popup */}
       <Dialog open={!!openDetail} onOpenChange={(o) => !o && setOpenDetail(null)}>
         <DialogContent className="max-w-2xl backdrop-blur-xl bg-white/90 dark:bg-slate-900/80 max-h-[90vh] overflow-y-auto">
@@ -125,9 +169,15 @@ export function VehiculesCredits() {
 
                 <Separator className="my-4" />
 
+                {remaining === 0 && (
+                  <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm inline-flex items-center gap-2 w-full">
+                    <CheckCircle2 size={16} /> Contrat soldé — plus aucun paiement requis.
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-display font-semibold">Historique des paiements</h4>
-                  <Button size="sm" onClick={() => { setOpenPay(openDetail); }}><Plus size={14} /> Ajouter</Button>
+                  <Button size="sm" disabled={remaining === 0} onClick={() => { setOpenPay(openDetail); }}><Plus size={14} /> Ajouter</Button>
                 </div>
 
                 <div className="space-y-2">
@@ -156,7 +206,9 @@ export function VehiculesCredits() {
 
                 <div className="mt-4 p-3 rounded-lg bg-muted/40 text-sm flex items-center justify-between">
                   <span className="inline-flex items-center gap-1.5"><TrendingDown size={14} /> Statut</span>
-                  <Badge variant={openDetail.status === "late" ? "destructive" : "secondary"}>{openDetail.status === "late" ? "En retard" : "À jour"}</Badge>
+                  <Badge variant={remaining === 0 ? "secondary" : openDetail.status === "late" ? "destructive" : "secondary"}>
+                    {remaining === 0 ? "Soldé" : openDetail.status === "late" ? "En retard" : "À jour"}
+                  </Badge>
                 </div>
 
                 <div className="mt-4 flex gap-2 flex-wrap">
