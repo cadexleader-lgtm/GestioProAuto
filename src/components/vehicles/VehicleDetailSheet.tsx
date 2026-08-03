@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatFCFA } from "@/lib/format";
 import { db, vehicleProfitability } from "@/lib/demo-store";
 import type { Vehicle } from "@/lib/demo-data";
-import { Car, Fuel, Gauge, KeyRound, Wrench, TrendingUp, TrendingDown } from "lucide-react";
+import { Car, Fuel, Gauge, KeyRound, Wrench, TrendingUp, TrendingDown, ArrowLeft } from "lucide-react";
 
 const STATUS_LABEL: Record<Vehicle["status"], { label: string; cls: string }> = {
   available: { label: "Disponible", cls: "bg-emerald-100 text-emerald-700" },
