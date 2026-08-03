@@ -49,7 +49,9 @@ export const employees: Employee[] = [
 
 export const EXPENSE_CATEGORIES = [
   "Loyer", "Électricité", "Internet", "Eau", "Transport",
-  "Marketing", "Salaires", "Réparations", "Entretien", "Divers",
+  "Marketing", "Salaires", "Réparations", "Entretien",
+  "Maintenance", "Carburant", "Assurance", "Taxes & impôts",
+  "Achat stock", "Achat véhicule", "Fournisseurs", "Divers",
 ] as const;
 export type ExpenseCategory = typeof EXPENSE_CATEGORIES[number];
 
@@ -60,6 +62,11 @@ export interface Expense {
   amount: number;
   date: string;
   hasReceipt: boolean;
+  /** Origine de la dépense : saisie manuelle ou générée par un module. */
+  source?: string;
+  paidBy?: string;
+  paymentMethod?: string;
+  note?: string;
 }
 
 export const expenses: Expense[] = [
