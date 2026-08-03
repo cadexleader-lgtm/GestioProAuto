@@ -1,13 +1,14 @@
 import { unbindCompany } from "@/lib/demo-store";
 import { resetTenant } from "@/lib/tenant";
 import { useState, useEffect } from "react";
-import { Menu, Search, Bell, Plus, User, Settings, LogOut, HelpCircle, Maximize2, Moon, FileText, ChevronDown } from "lucide-react";
+import { Menu, Search, Plus, User, Settings, LogOut, HelpCircle, Maximize2, Moon, FileText, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { useGetCompany, useGetDashboard } from "@workspace/api-client-react";
+import { useGetCompany } from "@workspace/api-client-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { NotificationsBell } from "./NotificationsBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +27,6 @@ interface TopbarProps {
 export function Topbar({ onMenuClick, onNewSale, showQuickSale = true }: TopbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const { data: company } = useGetCompany();
-  const { data: dashboard } = useGetDashboard();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -36,7 +36,6 @@ export function Topbar({ onMenuClick, onNewSale, showQuickSale = true }: TopbarP
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const alertsCount = dashboard?.lowStock?.length || 0;
   const initial = company?.ownerName?.charAt(0)?.toUpperCase() || "G";
 
   const handleLogout = async () => {
@@ -101,22 +100,7 @@ export function Topbar({ onMenuClick, onNewSale, showQuickSale = true }: TopbarP
           <FileText size={18} />
         </Link>
 
-        <button
-          className="relative p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-          onClick={() =>
-            alertsCount > 0
-              ? toast.info(`${alertsCount} produit(s) en stock faible`)
-              : toast.info("Aucune notification")
-          }
-          title="Notifications"
-        >
-          <Bell size={20} />
-          {alertsCount > 0 && (
-            <span className="absolute top-1.5 right-2 min-w-[16px] h-4 px-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-background">
-              {alertsCount}
-            </span>
-          )}
-        </button>
+        <NotificationsBell />
 
         {showQuickSale && (
           <button

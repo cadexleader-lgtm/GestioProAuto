@@ -55,6 +55,8 @@ export function VehiculesList() {
 
   const filtered = useMemo(() => {
     return vehicles.filter((v) => {
+      // Le parc actif n'affiche pas les véhicules vendus : ils partent en historique.
+      if (filter === "all" && v.status === "sold") return false;
       if (filter !== "all" && v.status !== filter) return false;
       if (!q) return true;
       return `${v.brand} ${v.model} ${v.plate} ${v.vin} ${v.color}`.toLowerCase().includes(q.toLowerCase());
@@ -67,7 +69,10 @@ export function VehiculesList() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Parc véhicules</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Pilotage complet : stock, location, vente, crédit, maintenance.</p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Pilotage complet : stock, location, vente, crédit, maintenance.
+            {stats.sold > 0 && <> Les véhicules vendus sont archivés dans <button onClick={() => setFilter("sold")} className="text-primary font-semibold underline">l'historique</button>.</>}
+          </p>
         </div>
         <Button onClick={() => setOpenAdd(true)} className="shadow-lg shadow-primary/20"><Plus size={16} /> Ajouter</Button>
       </div>
@@ -77,7 +82,7 @@ export function VehiculesList() {
         <Kpi icon={<Package className="text-slate-600" size={18} />} label="Total" value={stats.total} active={filter === "all"} onClick={() => setFilter("all")} />
         <Kpi icon={<CheckCircle2 className="text-emerald-600" size={18} />} label="Disponibles" value={stats.available} active={filter === "available"} onClick={() => setFilter("available")} />
         <Kpi icon={<KeyRound className="text-indigo-600" size={18} />} label="Loués" value={stats.rented} active={filter === "rented"} onClick={() => setFilter("rented")} />
-        <Kpi icon={<ShoppingCart className="text-slate-600" size={18} />} label="Vendus" value={stats.sold} active={filter === "sold"} onClick={() => setFilter("sold")} />
+        <Kpi icon={<ShoppingCart className="text-slate-600" size={18} />} label="Vendus (hist.)" value={stats.sold} active={filter === "sold"} onClick={() => setFilter("sold")} />
         <Kpi icon={<Wrench className="text-amber-600" size={18} />} label="Maintenance" value={stats.maintenance} active={filter === "maintenance"} onClick={() => setFilter("maintenance")} />
         <Kpi
           icon={<TrendingUp className="text-violet-600" size={18} />}
@@ -167,6 +172,11 @@ export function VehiculesList() {
           <div className="col-span-full text-center py-16 text-muted-foreground">
             <Car size={48} className="mx-auto opacity-30 mb-3" />
             <p>Aucun véhicule trouvé</p>
+            {filter === "all" && stats.sold > 0 && (
+              <button onClick={() => setFilter("sold")} className="mt-2 text-sm text-primary font-semibold underline">
+                Voir les {stats.sold} véhicule(s) vendu(s)
+              </button>
+            )}
           </div>
         )}
       </div>
