@@ -422,9 +422,40 @@ export function useHydrated() {
  * VEHICLE SYNC HELPERS — single source of truth for status changes.
  * ============================================================== */
 
+/** Enregistre une dépense ET son décaissement de caisse (synchronisation compta). */
+export function addExpense(payload: {
+  category: string; label: string; amount: number; date?: string;
+  hasReceipt?: boolean; source?: string; paidBy?: string; paymentMethod?: string;
+}) {
+  const date = payload.date ?? new Date().toISOString().slice(0, 10);
+  const e = db.add("expenses", {
+    category: payload.category, label: payload.label, amount: payload.amount,
+    date, hasReceipt: payload.hasReceipt ?? false,
+    source: payload.source ?? "Manuel", paidBy: payload.paidBy,
+    paymentMethod: payload.paymentMethod ?? "Caisse principale",
+  } as any);
+  db.add("cash", {
+    type: "out",
+    label: payload.label,
+    amount: payload.amount,
+    date: new Date(date).toISOString(),
+    source: payload.paymentMethod ?? "Caisse principale",
+  });
+  return e;
+}
+
 export function startRental(payload: Omit<Rental, "id">): Rental {
   const r = db.add("rentals", payload);
   db.update("vehicles", payload.vehicleId, { status: "rented" } as any);
+  if (payload.advance && payload.advance > 0) {
+    db.add("cash", {
+      type: "in",
+      label: `Avance location — ${payload.customer}`,
+      amount: payload.advance,
+      date: new Date().toISOString(),
+      source: "Location auto",
+    });
+  }
   return r;
 }
 
@@ -438,6 +469,18 @@ export function returnRental(
   const patch: any = { status: "available" };
   if (data.returnKm && data.returnKm > 0) patch.mileageKm = data.returnKm;
   db.update("vehicles", r.vehicleId, patch);
+  const due = typeof r.remaining === "number"
+    ? r.remaining
+    : Math.max(0, (r.totalAmount ?? 0) - (r.advance ?? 0));
+  if (due > 0) {
+    db.add("cash", {
+      type: "in",
+      label: `Solde location — ${r.customer}`,
+      amount: due,
+      date: new Date().toISOString(),
+      source: "Location auto",
+    });
+  }
 }
 
 export function isRentalOverdue(r: Rental): boolean {
@@ -486,13 +529,14 @@ export function completeVehicleMaintenance(maintId: string) {
   } as any);
   const cost = (m.partsCost || 0) + (m.laborCost || 0) + (m.otherCost || 0);
   if (cost > 0) {
-    db.add("expenses", {
+    addExpense({
+      category: "Maintenance",
       label: `Maintenance véhicule — ${m.motif}`,
       amount: cost,
-      date: new Date().toISOString().slice(0, 10),
-      category: "Maintenance",
       paidBy: m.garage || "—",
-    } as any);
+      source: "Automobile",
+      hasReceipt: true,
+    });
   }
   db.update("vehicles", m.vehicleId, { status: "available" } as any);
 }
