@@ -1,10 +1,10 @@
 /**
  * Centre de notifications réactif et synchronisé.
  *
- * - Un store en mémoire (liste des notifications) alimenté par les données
- *   réelles de l'entreprise (caisse, crédits, locations, stock, maintenance).
- * - Un toast + un bip court pour les évènements « live ».
- * - Le composant <NotificationsBell /> affiche le flux complet.
+ * Les notifications sont DÉRIVÉES des données réelles de l'entreprise
+ * (caisse, ventes véhicules, locations, crédits, maintenance, stock, dépenses).
+ * Toast + bip uniquement pour les évènements survenus après l'hydratation,
+ * afin de ne jamais spammer au chargement de la page.
  */
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { toast } from "sonner";
@@ -64,7 +64,9 @@ function emit() {
 
 export function pushNotification(n: Omit<AppNotification, "read" | "at"> & { at?: string }) {
   if (items.some((x) => x.key === n.key)) return false;
-  items = [{ ...n, at: n.at ?? new Date().toISOString(), read: false }, ...items].slice(0, 80);
+  items = [{ ...n, at: n.at ?? new Date().toISOString(), read: false }, ...items]
+    .sort((a, b) => +new Date(b.at) - +new Date(a.at))
+    .slice(0, 120);
   listeners.forEach((l) => l());
   return true;
 }
@@ -92,159 +94,226 @@ export function clearNotificationStore() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Générateur d'évènements — branché sur les données réelles           */
+/* Générateur d'évènements — dérivé des données réelles                */
 /* ------------------------------------------------------------------ */
+
+type Candidate = Omit<AppNotification, "read"> & { toast?: { text: string; freq: number } };
+
+const d = (iso?: string) => (iso ? new Date(iso).toLocaleDateString("fr-FR") : "");
 
 export function NotificationCenter() {
   const cash = useCollection("cash");
   const credits = useCollection("vehicleCredits");
   const payments = useCollection("vehiclePayments");
   const rentals = useCollection("rentals");
+  const vehicles = useCollection("vehicles");
+  const vehicleSales = useCollection("vehicleSales");
   const products = useCollection("products");
   const appliances = useCollection("appliances");
   const maintenances = useCollection("vehicleMaintenances");
   const expenses = useCollection("expenses");
 
-  const booted = useRef(false);
-  const seenCash = useRef<Set<string>>(new Set());
-  const seenExpense = useRef<Set<string>>(new Set());
+  const hydrated = useRef(false);
 
-  // Amorçage : on n'alerte pas sur l'historique déjà présent au chargement.
   useEffect(() => {
-    if (booted.current) return;
-    booted.current = true;
-    cash.forEach((c) => seenCash.current.add(c.id));
-    expenses.forEach((e) => seenExpense.current.add(e.id));
-  }, [cash, expenses]);
+    const t = setTimeout(() => { hydrated.current = true; }, 1800);
+    return () => clearTimeout(t);
+  }, []);
 
-  // Encaissements
-  useEffect(() => {
-    if (!booted.current) return;
-    cash.forEach((m) => {
-      if (seenCash.current.has(m.id)) return;
-      seenCash.current.add(m.id);
-      const inflow = m.type === "in";
-      const ok = pushNotification({
-        key: `cash-${m.id}`,
-        kind: "sale",
-        severity: inflow ? "success" : "info",
-        title: `${inflow ? "Encaissement" : "Décaissement"} ${inflow ? "+" : "−"}${formatFCFA(m.amount)}`,
-        description: `${m.label} · ${m.source}`,
-      });
-      if (ok) {
-        if (inflow) toast.success(`💰 +${formatFCFA(m.amount)}`, { description: m.label });
-        else toast.message(`↗ −${formatFCFA(m.amount)}`, { description: m.label });
-        beep(inflow ? 880 : 520, 100);
-      }
-    });
-  }, [cash]);
-
-  // Dépenses enregistrées
-  useEffect(() => {
-    if (!booted.current) return;
-    expenses.forEach((e) => {
-      if (seenExpense.current.has(e.id)) return;
-      seenExpense.current.add(e.id);
-      pushNotification({
-        key: `exp-${e.id}`,
-        kind: "expense",
-        severity: "info",
-        title: `Dépense — ${e.category}`,
-        description: `${e.label} · ${formatFCFA(e.amount)}`,
-      });
-    });
-  }, [expenses]);
-
-  // Crédits : retard + solde
   useEffect(() => {
     const now = Date.now();
+    const vName = (id: string) => {
+      const v = vehicles.find((x) => x.id === id);
+      return v ? `${v.brand} ${v.model} (${v.plate})` : "Véhicule";
+    };
+    const list: Candidate[] = [];
+
+    /* --- Ventes de véhicules --- */
+    vehicleSales.forEach((s) => {
+      list.push({
+        key: `vsale-${s.id}-${s.status}`,
+        kind: "sale",
+        severity: s.status === "done" ? "success" : "info",
+        at: s.date,
+        title: s.status === "done"
+          ? `Véhicule vendu — ${vName(s.vehicleId)}`
+          : `Vente en cours — ${vName(s.vehicleId)}`,
+        description: `${s.customer} · ${formatFCFA(s.amount)} · ${s.payment === "credit" ? "à crédit" : "comptant"}`,
+        toast: { text: `🚗 Vente ${s.customer} — ${formatFCFA(s.amount)}`, freq: 900 },
+      });
+    });
+
+    /* --- Locations : départ, retard, retour --- */
+    rentals.forEach((r) => {
+      const label = vName(r.vehicleId);
+      if (r.returnedAt) {
+        list.push({
+          key: `rental-back-${r.id}`,
+          kind: "rental",
+          severity: "success",
+          at: r.returnedAt,
+          title: `Véhicule restitué — ${label}`,
+          description: `${r.customer} · retour le ${d(r.returnedAt)}`,
+          toast: { text: `✅ Retour véhicule — ${r.customer}`, freq: 760 },
+        });
+        return;
+      }
+      list.push({
+        key: `rental-start-${r.id}`,
+        kind: "rental",
+        severity: "info",
+        at: r.startDate,
+        title: `Location en cours — ${label}`,
+        description: `${r.customer} · retour prévu le ${d(r.endDate)}`,
+        toast: { text: `🔑 Location démarrée — ${r.customer}`, freq: 820 },
+      });
+      if (isRentalOverdue(r)) {
+        list.push({
+          key: `rental-late-${r.id}-${r.endDate}`,
+          kind: "rental",
+          severity: "danger",
+          at: r.endDate,
+          title: `Retour en retard — ${label}`,
+          description: `${r.customer} · devait rentrer le ${d(r.endDate)}`,
+          toast: { text: `🚨 Retour en retard — ${r.customer}`, freq: 500 },
+        });
+      }
+    });
+
+    /* --- Véhicules immobilisés / maintenance --- */
+    maintenances.forEach((m) => {
+      const label = vName(m.vehicleId);
+      const cost = (m.partsCost || 0) + (m.laborCost || 0) + (m.otherCost || 0);
+      if (m.status === "done") {
+        list.push({
+          key: `maint-done-${m.id}`,
+          kind: "maintenance",
+          severity: "success",
+          at: m.dateOut || m.dateIn,
+          title: `Maintenance terminée — ${label}`,
+          description: `${m.motif} · coût ${formatFCFA(cost)}`,
+          toast: { text: `🔧 Maintenance terminée — ${label}`, freq: 700 },
+        });
+      } else {
+        list.push({
+          key: `maint-open-${m.id}`,
+          kind: "maintenance",
+          severity: "warning",
+          at: m.dateIn,
+          title: `Véhicule immobilisé — ${label}`,
+          description: `${m.motif} · ${m.garage || "Atelier"} depuis le ${d(m.dateIn)}`,
+          toast: { text: `🔧 Immobilisation — ${label}`, freq: 620 },
+        });
+      }
+    });
+
+    /* --- Crédits véhicules --- */
     credits.forEach((c) => {
-      const paid = c.downPayment + payments.filter((p) => p.creditId === c.id).reduce((s, p) => s + p.amount, 0);
+      const cPays = payments.filter((p) => p.creditId === c.id);
+      const paid = c.downPayment + cPays.reduce((s, p) => s + p.amount, 0);
+      cPays.forEach((p) => {
+        list.push({
+          key: `vpay-${p.id}`,
+          kind: "credit",
+          severity: "success",
+          at: p.date,
+          title: `Versement reçu — ${c.customer}`,
+          description: `${formatFCFA(p.amount)} · ${p.method}`,
+          toast: { text: `💵 Versement ${c.customer} — ${formatFCFA(p.amount)}`, freq: 880 },
+        });
+      });
       if (paid >= c.total) {
-        pushNotification({
+        list.push({
           key: `credit-done-${c.id}`,
           kind: "credit",
           severity: "success",
+          at: cPays.length ? cPays[cPays.length - 1].date : c.nextDueDate,
           title: `Crédit soldé — ${c.customer}`,
           description: `Contrat terminé · ${formatFCFA(c.total)}`,
+          toast: { text: `🎉 Crédit soldé — ${c.customer}`, freq: 990 },
         });
         return;
       }
       const due = +new Date(c.nextDueDate);
       if (due < now) {
-        const ok = pushNotification({
+        list.push({
           key: `credit-late-${c.id}-${c.nextDueDate}`,
           kind: "credit",
           severity: "danger",
+          at: c.nextDueDate,
           title: `Crédit en retard — ${c.customer}`,
-          description: `Échéance du ${new Date(c.nextDueDate).toLocaleDateString("fr-FR")} · reste ${formatFCFA(c.total - paid)}`,
+          description: `Échéance du ${d(c.nextDueDate)} · reste ${formatFCFA(c.total - paid)}`,
+          toast: { text: `⏰ Crédit en retard — ${c.customer}`, freq: 440 },
         });
-        if (ok) { toast.warning(`⏰ Crédit en retard — ${c.customer}`); beep(440, 200); }
       } else if (due - now < 3 * 86400000) {
-        pushNotification({
+        list.push({
           key: `credit-soon-${c.id}-${c.nextDueDate}`,
           kind: "credit",
           severity: "warning",
+          at: new Date().toISOString(),
           title: `Échéance proche — ${c.customer}`,
-          description: `${formatFCFA(c.monthlyPayment)} le ${new Date(c.nextDueDate).toLocaleDateString("fr-FR")}`,
+          description: `${formatFCFA(c.monthlyPayment)} le ${d(c.nextDueDate)}`,
         });
       }
     });
-  }, [credits, payments]);
 
-  // Locations en retard
-  useEffect(() => {
-    rentals.forEach((r) => {
-      if (!isRentalOverdue(r)) return;
-      const ok = pushNotification({
-        key: `rental-late-${r.id}-${r.endDate}`,
-        kind: "rental",
-        severity: "danger",
-        title: `Retour en retard — ${r.customer}`,
-        description: `Retour prévu le ${new Date(r.endDate).toLocaleDateString("fr-FR")}`,
+    /* --- Caisse --- */
+    cash.forEach((m) => {
+      const inflow = m.type === "in";
+      list.push({
+        key: `cash-${m.id}`,
+        kind: inflow ? "sale" : "expense",
+        severity: inflow ? "success" : "info",
+        at: (m as any).date || new Date().toISOString(),
+        title: `${inflow ? "Encaissement" : "Décaissement"} ${inflow ? "+" : "−"}${formatFCFA(m.amount)}`,
+        description: `${m.label} · ${m.source}`,
+        toast: { text: `${inflow ? "💰 +" : "↗ −"}${formatFCFA(m.amount)} · ${m.label}`, freq: inflow ? 880 : 520 },
       });
-      if (ok) { toast.warning(`🚗 Retour en retard — ${r.customer}`); beep(500, 180); }
     });
-  }, [rentals]);
 
-  // Stock bas (boutique + électroménager)
-  useEffect(() => {
+    /* --- Dépenses --- */
+    expenses.forEach((e) => {
+      list.push({
+        key: `exp-${e.id}`,
+        kind: "expense",
+        severity: "info",
+        at: (e as any).date || new Date().toISOString(),
+        title: `Dépense — ${e.category}`,
+        description: `${e.label} · ${formatFCFA(e.amount)}`,
+      });
+    });
+
+    /* --- Stock bas --- */
     [...products, ...appliances].forEach((p: any) => {
       const min = typeof p.minStock === "number" ? p.minStock : 3;
       if (typeof p.stock !== "number" || p.stock > min) return;
-      const ok = pushNotification({
+      list.push({
         key: `stock-${p.id}-${p.stock}`,
         kind: "stock",
         severity: p.stock === 0 ? "danger" : "warning",
+        at: new Date().toISOString(),
         title: `${p.stock === 0 ? "Rupture" : "Stock bas"} — ${p.name}`,
         description: `Reste ${p.stock} unité(s)`,
+        toast: { text: `📦 ${p.stock === 0 ? "Rupture" : "Stock bas"} — ${p.name}`, freq: 660 },
       });
-      if (ok) { toast.warning(`📦 ${p.stock === 0 ? "Rupture" : "Stock bas"} — ${p.name}`); beep(660, 150); }
     });
-  }, [products, appliances]);
 
-  // Maintenances
-  useEffect(() => {
-    maintenances.forEach((m) => {
-      if (m.status === "done") {
-        pushNotification({
-          key: `maint-done-${m.id}`,
-          kind: "maintenance",
-          severity: "success",
-          title: `Maintenance terminée — ${m.motif}`,
-          description: `Coût ${formatFCFA((m.partsCost || 0) + (m.laborCost || 0) + (m.otherCost || 0))}`,
-        });
-      } else {
-        pushNotification({
-          key: `maint-open-${m.id}`,
-          kind: "maintenance",
-          severity: "warning",
-          title: `Véhicule immobilisé — ${m.motif}`,
-          description: `${m.garage || "Atelier"} · depuis le ${new Date(m.dateIn).toLocaleDateString("fr-FR")}`,
-        });
+    // Publication : les plus anciens d'abord pour un ordre cohérent.
+    list.sort((a, b) => +new Date(a.at) - +new Date(b.at));
+    let toasted = 0;
+    list.forEach((c) => {
+      const added = pushNotification({
+        key: c.key, kind: c.kind, title: c.title,
+        description: c.description, severity: c.severity, at: c.at,
+      });
+      if (added && hydrated.current && c.toast && toasted < 3) {
+        toasted++;
+        const fn = c.severity === "danger" ? toast.warning : c.severity === "success" ? toast.success : toast.message;
+        fn(c.toast.text);
+        beep(c.toast.freq, 120);
       }
     });
-  }, [maintenances]);
+  }, [cash, credits, payments, rentals, vehicles, vehicleSales, products, appliances, maintenances, expenses]);
 
   return null;
 }
