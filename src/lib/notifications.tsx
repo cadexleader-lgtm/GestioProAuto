@@ -51,6 +51,7 @@ export interface AppNotification {
   at: string;             // ISO
   read: boolean;
   severity: "info" | "success" | "warning" | "danger";
+  href?: string;
 }
 
 let items: AppNotification[] = [];
@@ -133,6 +134,7 @@ export function NotificationCenter() {
       list.push({
         key: `vsale-${s.id}-${s.status}`,
         kind: "sale",
+        href: "/app/auto/ventes",
         severity: s.status === "done" ? "success" : "info",
         at: s.date,
         title: s.status === "done"
@@ -150,6 +152,7 @@ export function NotificationCenter() {
         list.push({
           key: `rental-back-${r.id}`,
           kind: "rental",
+          href: "/app/auto/locations",
           severity: "success",
           at: r.returnedAt,
           title: `Véhicule restitué — ${label}`,
@@ -171,6 +174,7 @@ export function NotificationCenter() {
         list.push({
           key: `rental-late-${r.id}-${r.endDate}`,
           kind: "rental",
+          href: "/app/auto/locations",
           severity: "danger",
           at: r.endDate,
           title: `Retour en retard — ${label}`,
@@ -188,6 +192,7 @@ export function NotificationCenter() {
         list.push({
           key: `maint-done-${m.id}`,
           kind: "maintenance",
+          href: "/app/auto/maintenance",
           severity: "success",
           at: m.dateOut || m.dateIn,
           title: `Maintenance terminée — ${label}`,
@@ -198,6 +203,7 @@ export function NotificationCenter() {
         list.push({
           key: `maint-open-${m.id}`,
           kind: "maintenance",
+          href: "/app/auto/maintenance",
           severity: "warning",
           at: m.dateIn,
           title: `Véhicule immobilisé — ${label}`,
@@ -215,6 +221,7 @@ export function NotificationCenter() {
         list.push({
           key: `vpay-${p.id}`,
           kind: "credit",
+          href: "/app/auto/credits",
           severity: "success",
           at: p.date,
           title: `Versement reçu — ${c.customer}`,
@@ -226,6 +233,7 @@ export function NotificationCenter() {
         list.push({
           key: `credit-done-${c.id}`,
           kind: "credit",
+          href: "/app/auto/credits",
           severity: "success",
           at: cPays.length ? cPays[cPays.length - 1].date : c.nextDueDate,
           title: `Crédit soldé — ${c.customer}`,
@@ -239,6 +247,7 @@ export function NotificationCenter() {
         list.push({
           key: `credit-late-${c.id}-${c.nextDueDate}`,
           kind: "credit",
+          href: "/app/auto/credits",
           severity: "danger",
           at: c.nextDueDate,
           title: `Crédit en retard — ${c.customer}`,
@@ -249,6 +258,7 @@ export function NotificationCenter() {
         list.push({
           key: `credit-soon-${c.id}-${c.nextDueDate}`,
           kind: "credit",
+          href: "/app/auto/credits",
           severity: "warning",
           at: new Date().toISOString(),
           title: `Échéance proche — ${c.customer}`,
@@ -263,6 +273,7 @@ export function NotificationCenter() {
       list.push({
         key: `cash-${m.id}`,
         kind: inflow ? "sale" : "expense",
+        href: "/app/tresorerie",
         severity: inflow ? "success" : "info",
         at: (m as any).date || new Date().toISOString(),
         title: `${inflow ? "Encaissement" : "Décaissement"} ${inflow ? "+" : "−"}${formatFCFA(m.amount)}`,
@@ -276,6 +287,7 @@ export function NotificationCenter() {
       list.push({
         key: `exp-${e.id}`,
         kind: "expense",
+        href: "/app/depenses",
         severity: "info",
         at: (e as any).date || new Date().toISOString(),
         title: `Dépense — ${e.category}`,
@@ -290,6 +302,7 @@ export function NotificationCenter() {
       list.push({
         key: `stock-${p.id}-${p.stock}`,
         kind: "stock",
+        href: "/app/stock",
         severity: p.stock === 0 ? "danger" : "warning",
         at: new Date().toISOString(),
         title: `${p.stock === 0 ? "Rupture" : "Stock bas"} — ${p.name}`,
@@ -304,7 +317,7 @@ export function NotificationCenter() {
     list.forEach((c) => {
       const added = pushNotification({
         key: c.key, kind: c.kind, title: c.title,
-        description: c.description, severity: c.severity, at: c.at,
+        description: c.description, severity: c.severity, at: c.at, href: c.href,
       });
       if (added && hydrated.current && c.toast && toasted < 3) {
         toasted++;
