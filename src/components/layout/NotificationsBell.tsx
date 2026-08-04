@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Bell, CheckCheck, Trash2, ShoppingCart, CreditCard, Car, Package, Wrench, Receipt, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,8 @@ function ago(iso: string) {
 
 export function NotificationsBell() {
   const items = useNotifications();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
   const unread = items.filter((n) => !n.read).length;
 
@@ -50,7 +53,7 @@ export function NotificationsBell() {
   );
 
   return (
-    <Popover onOpenChange={(o) => { if (!o) markAllRead(); }}>
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) markAllRead(); }}>
       <PopoverTrigger asChild>
         <button
           className="relative p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
@@ -114,7 +117,18 @@ export function NotificationsBell() {
           ) : (
             <ul className="divide-y">
               {shown.map((n) => (
-                <li key={n.key} className={`flex gap-3 px-4 py-3 ${n.read ? "" : "bg-primary/5"}`}>
+                <li
+                  key={n.key}
+                  role={n.href ? "button" : undefined}
+                  tabIndex={n.href ? 0 : undefined}
+                  onClick={() => {
+                    if (!n.href) return;
+                    setOpen(false);
+                    markAllRead();
+                    navigate({ to: n.href });
+                  }}
+                  className={`flex gap-3 px-4 py-3 ${n.read ? "" : "bg-primary/5"} ${n.href ? "cursor-pointer hover:bg-muted/60 transition-colors" : ""}`}
+                >
                   <span className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center ${TONES[n.severity]}`}>
                     {ICONS[n.kind]}
                   </span>
