@@ -9,48 +9,43 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as InscriptionRouteImport } from './routes/inscription'
-import { Route as ConnexionRouteImport } from './routes/connexion'
-import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/app'
+import { Route as ConnexionRouteImport } from './routes/connexion'
+import { Route as InscriptionRouteImport } from './routes/inscription'
 import { Route as AppIndexRouteImport } from './routes/app.index'
-import { Route as AppVentesRouteImport } from './routes/app.ventes'
-import { Route as AppTresorerieRouteImport } from './routes/app.tresorerie'
-import { Route as AppStockRouteImport } from './routes/app.stock'
-import { Route as AppRapportsRouteImport } from './routes/app.rapports'
-import { Route as AppPersonnelRouteImport } from './routes/app.personnel'
-import { Route as AppParametresRouteImport } from './routes/app.parametres'
-import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
-import { Route as AppFournisseursRouteImport } from './routes/app.fournisseurs'
-import { Route as AppDocumentsRouteImport } from './routes/app.documents'
-import { Route as AppDepensesRouteImport } from './routes/app.depenses'
-import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppCategoriesRouteImport } from './routes/app.categories'
-import { Route as AppRestoTablesRouteImport } from './routes/app.resto.tables'
-import { Route as AppRestoReservationsRouteImport } from './routes/app.resto.reservations'
-import { Route as AppRestoMenuRouteImport } from './routes/app.resto.menu'
-import { Route as AppRestoCuisineRouteImport } from './routes/app.resto.cuisine'
-import { Route as AppRestoCommandesRouteImport } from './routes/app.resto.commandes'
-import { Route as AppElecGarantiesRouteImport } from './routes/app.elec.garanties'
-import { Route as AppElecFacturationRouteImport } from './routes/app.elec.facturation'
-import { Route as AppElecCreditsRouteImport } from './routes/app.elec.credits'
-import { Route as AppAutoVentesRouteImport } from './routes/app.auto.ventes'
-import { Route as AppAutoVehiculesRouteImport } from './routes/app.auto.vehicules'
-import { Route as AppAutoRapportsRouteImport } from './routes/app.auto.rapports'
-import { Route as AppAutoMaintenanceRouteImport } from './routes/app.auto.maintenance'
-import { Route as AppAutoLocationsRouteImport } from './routes/app.auto.locations'
-import { Route as AppAutoGpsRouteImport } from './routes/app.auto.gps'
-import { Route as AppAutoCreditsRouteImport } from './routes/app.auto.credits'
+import { Route as AppClientsRouteImport } from './routes/app.clients'
+import { Route as AppDepensesRouteImport } from './routes/app.depenses'
+import { Route as AppDocumentsRouteImport } from './routes/app.documents'
+import { Route as AppFournisseursRouteImport } from './routes/app.fournisseurs'
+import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
+import { Route as AppParametresRouteImport } from './routes/app.parametres'
+import { Route as AppPersonnelRouteImport } from './routes/app.personnel'
+import { Route as AppRapportsRouteImport } from './routes/app.rapports'
+import { Route as AppStockRouteImport } from './routes/app.stock'
+import { Route as AppTresorerieRouteImport } from './routes/app.tresorerie'
+import { Route as AppVentesRouteImport } from './routes/app.ventes'
 import { Route as AppAutoClientsRouteImport } from './routes/app.auto.clients'
+import { Route as AppAutoCreditsRouteImport } from './routes/app.auto.credits'
+import { Route as AppAutoGpsRouteImport } from './routes/app.auto.gps'
+import { Route as AppAutoLocationsRouteImport } from './routes/app.auto.locations'
+import { Route as AppAutoMaintenanceRouteImport } from './routes/app.auto.maintenance'
+import { Route as AppAutoRapportsRouteImport } from './routes/app.auto.rapports'
+import { Route as AppAutoVehiculesRouteImport } from './routes/app.auto.vehicules'
+import { Route as AppAutoVentesRouteImport } from './routes/app.auto.ventes'
+import { Route as AppElecCreditsRouteImport } from './routes/app.elec.credits'
+import { Route as AppElecFacturationRouteImport } from './routes/app.elec.facturation'
+import { Route as AppElecGarantiesRouteImport } from './routes/app.elec.garanties'
+import { Route as AppRestoCommandesRouteImport } from './routes/app.resto.commandes'
+import { Route as AppRestoCuisineRouteImport } from './routes/app.resto.cuisine'
+import { Route as AppRestoMenuRouteImport } from './routes/app.resto.menu'
+import { Route as AppRestoReservationsRouteImport } from './routes/app.resto.reservations'
+import { Route as AppRestoTablesRouteImport } from './routes/app.resto.tables'
 
-const InscriptionRoute = InscriptionRouteImport.update({
-  id: '/inscription',
-  path: '/inscription',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConnexionRoute = ConnexionRouteImport.update({
-  id: '/connexion',
-  path: '/connexion',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -58,9 +53,14 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ConnexionRoute = ConnexionRouteImport.update({
+  id: '/connexion',
+  path: '/connexion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InscriptionRoute = InscriptionRouteImport.update({
+  id: '/inscription',
+  path: '/inscription',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -68,54 +68,9 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppVentesRoute = AppVentesRouteImport.update({
-  id: '/ventes',
-  path: '/ventes',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTresorerieRoute = AppTresorerieRouteImport.update({
-  id: '/tresorerie',
-  path: '/tresorerie',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppStockRoute = AppStockRouteImport.update({
-  id: '/stock',
-  path: '/stock',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppRapportsRoute = AppRapportsRouteImport.update({
-  id: '/rapports',
-  path: '/rapports',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPersonnelRoute = AppPersonnelRouteImport.update({
-  id: '/personnel',
-  path: '/personnel',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppParametresRoute = AppParametresRouteImport.update({
-  id: '/parametres',
-  path: '/parametres',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppOnboardingRoute = AppOnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppFournisseursRoute = AppFournisseursRouteImport.update({
-  id: '/fournisseurs',
-  path: '/fournisseurs',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDocumentsRoute = AppDocumentsRouteImport.update({
-  id: '/documents',
-  path: '/documents',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDepensesRoute = AppDepensesRouteImport.update({
-  id: '/depenses',
-  path: '/depenses',
+const AppCategoriesRoute = AppCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
   getParentRoute: () => AppRoute,
 } as any)
 const AppClientsRoute = AppClientsRouteImport.update({
@@ -123,79 +78,59 @@ const AppClientsRoute = AppClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AppRoute,
 } as any)
-const AppCategoriesRoute = AppCategoriesRouteImport.update({
-  id: '/categories',
-  path: '/categories',
+const AppDepensesRoute = AppDepensesRouteImport.update({
+  id: '/depenses',
+  path: '/depenses',
   getParentRoute: () => AppRoute,
 } as any)
-const AppRestoTablesRoute = AppRestoTablesRouteImport.update({
-  id: '/resto/tables',
-  path: '/resto/tables',
+const AppDocumentsRoute = AppDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
   getParentRoute: () => AppRoute,
 } as any)
-const AppRestoReservationsRoute = AppRestoReservationsRouteImport.update({
-  id: '/resto/reservations',
-  path: '/resto/reservations',
+const AppFournisseursRoute = AppFournisseursRouteImport.update({
+  id: '/fournisseurs',
+  path: '/fournisseurs',
   getParentRoute: () => AppRoute,
 } as any)
-const AppRestoMenuRoute = AppRestoMenuRouteImport.update({
-  id: '/resto/menu',
-  path: '/resto/menu',
+const AppOnboardingRoute = AppOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => AppRoute,
 } as any)
-const AppRestoCuisineRoute = AppRestoCuisineRouteImport.update({
-  id: '/resto/cuisine',
-  path: '/resto/cuisine',
+const AppParametresRoute = AppParametresRouteImport.update({
+  id: '/parametres',
+  path: '/parametres',
   getParentRoute: () => AppRoute,
 } as any)
-const AppRestoCommandesRoute = AppRestoCommandesRouteImport.update({
-  id: '/resto/commandes',
-  path: '/resto/commandes',
+const AppPersonnelRoute = AppPersonnelRouteImport.update({
+  id: '/personnel',
+  path: '/personnel',
   getParentRoute: () => AppRoute,
 } as any)
-const AppElecGarantiesRoute = AppElecGarantiesRouteImport.update({
-  id: '/elec/garanties',
-  path: '/elec/garanties',
+const AppRapportsRoute = AppRapportsRouteImport.update({
+  id: '/rapports',
+  path: '/rapports',
   getParentRoute: () => AppRoute,
 } as any)
-const AppElecFacturationRoute = AppElecFacturationRouteImport.update({
-  id: '/elec/facturation',
-  path: '/elec/facturation',
+const AppStockRoute = AppStockRouteImport.update({
+  id: '/stock',
+  path: '/stock',
   getParentRoute: () => AppRoute,
 } as any)
-const AppElecCreditsRoute = AppElecCreditsRouteImport.update({
-  id: '/elec/credits',
-  path: '/elec/credits',
+const AppTresorerieRoute = AppTresorerieRouteImport.update({
+  id: '/tresorerie',
+  path: '/tresorerie',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAutoVentesRoute = AppAutoVentesRouteImport.update({
-  id: '/auto/ventes',
-  path: '/auto/ventes',
+const AppVentesRoute = AppVentesRouteImport.update({
+  id: '/ventes',
+  path: '/ventes',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAutoVehiculesRoute = AppAutoVehiculesRouteImport.update({
-  id: '/auto/vehicules',
-  path: '/auto/vehicules',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAutoRapportsRoute = AppAutoRapportsRouteImport.update({
-  id: '/auto/rapports',
-  path: '/auto/rapports',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAutoMaintenanceRoute = AppAutoMaintenanceRouteImport.update({
-  id: '/auto/maintenance',
-  path: '/auto/maintenance',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAutoLocationsRoute = AppAutoLocationsRouteImport.update({
-  id: '/auto/locations',
-  path: '/auto/locations',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAutoGpsRoute = AppAutoGpsRouteImport.update({
-  id: '/auto/gps',
-  path: '/auto/gps',
+const AppAutoClientsRoute = AppAutoClientsRouteImport.update({
+  id: '/auto/clients',
+  path: '/auto/clients',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAutoCreditsRoute = AppAutoCreditsRouteImport.update({
@@ -203,9 +138,74 @@ const AppAutoCreditsRoute = AppAutoCreditsRouteImport.update({
   path: '/auto/credits',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAutoClientsRoute = AppAutoClientsRouteImport.update({
-  id: '/auto/clients',
-  path: '/auto/clients',
+const AppAutoGpsRoute = AppAutoGpsRouteImport.update({
+  id: '/auto/gps',
+  path: '/auto/gps',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAutoLocationsRoute = AppAutoLocationsRouteImport.update({
+  id: '/auto/locations',
+  path: '/auto/locations',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAutoMaintenanceRoute = AppAutoMaintenanceRouteImport.update({
+  id: '/auto/maintenance',
+  path: '/auto/maintenance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAutoRapportsRoute = AppAutoRapportsRouteImport.update({
+  id: '/auto/rapports',
+  path: '/auto/rapports',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAutoVehiculesRoute = AppAutoVehiculesRouteImport.update({
+  id: '/auto/vehicules',
+  path: '/auto/vehicules',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAutoVentesRoute = AppAutoVentesRouteImport.update({
+  id: '/auto/ventes',
+  path: '/auto/ventes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppElecCreditsRoute = AppElecCreditsRouteImport.update({
+  id: '/elec/credits',
+  path: '/elec/credits',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppElecFacturationRoute = AppElecFacturationRouteImport.update({
+  id: '/elec/facturation',
+  path: '/elec/facturation',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppElecGarantiesRoute = AppElecGarantiesRouteImport.update({
+  id: '/elec/garanties',
+  path: '/elec/garanties',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRestoCommandesRoute = AppRestoCommandesRouteImport.update({
+  id: '/resto/commandes',
+  path: '/resto/commandes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRestoCuisineRoute = AppRestoCuisineRouteImport.update({
+  id: '/resto/cuisine',
+  path: '/resto/cuisine',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRestoMenuRoute = AppRestoMenuRouteImport.update({
+  id: '/resto/menu',
+  path: '/resto/menu',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRestoReservationsRoute = AppRestoReservationsRouteImport.update({
+  id: '/resto/reservations',
+  path: '/resto/reservations',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRestoTablesRoute = AppRestoTablesRouteImport.update({
+  id: '/resto/tables',
+  path: '/resto/tables',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -430,18 +430,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/inscription': {
-      id: '/inscription'
-      path: '/inscription'
-      fullPath: '/inscription'
-      preLoaderRoute: typeof InscriptionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/connexion': {
-      id: '/connexion'
-      path: '/connexion'
-      fullPath: '/connexion'
-      preLoaderRoute: typeof ConnexionRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -451,11 +444,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/connexion': {
+      id: '/connexion'
+      path: '/connexion'
+      fullPath: '/connexion'
+      preLoaderRoute: typeof ConnexionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inscription': {
+      id: '/inscription'
+      path: '/inscription'
+      fullPath: '/inscription'
+      preLoaderRoute: typeof InscriptionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/': {
@@ -465,74 +465,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/ventes': {
-      id: '/app/ventes'
-      path: '/ventes'
-      fullPath: '/app/ventes'
-      preLoaderRoute: typeof AppVentesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/tresorerie': {
-      id: '/app/tresorerie'
-      path: '/tresorerie'
-      fullPath: '/app/tresorerie'
-      preLoaderRoute: typeof AppTresorerieRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/stock': {
-      id: '/app/stock'
-      path: '/stock'
-      fullPath: '/app/stock'
-      preLoaderRoute: typeof AppStockRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/rapports': {
-      id: '/app/rapports'
-      path: '/rapports'
-      fullPath: '/app/rapports'
-      preLoaderRoute: typeof AppRapportsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/personnel': {
-      id: '/app/personnel'
-      path: '/personnel'
-      fullPath: '/app/personnel'
-      preLoaderRoute: typeof AppPersonnelRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/parametres': {
-      id: '/app/parametres'
-      path: '/parametres'
-      fullPath: '/app/parametres'
-      preLoaderRoute: typeof AppParametresRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/onboarding': {
-      id: '/app/onboarding'
-      path: '/onboarding'
-      fullPath: '/app/onboarding'
-      preLoaderRoute: typeof AppOnboardingRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/fournisseurs': {
-      id: '/app/fournisseurs'
-      path: '/fournisseurs'
-      fullPath: '/app/fournisseurs'
-      preLoaderRoute: typeof AppFournisseursRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/documents': {
-      id: '/app/documents'
-      path: '/documents'
-      fullPath: '/app/documents'
-      preLoaderRoute: typeof AppDocumentsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/depenses': {
-      id: '/app/depenses'
-      path: '/depenses'
-      fullPath: '/app/depenses'
-      preLoaderRoute: typeof AppDepensesRouteImport
+    '/app/categories': {
+      id: '/app/categories'
+      path: '/categories'
+      fullPath: '/app/categories'
+      preLoaderRoute: typeof AppCategoriesRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/clients': {
@@ -542,109 +479,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClientsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/categories': {
-      id: '/app/categories'
-      path: '/categories'
-      fullPath: '/app/categories'
-      preLoaderRoute: typeof AppCategoriesRouteImport
+    '/app/depenses': {
+      id: '/app/depenses'
+      path: '/depenses'
+      fullPath: '/app/depenses'
+      preLoaderRoute: typeof AppDepensesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/resto/tables': {
-      id: '/app/resto/tables'
-      path: '/resto/tables'
-      fullPath: '/app/resto/tables'
-      preLoaderRoute: typeof AppRestoTablesRouteImport
+    '/app/documents': {
+      id: '/app/documents'
+      path: '/documents'
+      fullPath: '/app/documents'
+      preLoaderRoute: typeof AppDocumentsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/resto/reservations': {
-      id: '/app/resto/reservations'
-      path: '/resto/reservations'
-      fullPath: '/app/resto/reservations'
-      preLoaderRoute: typeof AppRestoReservationsRouteImport
+    '/app/fournisseurs': {
+      id: '/app/fournisseurs'
+      path: '/fournisseurs'
+      fullPath: '/app/fournisseurs'
+      preLoaderRoute: typeof AppFournisseursRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/resto/menu': {
-      id: '/app/resto/menu'
-      path: '/resto/menu'
-      fullPath: '/app/resto/menu'
-      preLoaderRoute: typeof AppRestoMenuRouteImport
+    '/app/onboarding': {
+      id: '/app/onboarding'
+      path: '/onboarding'
+      fullPath: '/app/onboarding'
+      preLoaderRoute: typeof AppOnboardingRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/resto/cuisine': {
-      id: '/app/resto/cuisine'
-      path: '/resto/cuisine'
-      fullPath: '/app/resto/cuisine'
-      preLoaderRoute: typeof AppRestoCuisineRouteImport
+    '/app/parametres': {
+      id: '/app/parametres'
+      path: '/parametres'
+      fullPath: '/app/parametres'
+      preLoaderRoute: typeof AppParametresRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/resto/commandes': {
-      id: '/app/resto/commandes'
-      path: '/resto/commandes'
-      fullPath: '/app/resto/commandes'
-      preLoaderRoute: typeof AppRestoCommandesRouteImport
+    '/app/personnel': {
+      id: '/app/personnel'
+      path: '/personnel'
+      fullPath: '/app/personnel'
+      preLoaderRoute: typeof AppPersonnelRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/elec/garanties': {
-      id: '/app/elec/garanties'
-      path: '/elec/garanties'
-      fullPath: '/app/elec/garanties'
-      preLoaderRoute: typeof AppElecGarantiesRouteImport
+    '/app/rapports': {
+      id: '/app/rapports'
+      path: '/rapports'
+      fullPath: '/app/rapports'
+      preLoaderRoute: typeof AppRapportsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/elec/facturation': {
-      id: '/app/elec/facturation'
-      path: '/elec/facturation'
-      fullPath: '/app/elec/facturation'
-      preLoaderRoute: typeof AppElecFacturationRouteImport
+    '/app/stock': {
+      id: '/app/stock'
+      path: '/stock'
+      fullPath: '/app/stock'
+      preLoaderRoute: typeof AppStockRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/elec/credits': {
-      id: '/app/elec/credits'
-      path: '/elec/credits'
-      fullPath: '/app/elec/credits'
-      preLoaderRoute: typeof AppElecCreditsRouteImport
+    '/app/tresorerie': {
+      id: '/app/tresorerie'
+      path: '/tresorerie'
+      fullPath: '/app/tresorerie'
+      preLoaderRoute: typeof AppTresorerieRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/auto/ventes': {
-      id: '/app/auto/ventes'
-      path: '/auto/ventes'
-      fullPath: '/app/auto/ventes'
-      preLoaderRoute: typeof AppAutoVentesRouteImport
+    '/app/ventes': {
+      id: '/app/ventes'
+      path: '/ventes'
+      fullPath: '/app/ventes'
+      preLoaderRoute: typeof AppVentesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/auto/vehicules': {
-      id: '/app/auto/vehicules'
-      path: '/auto/vehicules'
-      fullPath: '/app/auto/vehicules'
-      preLoaderRoute: typeof AppAutoVehiculesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/auto/rapports': {
-      id: '/app/auto/rapports'
-      path: '/auto/rapports'
-      fullPath: '/app/auto/rapports'
-      preLoaderRoute: typeof AppAutoRapportsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/auto/maintenance': {
-      id: '/app/auto/maintenance'
-      path: '/auto/maintenance'
-      fullPath: '/app/auto/maintenance'
-      preLoaderRoute: typeof AppAutoMaintenanceRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/auto/locations': {
-      id: '/app/auto/locations'
-      path: '/auto/locations'
-      fullPath: '/app/auto/locations'
-      preLoaderRoute: typeof AppAutoLocationsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/auto/gps': {
-      id: '/app/auto/gps'
-      path: '/auto/gps'
-      fullPath: '/app/auto/gps'
-      preLoaderRoute: typeof AppAutoGpsRouteImport
+    '/app/auto/clients': {
+      id: '/app/auto/clients'
+      path: '/auto/clients'
+      fullPath: '/app/auto/clients'
+      preLoaderRoute: typeof AppAutoClientsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/auto/credits': {
@@ -654,11 +563,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAutoCreditsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/auto/clients': {
-      id: '/app/auto/clients'
-      path: '/auto/clients'
-      fullPath: '/app/auto/clients'
-      preLoaderRoute: typeof AppAutoClientsRouteImport
+    '/app/auto/gps': {
+      id: '/app/auto/gps'
+      path: '/auto/gps'
+      fullPath: '/app/auto/gps'
+      preLoaderRoute: typeof AppAutoGpsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/auto/locations': {
+      id: '/app/auto/locations'
+      path: '/auto/locations'
+      fullPath: '/app/auto/locations'
+      preLoaderRoute: typeof AppAutoLocationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/auto/maintenance': {
+      id: '/app/auto/maintenance'
+      path: '/auto/maintenance'
+      fullPath: '/app/auto/maintenance'
+      preLoaderRoute: typeof AppAutoMaintenanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/auto/rapports': {
+      id: '/app/auto/rapports'
+      path: '/auto/rapports'
+      fullPath: '/app/auto/rapports'
+      preLoaderRoute: typeof AppAutoRapportsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/auto/vehicules': {
+      id: '/app/auto/vehicules'
+      path: '/auto/vehicules'
+      fullPath: '/app/auto/vehicules'
+      preLoaderRoute: typeof AppAutoVehiculesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/auto/ventes': {
+      id: '/app/auto/ventes'
+      path: '/auto/ventes'
+      fullPath: '/app/auto/ventes'
+      preLoaderRoute: typeof AppAutoVentesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/elec/credits': {
+      id: '/app/elec/credits'
+      path: '/elec/credits'
+      fullPath: '/app/elec/credits'
+      preLoaderRoute: typeof AppElecCreditsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/elec/facturation': {
+      id: '/app/elec/facturation'
+      path: '/elec/facturation'
+      fullPath: '/app/elec/facturation'
+      preLoaderRoute: typeof AppElecFacturationRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/elec/garanties': {
+      id: '/app/elec/garanties'
+      path: '/elec/garanties'
+      fullPath: '/app/elec/garanties'
+      preLoaderRoute: typeof AppElecGarantiesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/resto/commandes': {
+      id: '/app/resto/commandes'
+      path: '/resto/commandes'
+      fullPath: '/app/resto/commandes'
+      preLoaderRoute: typeof AppRestoCommandesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/resto/cuisine': {
+      id: '/app/resto/cuisine'
+      path: '/resto/cuisine'
+      fullPath: '/app/resto/cuisine'
+      preLoaderRoute: typeof AppRestoCuisineRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/resto/menu': {
+      id: '/app/resto/menu'
+      path: '/resto/menu'
+      fullPath: '/app/resto/menu'
+      preLoaderRoute: typeof AppRestoMenuRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/resto/reservations': {
+      id: '/app/resto/reservations'
+      path: '/resto/reservations'
+      fullPath: '/app/resto/reservations'
+      preLoaderRoute: typeof AppRestoReservationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/resto/tables': {
+      id: '/app/resto/tables'
+      path: '/resto/tables'
+      fullPath: '/app/resto/tables'
+      preLoaderRoute: typeof AppRestoTablesRouteImport
       parentRoute: typeof AppRoute
     }
   }
