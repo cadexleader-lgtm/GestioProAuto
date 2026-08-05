@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { User2, CalendarDays, Wallet, ClipboardCheck, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   startRental, sellVehicle, startVehicleMaintenance,
   addVehicleCreditPayment, db,
