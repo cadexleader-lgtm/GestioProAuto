@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -6,9 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCollection, startRental, returnRental, isRentalOverdue } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { KeyRound, Plus, AlertTriangle, Calendar, CheckCircle2, RotateCcw, FileText, MessageCircle, Archive, ChevronDown } from "lucide-react";
+import { KeyRound, Plus, AlertTriangle, Calendar, CheckCircle2, RotateCcw, FileText, MessageCircle, Archive, ChevronDown, MapPin, Car } from "lucide-react";
 import { toast } from "sonner";
 import { RentVehicleDialog, ReturnRentalDialog } from "@/components/vehicles/VehicleActionsDialogs";
+import { VehicleDetailSheet } from "@/components/vehicles/VehicleDetailSheet";
 import { generateRentalContract, sendWhatsApp } from "@/lib/vehicle-pdf";
 import type { Rental } from "@/lib/demo-data";
 
@@ -28,6 +30,7 @@ export function VehiculesLocations() {
   const [returnId, setReturnId] = useState<string | null>(null);
   const [rentVehicleId, setRentVehicleId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   // Auto-detect overdue and reflect in display (do not mutate)
   const enriched = useMemo(() => rentals.map((r) => ({
@@ -123,6 +126,12 @@ export function VehiculesLocations() {
                   <div><p className="text-[10px] uppercase font-bold text-muted-foreground">Total</p><p className="font-bold text-primary">{formatFCFA(total)}</p></div>
                 </div>
                 <div className="flex gap-2 flex-wrap">
+                  <Button asChild size="sm" variant="outline">
+                    <Link to="/app/auto/gps" search={{ v: v.id }}><MapPin size={14} /> Position</Link>
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setDetailId(v.id)}>
+                    <Car size={14} /> Fiche
+                  </Button>
                   <Button size="sm" variant="outline" onClick={() => { generateRentalContract(r, v); toast.success("Contrat PDF généré"); }}>
                     <FileText size={14} /> PDF
                   </Button>
@@ -204,6 +213,11 @@ export function VehiculesLocations() {
       </Dialog>
 
       <RentVehicleDialog vehicle={rentVehicle} open={!!rentVehicleId} onOpenChange={(o) => !o && setRentVehicleId(null)} />
+      <VehicleDetailSheet
+        vehicle={detailId ? vehicles.find((x) => x.id === detailId) ?? null : null}
+        open={!!detailId}
+        onOpenChange={(o) => !o && setDetailId(null)}
+      />
       <ReturnRentalDialog rentalId={returnId} vehicle={returnVehicle} open={!!returnId} onOpenChange={(o) => !o && setReturnId(null)} onConfirm={confirmReturn} />
     </div>
   );

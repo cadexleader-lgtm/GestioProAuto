@@ -11,7 +11,7 @@ import {
 
 import { useGetCompany, useGetDashboard } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
-import { getSubSectorConfig, CROSS_MODULES } from "@/lib/sectors";
+import { getSubSectorConfig, getCrossModules } from "@/lib/sectors";
 import logoIcon from "@/assets/gestiopro-icon.png";
 
 interface SidebarProps {
@@ -126,7 +126,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           {sub.metierModules.map(renderItem)}
 
           <p className={cn("text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/40 px-3 mt-4 mb-1 transition-opacity", !expanded && "md:opacity-0")}>Transversal</p>
-          {CROSS_MODULES.map(renderItem)}
+          {getCrossModules(company?.subSectorId).map(renderItem)}
 
           <p className={cn("text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/40 px-3 mt-4 mb-1 transition-opacity", !expanded && "md:opacity-0")}>Entreprise</p>
           <Link to="/app/parametres" onClick={() => setIsOpen(false)} className="block" title={!expanded ? "Paramètres" : undefined}>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -34,7 +35,7 @@ export function ExpenseDialog({ open, onOpenChange }: { open:boolean; onOpenChan
         </div>
         <div><Label>Libellé *</Label><Input value={form.label} onChange={e=>setForm({...form,label:e.target.value})} placeholder="Ex: Loyer novembre"/></div>
         <div className="grid grid-cols-2 gap-3">
-          <div><Label>Montant (FCFA) *</Label><Input type="number" value={form.amount} onChange={e=>setForm({...form,amount:+e.target.value})}/></div>
+          <div><Label>Montant (FCFA) *</Label><MoneyInput value={form.amount} onChange={(v) => setForm({ ...form, amount: v })} /></div>
           <div><Label>Moyen de paiement</Label>
             <Select value={form.paymentMethod} onValueChange={v=>setForm({...form,paymentMethod:v})}><SelectTrigger><SelectValue/></SelectTrigger>
               <SelectContent><SelectItem value="cash">Espèces</SelectItem><SelectItem value="Wave">Wave</SelectItem><SelectItem value="Orange Money">Orange Money</SelectItem><SelectItem value="Virement">Virement</SelectItem></SelectContent>
@@ -70,7 +71,7 @@ export function CashMovementDialog({ open, onOpenChange, type }: { open:boolean;
       <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
       <div className="space-y-3 mt-4">
         {type !== "transfer" && <div><Label>Libellé</Label><Input value={form.label} onChange={e=>setForm({...form,label:e.target.value})}/></div>}
-        <div><Label>Montant *</Label><Input type="number" value={form.amount} onChange={e=>setForm({...form,amount:+e.target.value})}/></div>
+        <div><Label>Montant *</Label><MoneyInput value={form.amount} onChange={(v) => setForm({ ...form, amount: v })} /></div>
         <div><Label>{type==="transfer"?"Depuis":"Caisse"}</Label>
           <Select value={form.source} onValueChange={v=>setForm({...form,source:v})}><SelectTrigger><SelectValue/></SelectTrigger>
             <SelectContent><SelectItem value="Caisse principale">Caisse principale</SelectItem><SelectItem value="Wave">Wave</SelectItem><SelectItem value="Orange Money">Orange Money</SelectItem><SelectItem value="Banque">Banque</SelectItem></SelectContent>

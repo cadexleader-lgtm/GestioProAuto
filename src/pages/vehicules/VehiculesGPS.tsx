@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearch } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,12 @@ export function VehiculesGPS() {
   const vehicles = useCollection("vehicles");
   const rentals = useCollection("rentals");
   const [tick, setTick] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null);
+  const search = useSearch({ strict: false }) as { v?: string };
+  const [selected, setSelected] = useState<string | null>(search.v ?? null);
+
+  useEffect(() => {
+    if (search.v) setSelected(search.v);
+  }, [search.v]);
 
   useEffect(() => {
     const t = setInterval(() => setTick((x) => x + 1), 3000);
