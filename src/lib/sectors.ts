@@ -23,6 +23,8 @@ export interface SubSectorConfig {
   tagline: string;
   hasQuickSale: boolean;
   metierModules: SectorModule[];
+  /** hrefs transversaux à masquer (déjà couverts par un module métier) */
+  crossExclude?: string[];
 }
 
 /** Modules transversaux ajoutés à tous les sous-secteurs */
@@ -89,6 +91,7 @@ export const SUB_SECTORS: Record<SubSectorId, SubSectorConfig> = {
       { href: "/app/auto/clients", iconName: "Users", label: "Clients auto" },
       { href: "/app/auto/rapports", iconName: "BarChart3", label: "Rapports auto" },
     ],
+    crossExclude: ["/app/clients", "/app/rapports"],
   },
   restaurant: {
     id: "restaurant",
@@ -106,6 +109,7 @@ export const SUB_SECTORS: Record<SubSectorId, SubSectorConfig> = {
       { href: "/app/resto/reservations", iconName: "CalendarDays", label: "Réservations" },
       { href: "/app/resto/menu", iconName: "UtensilsCrossed", label: "Menu" },
     ],
+    crossExclude: ["/app/categories"],
   },
 };
 
@@ -118,9 +122,19 @@ export function getSubSectorConfig(id?: string | null): SubSectorConfig {
   return SUB_SECTORS.boutique;
 }
 
+/** Modules transversaux réellement affichés pour un sous-secteur. */
+export function getCrossModules(id?: string | null): SectorModule[] {
+  const sub = getSubSectorConfig(id);
+  const excluded = new Set([
+    ...(sub.crossExclude ?? []),
+    ...sub.metierModules.map((m) => m.href),
+  ]);
+  return CROSS_MODULES.filter((m) => !excluded.has(m.href));
+}
+
 export function getAllModules(id?: string | null): SectorModule[] {
   const sub = getSubSectorConfig(id);
-  return [...sub.metierModules, ...CROSS_MODULES];
+  return [...sub.metierModules, ...getCrossModules(id)];
 }
 
 // ---- Backward-compatible exports (used by older code) ----

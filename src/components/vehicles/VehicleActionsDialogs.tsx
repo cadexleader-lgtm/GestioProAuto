@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/ui/money-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -153,9 +154,9 @@ export function RentVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
 
           {step === 2 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><Label>Tarif / jour (FCFA)</Label><Input type="number" value={f.dailyRate || 0} onChange={(e) => setF({ ...f, dailyRate: +e.target.value })} /></div>
-              <div><Label>Caution</Label><Input type="number" value={f.deposit || 0} onChange={(e) => setF({ ...f, deposit: +e.target.value })} /></div>
-              <div><Label>Avance versée</Label><Input type="number" value={f.advance || 0} onChange={(e) => setF({ ...f, advance: +e.target.value })} /></div>
+              <div><Label>Tarif / jour (FCFA)</Label><MoneyInput value={f.dailyRate} onChange={(v) => setF({ ...f, dailyRate: v })} /></div>
+              <div><Label>Caution</Label><MoneyInput value={f.deposit} onChange={(v) => setF({ ...f, deposit: v })} /></div>
+              <div><Label>Avance versée</Label><MoneyInput value={f.advance} onChange={(v) => setF({ ...f, advance: v })} /></div>
               <div><Label>Mode de paiement</Label>
                 <Select value={f.method || "Cash"} onValueChange={(v) => setF({ ...f, method: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -277,7 +278,7 @@ export function SellVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
         <div className="grid grid-cols-2 gap-3 mt-2">
           <div className="col-span-2"><Label>Client *</Label><Input value={f.customer || ""} onChange={(e) => setF({ ...f, customer: e.target.value })} /></div>
           <div><Label>Téléphone</Label><Input value={f.phone || ""} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
-          <div><Label>Montant total</Label><Input type="number" value={f.amount || 0} onChange={(e) => setF({ ...f, amount: +e.target.value })} /></div>
+          <div><Label>Montant total</Label><MoneyInput value={f.amount} onChange={(v) => setF({ ...f, amount: v })} /></div>
           <div className="col-span-2"><Label>Mode</Label>
             <Select value={f.payment} onValueChange={(v) => setF({ ...f, payment: v })}><SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="cash">Cash / Comptant</SelectItem><SelectItem value="credit">À crédit</SelectItem></SelectContent>
@@ -415,7 +416,7 @@ export function CreditPaymentDialog({ credit, open, onOpenChange }: { credit: Ve
           <DialogDescription>Crédit de {credit.customer} — {formatFCFA(credit.total)}</DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-3 mt-2">
-          <div><Label>Montant</Label><Input type="number" value={f.amount || 0} onChange={(e) => setF({ ...f, amount: +e.target.value })} /></div>
+          <div><Label>Montant</Label><MoneyInput value={f.amount} onChange={(v) => setF({ ...f, amount: v })} /></div>
           <div><Label>Date</Label><Input type="date" value={f.date || ""} onChange={(e) => setF({ ...f, date: e.target.value })} /></div>
           <div className="col-span-2"><Label>Méthode</Label>
             <Select value={f.method} onValueChange={(v) => setF({ ...f, method: v })}><SelectTrigger><SelectValue /></SelectTrigger>
