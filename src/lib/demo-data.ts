@@ -189,6 +189,7 @@ export interface Rental {
   returnKm?: number;
   fuelLevel?: string;
   conditionNote?: string;
+  notes?: string;
   status: "reserved" | "active" | "returned" | "overdue" | "cancelled";
 }
 export const rentals: Rental[] = [
