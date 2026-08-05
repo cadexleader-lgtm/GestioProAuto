@@ -213,6 +213,11 @@ export function VehiculesLocations() {
       </Dialog>
 
       <RentVehicleDialog vehicle={rentVehicle} open={!!rentVehicleId} onOpenChange={(o) => !o && setRentVehicleId(null)} />
+      <VehicleDetailSheet
+        vehicle={detailId ? vehicles.find((x) => x.id === detailId) ?? null : null}
+        open={!!detailId}
+        onOpenChange={(o) => !o && setDetailId(null)}
+      />
       <ReturnRentalDialog rentalId={returnId} vehicle={returnVehicle} open={!!returnId} onOpenChange={(o) => !o && setReturnId(null)} onConfirm={confirmReturn} />
     </div>
   );
