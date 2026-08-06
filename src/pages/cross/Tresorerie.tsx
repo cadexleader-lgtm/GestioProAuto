@@ -84,10 +84,10 @@ export function Tresorerie() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Kpi label="Solde de caisse" value={formatFCFA(balance)} icon={<Wallet size={17} className="text-primary" />} tone="primary" />
-        <Kpi label="Encaissements période" value={formatFCFA(periodIn)} icon={<ArrowDownLeft size={17} className="text-emerald-600" />} tone="emerald" />
-        <Kpi label="Décaissements période" value={formatFCFA(periodOut)} icon={<ArrowUpRight size={17} className="text-rose-600" />} tone="rose" />
+        <Kpi label="Encaissements" value={formatFCFA(periodIn)} icon={<ArrowDownLeft size={17} className="text-emerald-600" />} tone="emerald" />
+        <Kpi label="Décaissements" value={formatFCFA(periodOut)} icon={<ArrowUpRight size={17} className="text-rose-600" />} tone="rose" />
         <Kpi
-          label="Résultat net période"
+          label="Résultat net"
           value={`${net >= 0 ? "+" : "−"}${formatFCFA(Math.abs(net))}`}
           icon={<Scale size={17} className={net >= 0 ? "text-emerald-600" : "text-rose-600"} />}
           tone={net >= 0 ? "emerald" : "rose"}
