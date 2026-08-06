@@ -17,6 +17,16 @@ const ICON_MAP: Record<string, LucideIcon> = {
   ShieldCheck, FileSpreadsheet, Tv,
 };
 
+/** Shortens long module labels so they stay readable in the mobile tab bar. */
+function shortLabel(label: string) {
+  const cleaned = label
+    .replace(/^Tableau de bord.*$/i, "Accueil")
+    .replace(/\s*\(.*?\)\s*/g, " ")
+    .trim();
+  const first = cleaned.split(/\s+/)[0];
+  return first.length > 9 ? `${first.slice(0, 8)}.` : first;
+}
+
 /**
  * Glassmorphism bottom navigation for mobile.
  * Shows the 4 most-used modules for the current sub-sector + Settings.
@@ -26,7 +36,6 @@ export function MobileBottomNav() {
   const { data: company } = useGetCompany();
   const sub = getSubSectorConfig(company?.subSectorId);
 
-  // First 4 métier modules + settings entry
   const primary = sub.metierModules.slice(0, 4);
   const items = [
     ...primary,
@@ -35,31 +44,44 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)]"
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 pointer-events-none"
       aria-label="Navigation principale"
     >
-      <div className="mx-2 mb-2 rounded-3xl border border-white/40 dark:border-white/10 bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl shadow-[0_8px_32px_-8px_rgba(15,23,42,0.25)]">
-        <ul className="flex items-stretch justify-around px-1.5 py-1.5">
+      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background via-background/70 to-transparent" />
+
+      <div className="relative pointer-events-auto px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+        <ul className="grid grid-cols-5 gap-1 rounded-[26px] border border-white/50 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl shadow-[0_10px_40px_-12px_rgba(15,23,42,0.35)] p-1.5">
           {items.map((item) => {
             const Icon = ICON_MAP[item.iconName] ?? LayoutDashboard;
             const active = location === item.href;
             return (
-              <li key={item.href} className="flex-1">
+              <li key={item.href} className="min-w-0">
                 <Link
                   to={item.href}
+                  aria-current={active ? "page" : undefined}
+                  title={item.label}
                   className={cn(
-                    "relative flex flex-col items-center justify-center gap-0.5 py-2 rounded-2xl transition-all",
+                    "relative flex flex-col items-center justify-center gap-1 rounded-[20px] px-0.5 py-2 min-w-0 transition-colors duration-200",
                     active
                       ? "text-primary"
-                      : "text-slate-500 dark:text-slate-400 hover:text-slate-900",
+                      : "text-muted-foreground active:text-foreground",
                   )}
                 >
                   {active && (
-                    <span className="absolute inset-x-3 inset-y-1 rounded-2xl bg-primary/10" />
+                    <span className="absolute inset-0 rounded-[20px] bg-primary/10 ring-1 ring-primary/20" />
                   )}
-                  <Icon size={20} className="relative z-10" strokeWidth={active ? 2.4 : 2} />
-                  <span className="relative z-10 text-[10px] font-semibold leading-none truncate max-w-[60px]">
-                    {item.label}
+                  <Icon
+                    size={20}
+                    className={cn("relative z-10 shrink-0 transition-transform", active && "scale-110")}
+                    strokeWidth={active ? 2.4 : 1.9}
+                  />
+                  <span
+                    className={cn(
+                      "relative z-10 block w-full truncate text-center text-[10px] leading-tight tracking-tight",
+                      active ? "font-bold" : "font-medium",
+                    )}
+                  >
+                    {shortLabel(item.label)}
                   </span>
                 </Link>
               </li>
