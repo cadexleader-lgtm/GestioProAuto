@@ -87,8 +87,9 @@ export function VehiculesList() {
         <Kpi icon={<Wrench className="text-amber-600" size={18} />} label="Maintenance" value={stats.maintenance} active={filter === "maintenance"} onClick={() => setFilter("maintenance")} />
         <Kpi
           icon={<TrendingUp className="text-violet-600" size={18} />}
-          label="Valeur stock"
+          label="Valeur stock (revient)"
           valueText={formatFCFA(stats.stockValue)}
+          hint={`Revente est. ${formatFCFA(stats.resaleValue)} · Marge ${formatFCFA(stats.resaleValue - stats.stockValue)}`}
           tone="violet"
         />
       </div>
