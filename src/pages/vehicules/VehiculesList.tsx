@@ -47,10 +47,11 @@ export function VehiculesList() {
     const rented = vehicles.filter((v) => v.status === "rented").length;
     const sold = vehicles.filter((v) => v.status === "sold").length;
     const maintenance = vehicles.filter((v) => v.status === "maintenance").length;
-    const stockValue = vehicles
-      .filter((v) => v.status !== "sold")
-      .reduce((s, v) => s + (v.purchasePrice || 0), 0);
-    return { total, available, rented, sold, maintenance, stockValue };
+    const inStock = vehicles.filter((v) => v.status !== "sold");
+    // Valeur de stock = prix de revient complet (achat + import + douane + réparations + entretien)
+    const stockValue = inStock.reduce((s, v) => s + vehicleCost(v), 0);
+    const resaleValue = inStock.reduce((s, v) => s + (v.sellingPrice || 0), 0);
+    return { total, available, rented, sold, maintenance, stockValue, resaleValue };
   }, [vehicles]);
 
   const filtered = useMemo(() => {
