@@ -47,10 +47,11 @@ export function VehiculesList() {
     const rented = vehicles.filter((v) => v.status === "rented").length;
     const sold = vehicles.filter((v) => v.status === "sold").length;
     const maintenance = vehicles.filter((v) => v.status === "maintenance").length;
-    const stockValue = vehicles
-      .filter((v) => v.status !== "sold")
-      .reduce((s, v) => s + (v.purchasePrice || 0), 0);
-    return { total, available, rented, sold, maintenance, stockValue };
+    const inStock = vehicles.filter((v) => v.status !== "sold");
+    // Valeur de stock = prix de revient complet (achat + import + douane + réparations + entretien)
+    const stockValue = inStock.reduce((s, v) => s + vehicleCost(v), 0);
+    const resaleValue = inStock.reduce((s, v) => s + (v.sellingPrice || 0), 0);
+    return { total, available, rented, sold, maintenance, stockValue, resaleValue };
   }, [vehicles]);
 
   const filtered = useMemo(() => {
@@ -86,8 +87,9 @@ export function VehiculesList() {
         <Kpi icon={<Wrench className="text-amber-600" size={18} />} label="Maintenance" value={stats.maintenance} active={filter === "maintenance"} onClick={() => setFilter("maintenance")} />
         <Kpi
           icon={<TrendingUp className="text-violet-600" size={18} />}
-          label="Valeur stock"
+          label="Valeur stock (revient)"
           valueText={formatFCFA(stats.stockValue)}
+          hint={`Revente est. ${formatFCFA(stats.resaleValue)} · Marge ${formatFCFA(stats.resaleValue - stats.stockValue)}`}
           tone="violet"
         />
       </div>
@@ -192,10 +194,10 @@ export function VehiculesList() {
 }
 
 function Kpi({
-  icon, label, value, valueText, active, onClick, tone,
+  icon, label, value, valueText, active, onClick, tone, hint,
 }: {
   icon: React.ReactNode; label: string;
-  value?: number; valueText?: string;
+  value?: number; valueText?: string; hint?: string;
   active?: boolean; onClick?: () => void;
   tone?: "violet";
 }) {
@@ -209,12 +211,13 @@ function Kpi({
   return (
     <Comp onClick={onClick} className={`${base} ${palette} hover:-translate-y-0.5 w-full`}>
       <div className="flex items-center gap-2 mb-1.5">
-        <div className="w-7 h-7 rounded-lg bg-white/80 flex items-center justify-center shadow-sm">{icon}</div>
-        <p className="text-[10px] sm:text-xs uppercase tracking-wider font-bold text-muted-foreground truncate">{label}</p>
+        <div className="w-7 h-7 rounded-lg bg-white/80 flex items-center justify-center shadow-sm shrink-0">{icon}</div>
+        <p className="min-w-0 text-[10px] sm:text-xs uppercase tracking-wider font-bold text-muted-foreground truncate">{label}</p>
       </div>
       <p className="font-display font-bold text-lg sm:text-xl tabular-nums truncate">
         {valueText ?? value}
       </p>
+      {hint && <p className="mt-1 text-[10px] leading-tight text-muted-foreground line-clamp-2">{hint}</p>}
     </Comp>
   );
 }

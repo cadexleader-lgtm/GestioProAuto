@@ -68,26 +68,26 @@ export function Tresorerie() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:flex-wrap sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:flex-wrap">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Trésorerie & Caisse</h1>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Trésorerie &amp; Caisse</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Journal de caisse synchronisé : ventes, locations, crédits, salaires et dépenses.
           </p>
         </div>
-        <div className="flex gap-2 flex-wrap shrink-0">
-          <Button variant="outline" size="sm" onClick={() => setType("in")}><ArrowDownLeft size={15}/> Entrée</Button>
-          <Button variant="outline" size="sm" onClick={() => setType("out")}><ArrowUpRight size={15}/> Sortie</Button>
-          <Button size="sm" onClick={() => setType("transfer")}><ArrowLeftRight size={15}/> Virement</Button>
+        <div className="grid grid-cols-3 gap-2 sm:flex sm:shrink-0">
+          <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setType("in")}><ArrowDownLeft size={15}/> Entrée</Button>
+          <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setType("out")}><ArrowUpRight size={15}/> Sortie</Button>
+          <Button size="sm" className="w-full sm:w-auto" onClick={() => setType("transfer")}><ArrowLeftRight size={15}/> Virement</Button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Kpi label="Solde de caisse" value={formatFCFA(balance)} icon={<Wallet size={17} className="text-primary" />} tone="primary" />
-        <Kpi label="Encaissements période" value={formatFCFA(periodIn)} icon={<ArrowDownLeft size={17} className="text-emerald-600" />} tone="emerald" />
-        <Kpi label="Décaissements période" value={formatFCFA(periodOut)} icon={<ArrowUpRight size={17} className="text-rose-600" />} tone="rose" />
+        <Kpi label="Encaissements" value={formatFCFA(periodIn)} icon={<ArrowDownLeft size={17} className="text-emerald-600" />} tone="emerald" />
+        <Kpi label="Décaissements" value={formatFCFA(periodOut)} icon={<ArrowUpRight size={17} className="text-rose-600" />} tone="rose" />
         <Kpi
-          label="Résultat net période"
+          label="Résultat net"
           value={`${net >= 0 ? "+" : "−"}${formatFCFA(Math.abs(net))}`}
           icon={<Scale size={17} className={net >= 0 ? "text-emerald-600" : "text-rose-600"} />}
           tone={net >= 0 ? "emerald" : "rose"}
@@ -198,12 +198,12 @@ function Kpi({ label, value, icon, tone }: { label: string; value: string; icon:
   }[tone];
   return (
     <Card className={`rounded-2xl bg-gradient-to-br ${cls}`}>
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-2 gap-2">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold truncate">{label}</p>
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex items-start justify-between mb-1.5 gap-2">
+          <p className="min-w-0 text-[10px] uppercase tracking-wider text-muted-foreground font-bold leading-tight">{label}</p>
           <span className="shrink-0">{icon}</span>
         </div>
-        <p className="font-display font-bold text-xl sm:text-2xl tabular-nums truncate">{value}</p>
+        <p className="font-display font-bold text-base sm:text-2xl tabular-nums truncate">{value}</p>
       </CardContent>
     </Card>
   );
