@@ -198,12 +198,12 @@ function Kpi({ label, value, icon, tone }: { label: string; value: string; icon:
   }[tone];
   return (
     <Card className={`rounded-2xl bg-gradient-to-br ${cls}`}>
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-2 gap-2">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold truncate">{label}</p>
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex items-start justify-between mb-1.5 gap-2">
+          <p className="min-w-0 text-[10px] uppercase tracking-wider text-muted-foreground font-bold leading-tight">{label}</p>
           <span className="shrink-0">{icon}</span>
         </div>
-        <p className="font-display font-bold text-xl sm:text-2xl tabular-nums truncate">{value}</p>
+        <p className="font-display font-bold text-base sm:text-2xl tabular-nums truncate">{value}</p>
       </CardContent>
     </Card>
   );
