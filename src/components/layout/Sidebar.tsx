@@ -27,7 +27,6 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Car, KeyRound, MapPin, CreditCard, ShieldCheck, FileSpreadsheet, Tv, Tags, Wrench,
 };
 
-
 export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const location = useLocation({ select: (s) => s.pathname });
   const { data: company } = useGetCompany();
@@ -36,37 +35,72 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const [hovered, setHovered] = useState(false);
 
   const alertsCount = dashboard?.lowStock?.length || 0;
-  // On mobile: expanded when isOpen. On desktop: expanded on hover.
+  // Mobile: expanded when isOpen. Desktop: expanded on hover.
   const expanded = isOpen || hovered;
 
-  const renderItem = (item: typeof sub.metierModules[number]) => {
+  const renderItem = (item: { href: string; iconName: string; label: string; badge?: string }) => {
     const Icon = ICON_MAP[item.iconName] ?? LayoutDashboard;
     const active = location === item.href;
     const showBadge = item.badge === "alerts" && alertsCount > 0;
     return (
-      <Link key={item.href} to={item.href} onClick={() => setIsOpen(false)} className="block" title={!expanded ? item.label : undefined}>
-        <div className={cn(
-          "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all group relative cursor-pointer",
-          active ? "bg-primary/10 text-primary font-semibold" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground font-medium"
-        )}>
-          {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary rounded-r-full" />}
-          <Icon size={18} className="shrink-0" />
-          <span className={cn("text-sm truncate flex-1 transition-opacity duration-200", !expanded && "md:opacity-0 md:pointer-events-none")}>{item.label}</span>
-          {showBadge && (
-            <span className={cn(
-              "ml-auto bg-destructive/15 text-destructive text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0 transition-opacity",
-              !expanded && "md:opacity-0"
-            )}>
-              {alertsCount}
-            </span>
+      <Link
+        key={item.href}
+        to={item.href}
+        onClick={() => setIsOpen(false)}
+        title={!expanded ? item.label : undefined}
+        aria-current={active ? "page" : undefined}
+        className={cn(
+          "group relative flex items-center gap-3 rounded-xl h-10 px-2 transition-colors duration-200",
+          active
+            ? "bg-primary/10 text-primary"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        )}
+      >
+        <span
+          className={cn(
+            "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-primary transition-all duration-200",
+            active ? "h-5 opacity-100" : "h-0 opacity-0",
           )}
-          {!expanded && showBadge && (
-            <span className="hidden md:block absolute top-1 right-1 w-2 h-2 rounded-full bg-destructive" />
+        />
+        <span
+          className={cn(
+            "grid place-items-center h-8 w-8 shrink-0 rounded-lg transition-colors",
+            active ? "bg-primary/15 text-primary" : "text-current group-hover:bg-sidebar-accent",
           )}
-        </div>
+        >
+          <Icon size={17} strokeWidth={active ? 2.4 : 1.9} />
+        </span>
+        <span
+          className={cn(
+            "min-w-0 flex-1 truncate text-[13px] transition-all duration-200",
+            active ? "font-semibold" : "font-medium",
+            !expanded && "md:opacity-0 md:pointer-events-none",
+          )}
+        >
+          {item.label}
+        </span>
+        {showBadge && expanded && (
+          <span className="shrink-0 rounded-md bg-destructive/15 px-1.5 py-0.5 text-[10px] font-bold text-destructive">
+            {alertsCount}
+          </span>
+        )}
+        {showBadge && !expanded && (
+          <span className="hidden md:block absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-sidebar" />
+        )}
       </Link>
     );
   };
+
+  const sectionLabel = (label: string) => (
+    <div className="px-2 pt-4 pb-1.5">
+      {expanded ? (
+        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-sidebar-foreground/40">{label}</p>
+      ) : (
+        <div className="hidden md:block mx-auto h-px w-6 bg-sidebar-border" />
+      )}
+      {expanded ? null : <p className="md:hidden text-[10px] font-bold uppercase tracking-[0.12em] text-sidebar-foreground/40">{label}</p>}
+    </div>
+  );
 
   return (
     <>
@@ -77,79 +111,76 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         />
       )}
 
-      {/* Desktop spacer to reserve mini-rail width in the flex layout */}
-      <div className="hidden md:block shrink-0 w-16" aria-hidden="true" />
+      {/* Desktop spacer reserving the mini-rail width */}
+      <div className="hidden md:block shrink-0 w-[68px]" aria-hidden="true" />
 
       <aside
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         className={cn(
-          "fixed inset-y-0 left-0 z-50 bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300 ease-in-out shrink-0",
-          // Mobile: full width drawer, slides in/out
-          "w-64 md:w-16",
-          expanded && "md:w-64 md:shadow-xl",
-          !isOpen && "-translate-x-full md:translate-x-0"
+          "fixed inset-y-0 left-0 z-50 flex flex-col shrink-0 border-r border-sidebar-border",
+          "bg-sidebar/95 backdrop-blur-xl transition-[width,transform] duration-300 ease-out",
+          "w-[264px] md:w-[68px]",
+          expanded && "md:w-[248px] md:shadow-[0_20px_60px_-20px_rgba(15,23,42,0.35)]",
+          !isOpen && "-translate-x-full md:translate-x-0",
         )}
       >
-        <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border shrink-0 overflow-hidden">
-          <Link to="/app" className="flex items-center gap-2 min-w-0">
-            <img src={logoIcon} alt="GestioPro" className="w-8 h-8 rounded-lg shrink-0" />
-            <div className={cn("flex flex-col leading-tight transition-opacity duration-200", !expanded && "md:opacity-0 md:pointer-events-none")}>
-              <span className="font-display font-bold text-base text-sidebar-foreground whitespace-nowrap">GestioPro</span>
-              <span className="text-[10px] text-sidebar-foreground/50 font-medium whitespace-nowrap">ERP Suite</span>
-            </div>
+        {/* Brand */}
+        <div className="h-16 shrink-0 flex items-center gap-2 px-3 border-b border-sidebar-border overflow-hidden">
+          <Link to="/app" className="flex items-center gap-2.5 min-w-0 flex-1">
+            <img src={logoIcon} alt="GestioPro" className="h-9 w-9 shrink-0 rounded-xl shadow-sm" />
+            <span
+              className={cn(
+                "flex min-w-0 flex-col leading-tight transition-opacity duration-200",
+                !expanded && "md:opacity-0 md:pointer-events-none",
+              )}
+            >
+              <span className="font-display text-[15px] font-bold text-sidebar-foreground truncate">GestioPro</span>
+              <span className="text-[10px] font-medium text-sidebar-foreground/50 truncate">{sub.label}</span>
+            </span>
           </Link>
           <button
             onClick={() => setIsOpen(false)}
-            className="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
+            className="md:hidden rounded-lg p-2 text-sidebar-foreground/60 hover:bg-sidebar-accent"
+            aria-label="Fermer le menu"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        {/* Sub-sector badge */}
-        <div className={cn("px-4 pt-4 pb-2 transition-all duration-200 overflow-hidden", !expanded && "md:px-2 md:pt-3")}>
-          <div className={cn(
-            "rounded-lg border border-primary/15 bg-primary/5 transition-all",
-            expanded ? "px-3 py-2" : "md:px-0 md:py-2 md:flex md:justify-center"
-          )}>
-            <p className={cn("text-[10px] font-bold uppercase tracking-wider text-primary/70 transition-opacity", !expanded && "md:hidden")}>Activité</p>
-            <p className={cn("text-sm font-semibold text-sidebar-foreground mt-0.5 truncate transition-opacity", !expanded && "md:hidden")}>{sub.label}</p>
-            {!expanded && (
-              <span className="hidden md:block text-[10px] font-bold text-primary uppercase tracking-wider">{sub.label.charAt(0)}</span>
-            )}
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-3 space-y-0.5 custom-scrollbar">
-          <p className={cn("text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/40 px-3 mt-2 mb-1 transition-opacity", !expanded && "md:opacity-0")}>Métier</p>
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2.5 py-2 custom-scrollbar space-y-0.5">
+          {sectionLabel("Métier")}
           {sub.metierModules.map(renderItem)}
 
-          <p className={cn("text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/40 px-3 mt-4 mb-1 transition-opacity", !expanded && "md:opacity-0")}>Transversal</p>
+          {sectionLabel("Transversal")}
           {getCrossModules(company?.subSectorId).map(renderItem)}
 
-          <p className={cn("text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/40 px-3 mt-4 mb-1 transition-opacity", !expanded && "md:opacity-0")}>Entreprise</p>
-          <Link to="/app/parametres" onClick={() => setIsOpen(false)} className="block" title={!expanded ? "Paramètres" : undefined}>
-            <div className={cn(
-              "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all cursor-pointer",
-              location === "/app/parametres" ? "bg-primary/10 text-primary font-semibold" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground font-medium"
-            )}>
-              <Settings size={18} className="shrink-0" />
-              <span className={cn("text-sm truncate transition-opacity", !expanded && "md:opacity-0 md:pointer-events-none")}>Paramètres</span>
-            </div>
-          </Link>
-        </div>
+          {sectionLabel("Entreprise")}
+          {renderItem({ href: "/app/parametres", iconName: "Settings", label: "Paramètres" })}
+        </nav>
 
-        <div className="p-3 border-t border-sidebar-border shrink-0 overflow-hidden">
-          <div className={cn("flex items-center gap-3 rounded-lg p-2 bg-sidebar-accent/50", !expanded && "md:p-1 md:bg-transparent md:justify-center")}>
-            <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center shrink-0 text-sm">
-              {company?.ownerName?.charAt(0) || "G"}
+        {/* User */}
+        <div className="shrink-0 border-t border-sidebar-border p-2.5">
+          <div
+            className={cn(
+              "flex items-center gap-2.5 rounded-xl p-1.5 transition-colors",
+              expanded ? "bg-sidebar-accent/60" : "md:justify-center",
+            )}
+          >
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+              {company?.ownerName?.charAt(0)?.toUpperCase() || "G"}
             </div>
-            <div className={cn("flex flex-col min-w-0 transition-opacity duration-200", !expanded && "md:opacity-0 md:pointer-events-none md:w-0")}>
-              <span className="text-xs font-semibold text-sidebar-foreground truncate whitespace-nowrap">
+            <div
+              className={cn(
+                "flex min-w-0 flex-col transition-opacity duration-200",
+                !expanded && "md:w-0 md:opacity-0 md:pointer-events-none",
+              )}
+            >
+              <span className="truncate text-xs font-semibold text-sidebar-foreground">
                 {company?.ownerName || "Utilisateur"}
               </span>
-              <span className="text-[11px] text-sidebar-foreground/60 truncate whitespace-nowrap">{company?.name}</span>
+              <span className="truncate text-[11px] text-sidebar-foreground/60">{company?.name}</span>
             </div>
           </div>
         </div>
