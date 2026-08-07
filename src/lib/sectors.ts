@@ -91,7 +91,7 @@ export const SUB_SECTORS: Record<SubSectorId, SubSectorConfig> = {
       { href: "/app/auto/clients", iconName: "Users", label: "Clients auto" },
       { href: "/app/auto/rapports", iconName: "BarChart3", label: "Rapports auto" },
     ],
-    crossExclude: ["/app/clients", "/app/rapports"],
+    crossExclude: ["/app/clients", "/app/rapports", "/app/fournisseurs"],
   },
   restaurant: {
     id: "restaurant",

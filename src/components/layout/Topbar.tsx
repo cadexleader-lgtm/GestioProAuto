@@ -9,6 +9,7 @@ import { useGetCompany } from "@workspace/api-client-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { NotificationsBell } from "./NotificationsBell";
+import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,6 +100,8 @@ export function Topbar({ onMenuClick, onNewSale, showQuickSale = true }: TopbarP
         >
           <FileText size={18} />
         </Link>
+
+        <InstallAppButton className="hidden md:inline-flex h-9" />
 
         <NotificationsBell />
 
