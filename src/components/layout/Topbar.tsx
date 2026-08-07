@@ -100,6 +100,8 @@ export function Topbar({ onMenuClick, onNewSale, showQuickSale = true }: TopbarP
           <FileText size={18} />
         </Link>
 
+        <InstallAppButton className="hidden md:inline-flex h-9" />
+
         <NotificationsBell />
 
         {showQuickSale && (
