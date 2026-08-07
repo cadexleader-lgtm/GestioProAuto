@@ -160,26 +160,15 @@ export function Settings() {
 
       <Card className="shadow-sm border-slate-200">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Database size={18}/> Données de démonstration</CardTitle>
+          <CardTitle className="flex items-center gap-2"><Database size={18}/> Données de l'entreprise</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            GestioPro peut être chargé avec un jeu de données fictives pour vos présentations,
-            ou totalement vidé pour démarrer sur une base propre en production.
+            Repartez d'une base totalement vierge pour l'exploitation réelle. Votre profil
+            d'entreprise et vos paramètres de documents sont conservés.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-xl"
-              onClick={() => {
-                void db.loadDemo().then(() =>
-                  toast.success("Données de démonstration chargées"),
-                );
-              }}
-            >
-              <Sparkles size={16} /> Charger les données de démo
-            </Button>
+
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
