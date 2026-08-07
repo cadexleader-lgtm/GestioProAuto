@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect } from "react";
 import { SUB_SECTORS_ARRAY } from "@/lib/sectors";
 import { db } from "@/lib/demo-store";
-import { Database, Trash2, Sparkles, Shield, Volume2 } from "lucide-react";
+import { Database, Trash2, Shield, Volume2 } from "lucide-react";
 import { ROLES, setRole, useRole } from "@/lib/roles";
 import { isSoundEnabled, setSoundEnabled } from "@/lib/notifications";
 import { Switch } from "@/components/ui/switch";
