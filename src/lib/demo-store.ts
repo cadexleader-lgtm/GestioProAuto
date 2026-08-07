@@ -141,6 +141,11 @@ export interface VehicleSale {
 }
 
 
+export interface CompanySetting {
+  id: string;
+  [key: string]: any;
+}
+
 // ===== Collection registry =====
 type CollectionMap = {
   suppliers: Supplier;
@@ -172,6 +177,7 @@ type CollectionMap = {
   restoTables: RestaurantTable;
   orders: RestaurantOrder;
   documents: ArchivedDocument;
+  settings: CompanySetting;
 };
 
 
@@ -219,6 +225,7 @@ const seeds: { [K in keyof CollectionMap]: CollectionMap[K][] } = {
   restoTables: seedTables,
   orders: seedOrders,
   documents: [],
+  settings: [],
 };
 
 
@@ -253,6 +260,7 @@ const TABLES: Record<keyof CollectionMap, string> = {
   restoTables: "resto_tables",
   orders: "orders",
   documents: "documents",
+  settings: "company_settings",
 };
 
 const ALL_KEYS = Object.keys(TABLES) as Array<keyof CollectionMap>;
@@ -379,6 +387,21 @@ export const db = {
     notify(name);
     if (companyId) {
       fireAndForget(sb.from(TABLES[name]).delete().eq("company_id", companyId).eq("id", id));
+    }
+  },
+  /** Insert or update by id (used for singleton rows like company settings). */
+  upsert<K extends keyof CollectionMap>(name: K, item: CollectionMap[K] & { id: string }): void {
+    const exists = ((stores[name] ?? []) as any[]).some((it: any) => it.id === item.id);
+    if (exists) {
+      db.update(name, item.id, item as any);
+      return;
+    }
+    stores[name] = [item, ...(stores[name] ?? [])] as any;
+    notify(name);
+    if (companyId) {
+      fireAndForget(
+        sb.from(TABLES[name]).upsert(row(item.id, item), { onConflict: "company_id,id" }),
+      );
     }
   },
   reset<K extends keyof CollectionMap>(name: K): void {
