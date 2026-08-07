@@ -89,7 +89,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "theme-color", content: "#2563eb" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { name: "apple-mobile-web-app-title", content: "GestioPro" },
+      { name: "application-name", content: "GestioPro" },
       { title: "GestioPro — L'ERP des PME africaines (Commerce, Restaurant, Véhicules, Électroménager)" },
       { name: "description", content: "GestioPro : la plateforme tout-en-un pour gérer ventes, stock, clients, fournisseurs, personnel et finances. Pensée pour le commerce africain." },
       { property: "og:site_name", content: "GestioPro" },
