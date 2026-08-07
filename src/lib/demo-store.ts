@@ -137,6 +137,7 @@ export interface VehicleSale {
   documents?: { id: string; name: string; type: string; dataUrl: string; uploadedAt: string; size: number }[];
   delivery?: { date: string; km: number; fuelLevel: string; conditionNote?: string; signed: boolean };
   reminders?: { insuranceExpiry?: string; techControlExpiry?: string; nextDueDate?: string };
+  signatures?: { client?: string; vendor?: string; signedAt?: string };
   status: "draft" | "documents" | "sale" | "payment" | "delivery" | "done";
 }
 

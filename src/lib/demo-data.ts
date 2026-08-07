@@ -159,6 +159,7 @@ export interface VehicleCredit {
   paidMonths: number;
   totalMonths: number;
   nextDueDate: string;
+  signatures?: { client?: string; vendor?: string; signedAt?: string };
   status: "ok" | "late";
 }
 
@@ -190,6 +191,7 @@ export interface Rental {
   fuelLevel?: string;
   conditionNote?: string;
   notes?: string;
+  signatures?: { client?: string; vendor?: string; signedAt?: string };
   status: "reserved" | "active" | "returned" | "overdue" | "cancelled";
 }
 export const rentals: Rental[] = [
