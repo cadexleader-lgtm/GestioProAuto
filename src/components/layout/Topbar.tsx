@@ -9,6 +9,7 @@ import { useGetCompany } from "@workspace/api-client-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { NotificationsBell } from "./NotificationsBell";
+import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 import {
   DropdownMenu,
   DropdownMenuContent,
