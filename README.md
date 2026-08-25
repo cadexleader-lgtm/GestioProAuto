@@ -191,7 +191,7 @@ Dashboard metrics include:
 
 GestioPro Auto is designed around the real workflow of automotive businesses.
 
-```text
+
 Vehicle Added
       ↓
 Inventory
@@ -209,3 +209,111 @@ Payment
 Sale
       ↓
 Vehicle Delivered
+****
+🏗️ Platform Architecture
+
+GestioPro Auto is being designed as a specialized automotive SaaS platform.
+
+The architecture is intended to be:
+
+Modular
+Scalable
+Secure
+Multi-tenant
+Cloud-based
+Mobile responsive
+API-ready
+
+Each company can manage its own:
+
+Vehicles
+Customers
+Sales
+Documents
+Users
+Financial information
+Business settings
+🛠️ Technologies
+Frontend
+React
+TypeScript
+Tailwind CSS
+Data & Backend
+PostgreSQL
+Supabase
+REST APIs
+Development Tools
+Git
+GitHub
+VS Code
+Lovable
+AI-Assisted Development
+Claude Code
+OpenAI Codex
+GitHub Copilot
+🎨 Design Philosophy
+
+GestioPro Auto focuses on a modern and professional SaaS experience.
+
+The interface is designed to be:
+
+Clean
+Modern
+Professional
+Fast
+Responsive
+Mobile-friendly
+Easy to use
+
+The design philosophy takes inspiration from modern products such as:
+
+Linear
+Stripe
+Notion
+Shopify
+
+while maintaining a visual identity adapted specifically to the automotive industry.
+
+🚀 Project Status
+
+GestioPro Auto is currently under active development.
+
+The project is being progressively expanded with new automotive management features and business workflows.
+
+Current focus
+Vehicle management
+Inventory
+Customers
+Reservations
+Sales
+Documents
+Insurance
+Business dashboard
+Automotive workflows
+🌍 Long-Term Vision
+
+GestioPro Auto aims to become a leading automotive business management platform in Africa.
+
+The long-term objective is to provide automotive businesses with the infrastructure they need to:
+
+Digitize their operations
+Reduce administrative work
+Improve vehicle tracking
+Increase sales efficiency
+Centralize business data
+Make better decisions through analytics
+🚗 One platform. One automotive ecosystem.
+🔗 Live Demo
+
+Live application:
+https://gestiopro-a.lovable.app
+
+👨‍💻 Developer
+
+Clarence Alvin HAZOUME
+
+Junior Full-Stack Web Developer
+Cotonou, Benin 🇧🇯
+
+LinkedIn: https://www.linkedin.com/in/alvin-clarence-hazoume-4628b4286/
+GitHub: https://github.com/cadexleader-lgtm
