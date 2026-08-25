@@ -1,474 +1,211 @@
-# GestioProAuto
+# 🚗 GestioPro Auto
 
-Projet : GestioPro
+### The all-in-one SaaS management platform for automotive businesses
 
-Je veux créer une plateforme SaaS moderne appelée GestioPro.
+GestioPro Auto is a modern SaaS platform designed specifically for **automotive businesses**.
 
-L'objectif est de construire la plateforme de gestion d'entreprise la plus adaptée aux PME africaines.
+The goal is simple: help car dealerships, vehicle importers, automotive retailers and other automotive professionals manage their operations from a single platform.
 
-Vision
+From vehicle inventory to sales, customer management, documents, insurance tracking and business performance, GestioPro Auto brings the essential tools together in one place.
 
-GestioPro est une plateforme modulaire.
+---
 
-Une seule base de code doit permettre de gérer plusieurs types d'entreprises :
+## 🎯 Vision
 
-Commerce et boutiques
+The automotive industry still relies heavily on spreadsheets, paper documents, WhatsApp conversations and disconnected tools.
 
-Magasins de téléphones
+GestioPro Auto aims to solve this problem by providing a **centralized digital operating system for automotive businesses**.
 
-Supermarchés
+Instead of using multiple tools for different tasks, businesses can manage their automotive operations from one platform.
 
-Restaurants
+### Our vision
 
-Assurances
+> **Build a powerful digital management platform dedicated to the automotive industry in Africa.**
 
-Cliniques
+The platform is designed with African automotive businesses in mind, while remaining scalable for international markets.
 
-Écoles
+---
 
-Entreprises de services
+## 🚘 Who is GestioPro Auto for?
 
-Chaque entreprise active uniquement les modules dont elle a besoin.
+GestioPro Auto is designed for:
 
-Le système doit adapter automatiquement l'interface selon :
+- 🚗 Car dealerships
+- 🚙 Used-car dealers
+- 🚢 Vehicle importers
+- 🏢 Automotive companies
+- 🤝 Vehicle brokers
+- 📦 Automotive retailers
+- 🔧 Automotive businesses managing vehicle operations
 
-le secteur d'activité
+---
 
-les modules activés
+## ⚙️ Core Features
 
-le rôle de l'utilisateur
+### 🚗 Vehicle Management
 
-Exemple :
+Centralize all vehicle information in one place.
 
-Une boutique voit :
+- Add and edit vehicles
+- Vehicle reference
+- Make and model
+- Year
+- Mileage
+- Engine information
+- Purchase price
+- Selling price
+- Vehicle status
+- Vehicle photos
+- Vehicle documents
+- Availability tracking
+- Vehicle history
 
-Produits
+---
 
-Stock
+### 📦 Inventory Management
 
-Ventes
+Get a clear overview of the vehicles available in your business.
 
-Clients
+- Available vehicles
+- Reserved vehicles
+- Sold vehicles
+- Vehicles in transit
+- Inventory valuation
+- Stock history
+- Vehicle status tracking
+- Search and filtering
 
-Rapports
+---
 
-Un restaurant voit :
+### 👤 Customer Management
 
-Tables
+Manage your customers and their relationship with your business.
 
-Cuisine
+- Customer profiles
+- Contact information
+- Purchase history
+- Reservations
+- Customer interactions
+- Customer documents
+- Customer status
+- WhatsApp contact
 
-Commandes
+---
 
-Serveurs
+### 💰 Sales Management
 
-Rapports
+Manage the complete vehicle sales process.
 
-Une assurance voit :
-
-Clients
-
-Contrats
-
-Sinistres
-
-Rapports
-
-Le cœur du système reste identique.
-
-Style de design
-
-Créer une interface :
-
-Premium
-
-Moderne
-
-Professionnelle
-
-Inspirée de Stripe
-
-Inspirée de Notion
-
-Inspirée de Linear
-
-Inspirée de Shopify
-
-Couleurs :
-
-Bleu principal (#2563EB)
-
-Blanc
-
-Gris clair
-
-Vert pour les bénéfices
-
-Rouge pour les alertes
-
-Design :
-
-Cartes modernes
-
-Animations fluides
-
-Ombres douces
-
-Responsive
-
-Mobile First
-
-Desktop optimisé
-
-Utiliser :
-
-React
-
-Next.js
-
-Tailwind CSS
-
-Framer Motion
-
-Recharts
-
-Authentification
-
-Pages :
-
-Connexion
-
-Inscription
-
-Mot de passe oublié
-
-Fonctionnalités :
-
-JWT
-
-Multi-tenant
-
-Gestion des rôles
-
-Rôles :
-
-Owner
-
-Manager
-
-Employé
-
-Caissier
-
-Serveur
-
-Cuisinier
-
-Dashboard principal
-
-Afficher :
-
-Chiffre d'affaires
-
-Bénéfices
-
-Produits vendus
-
-Clients
-
-Stock faible
-
-Dettes clients
-
-Widgets :
-
-Graphique revenus
-
-Graphique bénéfices
-
-Top produits
-
-Top clients
-
-Alertes stock
-
-Gestion Produits
-
-Fonctionnalités :
-
-Ajouter produit
-
-Modifier produit
-
-Supprimer produit
-
-Scanner code barre
-
-Catégories
-
-Prix achat
-
-Prix vente
-
-Stock
-
-Photos produit
-
-Gestion Stock
-
-Fonctionnalités :
-
-Entrées stock
-
-Sorties stock
-
-Historique
-
-Alertes rupture
-
-Alertes stock faible
-
-Gestion Clients
-
-Fonctionnalités :
-
-Fiche client
-
-Historique achats
-
-Détection client VIP
-
-Gestion dettes
-
-WhatsApp direct
-
-Statistiques client
-
-Afficher :
-
-Total dépensé
-
-Nombre commandes
-
-Dernier achat
-
-Dette
-
-Statut VIP
-
-Gestion Fournisseurs
-
-Fonctionnalités :
-
-Liste fournisseurs
-
-Historique achats
-
-Dettes fournisseurs
-
-Commandes fournisseurs
-
-Gestion Ventes
-
-Fonctionnalités :
-
-Nouvelle vente
-
-Panier
-
-Calcul bénéfice
-
-Impression ticket
-
-PDF
-
-WhatsApp
-
-Vente comptant
-
-Vente à crédit
-
-Gestion Tickets
-
-Fonctionnalités :
-
-Ticket thermique
-
-Ticket PDF
-
-Ticket WhatsApp
-
-Contenu :
-
-Logo entreprise
-
-Produits
-
-Quantités
-
-Totaux
-
-Client
-
-Date
-
-Page Rapports
-
-Filtres :
-
-Jour
-
-Semaine
-
-Mois
-
-Année
-
-Personnalisé
-
-Statistiques :
-
-Revenus
-
-Bénéfices
-
-Ventes
-
-Clients
-
-Produits
-
-Graphiques :
-
-Évolution revenus
-
-Évolution bénéfices
-
-Répartition paiements
-
-Top produits
-
-Top clients
-
-Exports :
-
-PDF
-
-Excel
-
-Module Restaurant
-
-Fonctionnalités :
-
-Gestion tables
-
-QR Code par table
-
-Menu digital
-
-Commande client directe
-
-Commande serveur
-
-Cuisine en temps réel
-
-Statuts commande
-
-Workflow :
-
-Client → Cuisine → Serveur → Facture
-
-Module Assurance
-
-Fonctionnalités :
-
-Gestion clients
-
-Gestion contrats
-
-Gestion sinistres
-
-Suivi paiements
-
-Rapports
-
-Centre de Contrôle SaaS
-
-Créer une interface Super Admin permettant de voir :
-
-Nombre total d'entreprises
-
-Utilisateurs connectés
-
-Revenus SaaS
-
-Nouveaux abonnements
-
-Taux de croissance
-
-Logs système
-
-Activité temps réel
-
-Inclure :
-
-Carte du pays
-
-Graphiques croissance
-
-Activité live
-
-Monitoring plateforme
-
-Cette page doit donner l'impression de piloter toute la plateforme GestioPro.
-
-Architecture
-
-Architecture Single Core / Multi Sector.
-
-Principe :
-
-Un seul moteur.
-
-Des modules activés dynamiquement.
-
-Le même logiciel doit pouvoir servir :
-
-Boutique
-
-Restaurant
-
-Assurance
-
-Clinique
-
-École
-
-sans dupliquer le code.
-
-Construire une architecture évolutive, scalable et prête pour plusieurs pays africains.
-
-L'objectif final est de devenir le Shopify + Odoo + Zoho des PME africaines.
-
-This project was built with [Lovable](https://lovable.dev).
-
-**Live app**: https://gestiopro-a.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/47b31a72-6b77-46cc-9ede-47a943307a54).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
+- Create a sale
+- Customer assignment
+- Vehicle assignment
+- Sale price
+- Payment tracking
+- Deposit management
+- Remaining balance
+- Sales history
+- Sale status
+- Invoice generation
+
+---
+
+### 📅 Vehicle Reservations
+
+Manage vehicle reservations before the final sale.
+
+- Create reservations
+- Customer assignment
+- Reservation date
+- Reservation status
+- Deposit tracking
+- Reservation history
+- Automatic vehicle status update
+
+---
+
+### 📄 Document Management
+
+Centralize important vehicle and customer documents.
+
+- Vehicle documents
+- Import documents
+- Customer documents
+- Sales documents
+- Contracts
+- Invoices
+- Digital document storage
+- Document organization
+
+---
+
+### 🛡️ Insurance Tracking
+
+Keep track of vehicle insurance information.
+
+- Insurance company
+- Policy number
+- Start date
+- Expiration date
+- Insurance status
+- Expiration alerts
+- Insurance history
+
+---
+
+### 🚢 Import & Customs
+
+A dedicated workflow for imported vehicles.
+
+GestioPro Auto is designed to integrate automotive import operations, including:
+
+- Vehicle purchase information
+- Shipping information
+- Import documents
+- Customs information
+- Port-related information
+- Import cost tracking
+- Vehicle arrival tracking
+
+---
+
+### 📊 Business Dashboard
+
+Get a complete overview of your automotive business.
+
+Dashboard metrics include:
+
+- Total vehicles
+- Available vehicles
+- Reserved vehicles
+- Sold vehicles
+- Total sales
+- Revenue
+- Estimated profit
+- Outstanding payments
+- Vehicles in transit
+- Insurance alerts
+
+---
+
+## 🔄 Vehicle Sales Workflow
+
+GestioPro Auto is designed around the real workflow of automotive businesses.
+
+```text
+Vehicle Added
+      ↓
+Inventory
+      ↓
+Available
+      ↓
+Reserved
+      ↓
+Customer Validation
+      ↓
+Documents
+      ↓
+Payment
+      ↓
+Sale
+      ↓
+Vehicle Delivered
