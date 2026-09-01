@@ -1,110 +1,402 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { FileText, Download, Send, Printer, Mail, FileSpreadsheet, Receipt, ScrollText, FileSignature } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { MoneyInput } from "@/components/ui/money-input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  FileText, Download, Send, Search, Plus, Trash2, FileSpreadsheet, Receipt,
+  ScrollText, FileSignature, ClipboardList, BadgeCheck, RefreshCw,
+} from "lucide-react";
 import { useCollection, db } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
+import { useCompanyProfile } from "@/lib/company-profile";
+import {
+  pdfInvoice, pdfReceipt, pdfPurchaseOrder, pdfAttestation, sendWhatsApp,
+  type InvoiceLine,
+} from "@/lib/pdf/templates";
+import { SignaturePad } from "@/components/ui/signature-pad";
 import { toast } from "sonner";
 
-const TYPES = [
-  { id: "Facture",  label: "Facture",          icon: FileSpreadsheet, color: "blue", prefix: "FAC" },
-  { id: "Proforma", label: "Proforma",         icon: FileText,        color: "indigo", prefix: "PRO" },
-  { id: "Bon de livraison", label: "Bon de livraison", icon: ScrollText, color: "amber", prefix: "BL" },
-  { id: "Reçu",     label: "Reçu",             icon: Receipt,         color: "emerald", prefix: "REC" },
-  { id: "Contrat",  label: "Contrat",          icon: FileSignature,   color: "purple", prefix: "CTR" },
-  { id: "Rapport",  label: "Rapport",          icon: FileText,        color: "rose", prefix: "RPT" },
-] as const;
+type DocKind = "facture" | "proforma" | "recu" | "bon" | "attestation";
 
-const colorClass = (c: string) => ({
-  blue:"bg-blue-50 text-blue-700", indigo:"bg-indigo-50 text-indigo-700", amber:"bg-amber-50 text-amber-700",
-  emerald:"bg-emerald-50 text-emerald-700", purple:"bg-purple-50 text-purple-700", rose:"bg-rose-50 text-rose-700",
-}[c] || "bg-slate-50 text-slate-700");
+const TYPES: { id: DocKind; label: string; icon: any; prefix: string; tint: string }[] = [
+  { id: "facture",     label: "Facture",         icon: FileSpreadsheet, prefix: "FAC", tint: "bg-blue-50 text-blue-700" },
+  { id: "proforma",    label: "Proforma / Devis", icon: FileText,       prefix: "PRO", tint: "bg-indigo-50 text-indigo-700" },
+  { id: "recu",        label: "Reçu",            icon: Receipt,         prefix: "REC", tint: "bg-emerald-50 text-emerald-700" },
+  { id: "bon",         label: "Bon de commande", icon: ClipboardList,   prefix: "BC",  tint: "bg-amber-50 text-amber-700" },
+  { id: "attestation", label: "Attestation",     icon: BadgeCheck,      prefix: "ATT", tint: "bg-purple-50 text-purple-700" },
+];
+
+const emptyLine = (): InvoiceLine => ({ designation: "", detail: "", qty: 1, unitPrice: 0 });
+const today = () => new Date().toISOString().slice(0, 10);
 
 export function Documents() {
-  const proInvoices = useCollection("proInvoices");
-  const [genType, setGenType] = useState<typeof TYPES[number] | null>(null);
-  const [form, setForm] = useState({ customer: "", total: 0 });
+  const docs = useCollection("documents");
+  const profile = useCompanyProfile();
+  const [kind, setKind] = useState<DocKind | null>(null);
+  const [filter, setFilter] = useState<string>("all");
+  const [q, setQ] = useState("");
 
-  const handleGenerate = () => {
-    if (!genType || !form.customer) return toast.error("Client requis");
-    const seq = String(proInvoices.length + 1).padStart(4,"0");
-    db.add("proInvoices", {
-      number: `${genType.prefix}-${new Date().getFullYear()}-${seq}`,
-      type: genType.id as any,
-      customer: form.customer,
-      total: form.total,
-      date: new Date().toISOString().slice(0,10),
-      status: "draft",
-    });
-    toast.success(`${genType.label} créé(e)`);
-    setGenType(null); setForm({ customer: "", total: 0 });
+  const [form, setForm] = useState({
+    party: "", phone: "", address: "", note: "", date: today(),
+    lines: [emptyLine()], paid: 0, amount: 0, reason: "", method: "Espèces",
+    subject: "", body: "", signature: "" as string,
+  });
+
+  const reset = () => setForm({
+    party: "", phone: "", address: "", note: "", date: today(),
+    lines: [emptyLine()], paid: 0, amount: 0, reason: "", method: "Espèces",
+    subject: "", body: "", signature: "",
+  });
+
+  const open = (k: DocKind) => { reset(); setKind(k); };
+
+  const total = useMemo(
+    () => form.lines.reduce((s, l) => s + (l.qty ?? 1) * (l.unitPrice || 0), 0),
+    [form.lines],
+  );
+
+  const nextRef = (k: DocKind) => {
+    const t = TYPES.find((x) => x.id === k)!;
+    const n = docs.filter((d) => d.type === k).length + 1;
+    return `${t.prefix}-${new Date().getFullYear()}-${String(n).padStart(4, "0")}`;
   };
+
+  const buildPdf = (k: DocKind, reference: string, data: typeof form) => {
+    const signatures = data.signature ? { client: data.signature } : undefined;
+    if (k === "facture" || k === "proforma") {
+      pdfInvoice({
+        reference, date: data.date, title: k === "proforma" ? "Facture proforma" : "Facture",
+        customer: { name: data.party, phone: data.phone, address: data.address },
+        lines: data.lines.filter((l) => l.designation),
+        paid: k === "facture" ? data.paid : 0,
+        note: data.note, signatures,
+      });
+    } else if (k === "recu") {
+      pdfReceipt({
+        reference, date: data.date, payerName: data.party, amount: data.amount,
+        reason: data.reason || "Règlement", method: data.method, signatures,
+      });
+    } else if (k === "bon") {
+      pdfPurchaseOrder({
+        reference, date: data.date,
+        supplier: { name: data.party, phone: data.phone, address: data.address },
+        lines: data.lines.filter((l) => l.designation),
+        note: data.note,
+      });
+    } else {
+      pdfAttestation({
+        reference, date: data.date, recipient: data.party,
+        subject: data.subject || "Attestation", body: data.body,
+      });
+    }
+  };
+
+  const generate = () => {
+    if (!kind) return;
+    if (!form.party.trim()) return toast.error(kind === "bon" ? "Fournisseur requis" : "Nom du destinataire requis");
+    const reference = nextRef(kind);
+    const amount = kind === "recu" ? form.amount : total;
+
+    buildPdf(kind, reference, form);
+    db.add("documents", {
+      type: kind,
+      reference,
+      title: `${TYPES.find((t) => t.id === kind)!.label} — ${form.party}`,
+      relatedTo: form.party,
+      amount,
+      createdAt: new Date().toISOString(),
+      payload: { ...form } as any,
+    } as any);
+    toast.success(`${reference} généré et archivé`);
+    setKind(null);
+  };
+
+  const regenerate = (d: any) => {
+    if (d.payload) buildPdf(d.type as DocKind, d.reference, d.payload);
+    else toast.error("Document sans données source");
+  };
+
+  const filtered = docs
+    .filter((d) => filter === "all" || d.type === filter)
+    .filter((d) => !q || `${d.reference} ${d.title} ${d.relatedTo ?? ""}`.toLowerCase().includes(q.toLowerCase()))
+    .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+
+  const monthTotal = docs
+    .filter((d) => (d.createdAt || "").slice(0, 7) === today().slice(0, 7))
+    .reduce((s, d) => s + (d.amount || 0), 0);
+
+  const isLineDoc = kind === "facture" || kind === "proforma" || kind === "bon";
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Documents</h1>
-        <p className="text-muted-foreground mt-1">Générez et envoyez vos documents professionnels en quelques clics.</p>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Documents</h1>
+          <p className="text-muted-foreground mt-1">
+            Générez des PDF professionnels à votre image et retrouvez toutes vos archives.
+          </p>
+        </div>
+        {!profile.name && (
+          <Badge variant="outline" className="rounded-xl border-amber-300 bg-amber-50 text-amber-800">
+            Complétez l'identité de l'entreprise dans Paramètres
+          </Badge>
+        )}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {TYPES.map(t => {
+      {/* Générateurs */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {TYPES.map((t) => {
           const Icon = t.icon;
+          const count = docs.filter((d) => d.type === t.id).length;
           return (
-            <Card key={t.id} onClick={() => setGenType(t)} className="hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer">
-              <CardContent className="p-5 text-center">
-                <div className={`w-12 h-12 rounded-xl ${colorClass(t.color)} flex items-center justify-center mx-auto mb-2`}>
-                  <Icon size={20} />
-                </div>
-                <p className="font-semibold text-xs">{t.label}</p>
-              </CardContent>
-            </Card>
+            <button key={t.id} onClick={() => open(t.id)}
+              className="group text-left rounded-2xl border bg-card p-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+              <div className={`w-11 h-11 rounded-xl ${t.tint} flex items-center justify-center mb-3`}>
+                <Icon size={19} />
+              </div>
+              <p className="font-semibold text-sm leading-tight">{t.label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{count} document{count > 1 ? "s" : ""}</p>
+            </button>
           );
         })}
       </div>
 
+      {/* Archives */}
       <Card className="shadow-sm">
         <CardContent className="p-0">
-          <h3 className="font-display font-semibold p-6 pb-4">Documents récents</h3>
-          <div className="border-t divide-y max-h-[500px] overflow-y-auto">
-            {proInvoices.map(p => (
-              <div key={p.id} className="flex items-center gap-4 px-6 py-4 hover:bg-muted/30">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <FileText size={18} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{p.number} · {p.type}</p>
-                  <p className="text-xs text-muted-foreground">{p.customer} · {new Date(p.date).toLocaleDateString("fr-FR")}</p>
-                </div>
-                <p className="font-bold text-sm hidden sm:block">{formatFCFA(p.total)}</p>
-                <div className="flex gap-1">
-                  <Button size="icon" variant="ghost" onClick={() => toast.success(`PDF ${p.number} téléchargé`)} title="Télécharger"><Download size={14} /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => { window.print(); }} title="Imprimer"><Printer size={14} /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => { window.open(`https://wa.me/?text=${encodeURIComponent(`Document ${p.number} (${formatFCFA(p.total)})`)}`,"_blank"); toast.success("WhatsApp ouvert"); }} title="WhatsApp"><Send size={14} /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => toast.success(`Envoyé par email`)} title="Email"><Mail size={14} /></Button>
-                </div>
+          <div className="p-5 flex flex-col lg:flex-row lg:items-center gap-3 border-b">
+            <div>
+              <h3 className="font-display font-semibold">Archives</h3>
+              <p className="text-xs text-muted-foreground">
+                {docs.length} document(s) · {formatFCFA(monthTotal)} ce mois-ci
+              </p>
+            </div>
+            <div className="flex-1" />
+            <div className="relative w-full lg:w-64">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher…" className="pl-9 rounded-xl" />
+            </div>
+            <Tabs value={filter} onValueChange={setFilter}>
+              <TabsList className="rounded-xl overflow-x-auto max-w-full">
+                <TabsTrigger value="all" className="rounded-lg text-xs">Tous</TabsTrigger>
+                {TYPES.map((t) => (
+                  <TabsTrigger key={t.id} value={t.id} className="rounded-lg text-xs">{t.prefix}</TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
+
+          <div className="divide-y max-h-[520px] overflow-y-auto">
+            {filtered.length === 0 && (
+              <div className="p-12 text-center text-sm text-muted-foreground">
+                Aucun document. Choisissez un modèle ci-dessus pour commencer.
               </div>
-            ))}
+            )}
+            {filtered.map((d: any) => {
+              const t = TYPES.find((x) => x.id === d.type);
+              const Icon = t?.icon ?? FileText;
+              return (
+                <div key={d.id} className="flex items-center gap-3 px-4 sm:px-6 py-4 hover:bg-muted/30">
+                  <div className={`w-10 h-10 rounded-xl ${t?.tint ?? "bg-slate-100 text-slate-600"} flex items-center justify-center shrink-0`}>
+                    <Icon size={17} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">{d.reference}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {d.title} · {new Date(d.createdAt).toLocaleDateString("fr-FR")}
+                    </p>
+                  </div>
+                  <p className="font-bold text-sm hidden sm:block whitespace-nowrap">{formatFCFA(d.amount || 0)}</p>
+                  <div className="flex gap-0.5 shrink-0">
+                    <Button size="icon" variant="ghost" title="Retélécharger le PDF" onClick={() => regenerate(d)}>
+                      <Download size={15} />
+                    </Button>
+                    <Button size="icon" variant="ghost" title="Régénérer" onClick={() => regenerate(d)}>
+                      <RefreshCw size={15} />
+                    </Button>
+                    <Button size="icon" variant="ghost" title="Envoyer par WhatsApp"
+                      onClick={() => sendWhatsApp(d.payload?.phone || "", `Bonjour, voici votre document ${d.reference} d'un montant de ${formatFCFA(d.amount || 0)}.`)}>
+                      <Send size={15} />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="text-destructive" title="Supprimer"
+                      onClick={() => { db.remove("documents", d.id); toast.success("Document supprimé"); }}>
+                      <Trash2 size={15} />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
 
-      <Dialog open={!!genType} onOpenChange={(v)=>!v && setGenType(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Générer un(e) {genType?.label.toLowerCase()}</DialogTitle></DialogHeader>
-          <div className="space-y-3 mt-4">
-            <div><Label>Client *</Label><Input value={form.customer} onChange={e=>setForm({...form,customer:e.target.value})} placeholder="Nom du client" /></div>
-            <div><Label>Montant total (FCFA)</Label><Input type="number" value={form.total} onChange={e=>setForm({...form,total:+e.target.value})} /></div>
+      {/* Générateur */}
+      <Dialog open={!!kind} onOpenChange={(v) => !v && setKind(null)}>
+        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSignature size={18} /> {TYPES.find((t) => t.id === kind)?.label}
+            </DialogTitle>
+            <DialogDescription>
+              Référence automatique {kind ? nextRef(kind) : ""} · en-tête, logo et signature repris de votre profil.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>{kind === "bon" ? "Fournisseur *" : "Destinataire *"}</Label>
+                <Input value={form.party} onChange={(e) => setForm({ ...form, party: e.target.value })} placeholder="Nom complet" className="rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Date</Label>
+                <Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="rounded-xl" />
+              </div>
+              {kind !== "attestation" && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label>Téléphone</Label>
+                    <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="rounded-xl" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Adresse</Label>
+                    <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="rounded-xl" />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {isLineDoc && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Lignes du document</Label>
+                  <Button type="button" variant="outline" size="sm" className="rounded-xl gap-1"
+                    onClick={() => setForm({ ...form, lines: [...form.lines, emptyLine()] })}>
+                    <Plus size={14} /> Ligne
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {form.lines.map((l, i) => (
+                    <div key={i} className="grid grid-cols-12 gap-2 items-end rounded-xl border p-2">
+                      <div className="col-span-12 sm:col-span-5">
+                        <Input placeholder="Désignation" value={l.designation} className="rounded-lg"
+                          onChange={(e) => {
+                            const lines = [...form.lines]; lines[i] = { ...l, designation: e.target.value };
+                            setForm({ ...form, lines });
+                          }} />
+                      </div>
+                      <div className="col-span-5 sm:col-span-3">
+                        <Input placeholder="Détail" value={l.detail} className="rounded-lg"
+                          onChange={(e) => {
+                            const lines = [...form.lines]; lines[i] = { ...l, detail: e.target.value };
+                            setForm({ ...form, lines });
+                          }} />
+                      </div>
+                      <div className="col-span-3 sm:col-span-1">
+                        <Input type="number" min={1} value={l.qty ?? 1} className="rounded-lg"
+                          onChange={(e) => {
+                            const lines = [...form.lines]; lines[i] = { ...l, qty: Math.max(1, +e.target.value) };
+                            setForm({ ...form, lines });
+                          }} />
+                      </div>
+                      <div className="col-span-3 sm:col-span-2">
+                        <MoneyInput value={l.unitPrice}
+                          onChange={(v: number) => {
+                            const lines = [...form.lines]; lines[i] = { ...l, unitPrice: v };
+                            setForm({ ...form, lines });
+                          }} />
+                      </div>
+                      <div className="col-span-1 flex justify-end">
+                        <Button type="button" size="icon" variant="ghost" className="text-destructive"
+                          onClick={() => setForm({ ...form, lines: form.lines.filter((_, j) => j !== i) })}>
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-end text-sm font-semibold">Total : {formatFCFA(total)}</div>
+                {kind === "facture" && (
+                  <div className="space-y-1.5 max-w-xs ml-auto">
+                    <Label>Déjà réglé</Label>
+                    <MoneyInput value={form.paid} onChange={(v: number) => setForm({ ...form, paid: v })} />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {kind === "recu" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Montant reçu *</Label>
+                  <MoneyInput value={form.amount} onChange={(v: number) => setForm({ ...form, amount: v })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Mode de paiement</Label>
+                  <Input value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })} className="rounded-xl" />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Motif</Label>
+                  <Input value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })}
+                    placeholder="Acompte, solde de facture…" className="rounded-xl" />
+                </div>
+              </div>
+            )}
+
+            {kind === "attestation" && (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>Objet</Label>
+                  <Input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                    placeholder="Attestation de vente" className="rounded-xl" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Contenu</Label>
+                  <Textarea rows={5} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })}
+                    className="rounded-xl" placeholder="Je soussigné(e)…" />
+                </div>
+              </div>
+            )}
+
+            {kind !== "attestation" && kind !== "bon" && (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Note / mention</Label>
+                  <Textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className="rounded-xl" />
+                </div>
+                <SignaturePad
+                  label="Signature du client (facultative)"
+                  value={form.signature || undefined}
+                  onChange={(v) => setForm({ ...form, signature: v || "" })}
+                />
+              </>
+            )}
+            {kind === "bon" && (
+              <div className="space-y-1.5">
+                <Label>Note</Label>
+                <Textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className="rounded-xl" />
+              </div>
+            )}
           </div>
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={()=>setGenType(null)}>Annuler</Button>
-            <Button onClick={handleGenerate}>Générer</Button>
+
+          <DialogFooter className="mt-5 gap-2">
+            <Button variant="outline" className="rounded-xl" onClick={() => setKind(null)}>Annuler</Button>
+            <Button className="rounded-xl gap-1.5" onClick={generate}>
+              <Download size={15} /> Générer le PDF
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
 }
+
+export { ScrollText };
