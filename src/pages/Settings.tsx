@@ -17,6 +17,7 @@ import { Database, Trash2, Shield, Volume2 } from "lucide-react";
 import { ROLES, setRole, useRole } from "@/lib/roles";
 import { isSoundEnabled, setSoundEnabled } from "@/lib/notifications";
 import { Switch } from "@/components/ui/switch";
+import { CompanyBrandingCard } from "@/components/settings/CompanyBrandingCard";
 import { useState } from "react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -155,6 +156,8 @@ export function Settings() {
       </Card>
 
       <RolesAndAlertsCard />
+
+      <CompanyBrandingCard />
 
 
 
