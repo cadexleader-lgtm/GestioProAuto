@@ -366,6 +366,10 @@ export function Reports() {
               </thead>
               <tbody className="divide-y divide-border text-sm">
                 {(() => {
+                  const vehName = (id: string) => {
+                    const v = vehicles.find((x) => x.id === id);
+                    return v ? `${v.brand} ${v.model}` : "Véhicule";
+                  };
                   const rows = [
                     ...stats.salesList.map((s) => ({
                       date: s.createdAt, type: "Boutique",
@@ -374,12 +378,12 @@ export function Reports() {
                     })),
                     ...stats.vehicleSalesList.map((v) => ({
                       date: v.date, type: "Véhicule",
-                      detail: `${vehicles.find((x) => x.id === v.vehicleId)?.name ?? "Véhicule"} — ${v.customer}`,
+                      detail: `${vehName(v.vehicleId)} — ${v.customer}`,
                       amount: v.amount,
                     })),
                     ...stats.rentalsList.map((r) => ({
                       date: r.startDate, type: "Location",
-                      detail: `${vehicles.find((x) => x.id === r.vehicleId)?.name ?? "Véhicule"} — ${r.customer}`,
+                      detail: `${vehName(r.vehicleId)} — ${r.customer}`,
                       amount: r.totalAmount ?? r.dailyRate,
                     })),
                   ].sort((a, b) => +new Date(b.date) - +new Date(a.date)).slice(0, 12);
