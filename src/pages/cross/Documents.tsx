@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   FileText, Download, Send, Search, Plus, Trash2, FileSpreadsheet, Receipt,
-  ScrollText, FileSignature, ClipboardList, BadgeCheck, RefreshCw,
+  ScrollText, FileSignature, ClipboardList, BadgeCheck, RefreshCw, CalendarClock,
 } from "lucide-react";
 import { useCollection, db } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
@@ -34,15 +34,32 @@ const TYPES: { id: DocKind; label: string; icon: any; prefix: string; tint: stri
   { id: "attestation", label: "Attestation",     icon: BadgeCheck,      prefix: "ATT", tint: "bg-purple-50 text-purple-700" },
 ];
 
+/** Types archivés automatiquement (non générables depuis cette page). */
+const AUTO_TYPES = [
+  { id: "contrat-vente",    label: "Contrat de vente",    icon: FileSignature, prefix: "VTE", tint: "bg-rose-50 text-rose-700" },
+  { id: "contrat-location", label: "Contrat de location", icon: ScrollText,    prefix: "LOC", tint: "bg-cyan-50 text-cyan-700" },
+  { id: "contrat-credit",   label: "Échéancier crédit",   icon: ScrollText,    prefix: "CRE", tint: "bg-orange-50 text-orange-700" },
+  { id: "bulletin",         label: "Bulletin de paie",    icon: Receipt,       prefix: "PAI", tint: "bg-teal-50 text-teal-700" },
+  { id: "piece",            label: "Pièce jointe",        icon: FileText,      prefix: "PJ",  tint: "bg-slate-100 text-slate-700" },
+] as const;
+
+const ALL_TYPES: { id: string; label: string; icon: any; prefix: string; tint: string }[] = [
+  ...TYPES, ...AUTO_TYPES.map((t) => ({ ...t })),
+];
+
 const emptyLine = (): InvoiceLine => ({ designation: "", detail: "", qty: 1, unitPrice: 0 });
 const today = () => new Date().toISOString().slice(0, 10);
 
 export function Documents() {
   const docs = useCollection("documents");
+  const vehicles = useCollection("vehicles");
   const profile = useCompanyProfile();
   const [kind, setKind] = useState<DocKind | null>(null);
   const [filter, setFilter] = useState<string>("all");
+  const [entity, setEntity] = useState<string>("all");
+  const [expiringOnly, setExpiringOnly] = useState(false);
   const [q, setQ] = useState("");
+
 
   const [form, setForm] = useState({
     party: "", phone: "", address: "", note: "", date: today(),
@@ -124,14 +141,61 @@ export function Documents() {
     else toast.error("Document sans données source");
   };
 
-  const filtered = docs
-    .filter((d) => filter === "all" || d.type === filter)
+  // Pièces jointes rattachées aux véhicules (carte grise, assurance, visite…)
+  const vehicleDocs = useMemo(
+    () => vehicles.flatMap((v: any) =>
+      (v.documents ?? []).map((f: any) => ({
+        id: `veh-${v.id}-${f.id}`,
+        type: "piece",
+        reference: f.name,
+        title: `${f.type || "Pièce"} — ${v.brand} ${v.model}`,
+        relatedTo: v.plate,
+        amount: 0,
+        createdAt: f.uploadedAt,
+        entityType: "vehicle" as const,
+        entityId: v.id,
+        entityLabel: `${v.brand} ${v.model} (${v.plate})`,
+        expiresAt: f.expiresAt,
+        origin: "Importé",
+        dataUrl: f.dataUrl,
+      }))),
+    [vehicles],
+  );
+
+  const allDocs = useMemo(() => [...docs, ...vehicleDocs], [docs, vehicleDocs]);
+
+  const entityOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    allDocs.forEach((d: any) => {
+      const key = d.entityId ? `${d.entityType}:${d.entityId}` : d.relatedTo ? `party:${d.relatedTo}` : "";
+      if (key) map.set(key, d.entityLabel || d.relatedTo);
+    });
+    return [...map].map(([key, label]) => ({ key, label }));
+  }, [allDocs]);
+
+  const daysLeft = (d: any) =>
+    d.expiresAt ? Math.ceil((+new Date(d.expiresAt) - Date.now()) / 86400000) : null;
+
+  const expiringCount = allDocs.filter((d: any) => {
+    const n = daysLeft(d);
+    return n !== null && n <= 30;
+  }).length;
+
+  const filtered = allDocs
+    .filter((d: any) => filter === "all" || d.type === filter)
+    .filter((d: any) => {
+      if (entity === "all") return true;
+      const key = d.entityId ? `${d.entityType}:${d.entityId}` : d.relatedTo ? `party:${d.relatedTo}` : "";
+      return key === entity;
+    })
+    .filter((d: any) => { if (!expiringOnly) return true; const n = daysLeft(d); return n !== null && n <= 30; })
     .filter((d) => !q || `${d.reference} ${d.title} ${d.relatedTo ?? ""}`.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
 
-  const monthTotal = docs
+  const monthTotal = allDocs
     .filter((d) => (d.createdAt || "").slice(0, 7) === today().slice(0, 7))
     .reduce((s, d) => s + (d.amount || 0), 0);
+
 
   const isLineDoc = kind === "facture" || kind === "proforma" || kind === "bon";
 
@@ -184,14 +248,26 @@ export function Documents() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher…" className="pl-9 rounded-xl" />
             </div>
+            <select value={entity} onChange={(e) => setEntity(e.target.value)}
+              className="h-10 rounded-xl border bg-background px-3 text-sm w-full lg:w-56">
+              <option value="all">Toutes les entités</option>
+              {entityOptions.map((o) => (
+                <option key={o.key} value={o.key}>{o.label}</option>
+              ))}
+            </select>
+            <Button variant={expiringOnly ? "default" : "outline"} className="rounded-xl gap-1.5 shrink-0"
+              onClick={() => setExpiringOnly((v) => !v)}>
+              <CalendarClock size={15} /> Expire &lt; 30 j{expiringCount ? ` (${expiringCount})` : ""}
+            </Button>
             <Tabs value={filter} onValueChange={setFilter}>
               <TabsList className="rounded-xl overflow-x-auto max-w-full">
                 <TabsTrigger value="all" className="rounded-lg text-xs">Tous</TabsTrigger>
-                {TYPES.map((t) => (
+                {ALL_TYPES.map((t) => (
                   <TabsTrigger key={t.id} value={t.id} className="rounded-lg text-xs">{t.prefix}</TabsTrigger>
                 ))}
               </TabsList>
             </Tabs>
+
           </div>
 
           <div className="divide-y max-h-[520px] overflow-y-auto">
@@ -201,8 +277,10 @@ export function Documents() {
               </div>
             )}
             {filtered.map((d: any) => {
-              const t = TYPES.find((x) => x.id === d.type);
+              const t = ALL_TYPES.find((x) => x.id === d.type);
               const Icon = t?.icon ?? FileText;
+              const n = daysLeft(d);
+              const isAuto = !TYPES.some((x) => x.id === d.type);
               return (
                 <div key={d.id} className="flex items-center gap-3 px-4 sm:px-6 py-4 hover:bg-muted/30">
                   <div className={`w-10 h-10 rounded-xl ${t?.tint ?? "bg-slate-100 text-slate-600"} flex items-center justify-center shrink-0`}>
@@ -212,25 +290,44 @@ export function Documents() {
                     <p className="font-semibold text-sm truncate">{d.reference}</p>
                     <p className="text-xs text-muted-foreground truncate">
                       {d.title} · {new Date(d.createdAt).toLocaleDateString("fr-FR")}
+                      {d.entityLabel ? ` · ${d.entityLabel}` : ""}
                     </p>
                   </div>
-                  <p className="font-bold text-sm hidden sm:block whitespace-nowrap">{formatFCFA(d.amount || 0)}</p>
+                  {n !== null && (
+                    <Badge variant="outline"
+                      className={`hidden sm:inline-flex rounded-lg text-[11px] ${n < 0 ? "border-rose-300 bg-rose-50 text-rose-700" : n <= 30 ? "border-amber-300 bg-amber-50 text-amber-800" : "border-slate-200"}`}>
+                      {n < 0 ? `Expiré (${-n} j)` : `Expire dans ${n} j`}
+                    </Badge>
+                  )}
+                  <p className="font-bold text-sm hidden sm:block whitespace-nowrap">{d.amount ? formatFCFA(d.amount) : "—"}</p>
                   <div className="flex gap-0.5 shrink-0">
-                    <Button size="icon" variant="ghost" title="Retélécharger le PDF" onClick={() => regenerate(d)}>
-                      <Download size={15} />
-                    </Button>
-                    <Button size="icon" variant="ghost" title="Régénérer" onClick={() => regenerate(d)}>
-                      <RefreshCw size={15} />
-                    </Button>
+                    {d.dataUrl ? (
+                      <Button size="icon" variant="ghost" title="Télécharger" asChild>
+                        <a href={d.dataUrl} download={d.reference}><Download size={15} /></a>
+                      </Button>
+                    ) : (
+                      <Button size="icon" variant="ghost" title={isAuto ? "PDF disponible depuis le module d'origine" : "Retélécharger le PDF"}
+                        disabled={isAuto} onClick={() => regenerate(d)}>
+                        <Download size={15} />
+                      </Button>
+                    )}
+                    {!isAuto && (
+                      <Button size="icon" variant="ghost" title="Régénérer" onClick={() => regenerate(d)}>
+                        <RefreshCw size={15} />
+                      </Button>
+                    )}
                     <Button size="icon" variant="ghost" title="Envoyer par WhatsApp"
-                      onClick={() => sendWhatsApp(d.payload?.phone || "", `Bonjour, voici votre document ${d.reference} d'un montant de ${formatFCFA(d.amount || 0)}.`)}>
+                      onClick={() => sendWhatsApp(d.payload?.phone || "", `Bonjour, voici votre document ${d.reference}.`)}>
                       <Send size={15} />
                     </Button>
-                    <Button size="icon" variant="ghost" className="text-destructive" title="Supprimer"
-                      onClick={() => { db.remove("documents", d.id); toast.success("Document supprimé"); }}>
-                      <Trash2 size={15} />
-                    </Button>
+                    {d.origin !== "Importé" && (
+                      <Button size="icon" variant="ghost" className="text-destructive" title="Supprimer"
+                        onClick={() => { db.remove("documents", d.id); toast.success("Document supprimé"); }}>
+                        <Trash2 size={15} />
+                      </Button>
+                    )}
                   </div>
+
                 </div>
               );
             })}

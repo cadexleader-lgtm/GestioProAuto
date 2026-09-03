@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { db } from "@/lib/demo-store";
+import { db, addExpense, archiveDocument } from "@/lib/demo-store";
 import { toast } from "sonner";
 
 const DEPTS = ["Direction","Ventes","Caisse","Stock","Finance","Logistique","RH","Cuisine","Service","Technique"];
@@ -102,10 +102,33 @@ export function PayrollDialog({ open, onOpenChange }: { open:boolean; onOpenChan
   },[open]);
   const net = (form.baseSalary||0) + (form.bonuses||0) - (form.deductions||0) - (form.advances||0);
   const submit = () => {
-    db.add("payslips", { ...form, net, paidAt: new Date().toISOString() });
-    toast.success("Bulletin de paie généré");
+    const emp = employees.find(e => e.id === form.employeeId);
+    const name = emp ? `${emp.firstName} ${emp.lastName}` : "Employé";
+    const slip = db.add("payslips", { ...form, net, paidAt: new Date().toISOString() });
+    if (net > 0) {
+      addExpense({
+        category: "Salaires",
+        label: `Salaire ${form.month} — ${name}`,
+        amount: net,
+        source: "RH",
+        paidBy: name,
+        hasReceipt: true,
+      });
+    }
+    archiveDocument({
+      type: "bulletin",
+      title: `Bulletin de paie ${form.month} — ${name}`,
+      relatedTo: name,
+      amount: net,
+      entityType: "employee",
+      entityId: form.employeeId,
+      entityLabel: name,
+      payload: { ...form, net, slipId: slip.id },
+    });
+    toast.success("Bulletin généré · dépense et sortie de caisse enregistrées");
     onOpenChange(false);
   };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-w-md">
       <DialogHeader><DialogTitle>Générer bulletin de paie</DialogTitle></DialogHeader>
