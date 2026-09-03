@@ -96,7 +96,17 @@ export interface ArchivedDocument {
   amount?: number;
   createdAt: string;
   dataUrl?: string;
+  /** Entité rattachée : véhicule, client, employé… */
+  entityType?: "vehicle" | "customer" | "employee" | "supplier" | "other";
+  entityId?: string;
+  entityLabel?: string;
+  /** Date d'expiration (assurance, visite technique, contrat…) */
+  expiresAt?: string;
+  /** Origine du document : "Généré" ou "Importé" */
+  origin?: string;
+  payload?: any;
 }
+
 
 const iso = (offsetDays = 0) => {
   const d = new Date();
