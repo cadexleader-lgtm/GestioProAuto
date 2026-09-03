@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   FileText, Download, Send, Search, Plus, Trash2, FileSpreadsheet, Receipt,
-  ScrollText, FileSignature, ClipboardList, BadgeCheck, RefreshCw,
+  ScrollText, FileSignature, ClipboardList, BadgeCheck, RefreshCw, CalendarClock,
 } from "lucide-react";
 import { useCollection, db } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
