@@ -277,8 +277,10 @@ export function Documents() {
               </div>
             )}
             {filtered.map((d: any) => {
-              const t = TYPES.find((x) => x.id === d.type);
+              const t = ALL_TYPES.find((x) => x.id === d.type);
               const Icon = t?.icon ?? FileText;
+              const n = daysLeft(d);
+              const isAuto = !TYPES.some((x) => x.id === d.type);
               return (
                 <div key={d.id} className="flex items-center gap-3 px-4 sm:px-6 py-4 hover:bg-muted/30">
                   <div className={`w-10 h-10 rounded-xl ${t?.tint ?? "bg-slate-100 text-slate-600"} flex items-center justify-center shrink-0`}>
@@ -288,25 +290,44 @@ export function Documents() {
                     <p className="font-semibold text-sm truncate">{d.reference}</p>
                     <p className="text-xs text-muted-foreground truncate">
                       {d.title} · {new Date(d.createdAt).toLocaleDateString("fr-FR")}
+                      {d.entityLabel ? ` · ${d.entityLabel}` : ""}
                     </p>
                   </div>
-                  <p className="font-bold text-sm hidden sm:block whitespace-nowrap">{formatFCFA(d.amount || 0)}</p>
+                  {n !== null && (
+                    <Badge variant="outline"
+                      className={`hidden sm:inline-flex rounded-lg text-[11px] ${n < 0 ? "border-rose-300 bg-rose-50 text-rose-700" : n <= 30 ? "border-amber-300 bg-amber-50 text-amber-800" : "border-slate-200"}`}>
+                      {n < 0 ? `Expiré (${-n} j)` : `Expire dans ${n} j`}
+                    </Badge>
+                  )}
+                  <p className="font-bold text-sm hidden sm:block whitespace-nowrap">{d.amount ? formatFCFA(d.amount) : "—"}</p>
                   <div className="flex gap-0.5 shrink-0">
-                    <Button size="icon" variant="ghost" title="Retélécharger le PDF" onClick={() => regenerate(d)}>
-                      <Download size={15} />
-                    </Button>
-                    <Button size="icon" variant="ghost" title="Régénérer" onClick={() => regenerate(d)}>
-                      <RefreshCw size={15} />
-                    </Button>
+                    {d.dataUrl ? (
+                      <Button size="icon" variant="ghost" title="Télécharger" asChild>
+                        <a href={d.dataUrl} download={d.reference}><Download size={15} /></a>
+                      </Button>
+                    ) : (
+                      <Button size="icon" variant="ghost" title={isAuto ? "PDF disponible depuis le module d'origine" : "Retélécharger le PDF"}
+                        disabled={isAuto} onClick={() => regenerate(d)}>
+                        <Download size={15} />
+                      </Button>
+                    )}
+                    {!isAuto && (
+                      <Button size="icon" variant="ghost" title="Régénérer" onClick={() => regenerate(d)}>
+                        <RefreshCw size={15} />
+                      </Button>
+                    )}
                     <Button size="icon" variant="ghost" title="Envoyer par WhatsApp"
-                      onClick={() => sendWhatsApp(d.payload?.phone || "", `Bonjour, voici votre document ${d.reference} d'un montant de ${formatFCFA(d.amount || 0)}.`)}>
+                      onClick={() => sendWhatsApp(d.payload?.phone || "", `Bonjour, voici votre document ${d.reference}.`)}>
                       <Send size={15} />
                     </Button>
-                    <Button size="icon" variant="ghost" className="text-destructive" title="Supprimer"
-                      onClick={() => { db.remove("documents", d.id); toast.success("Document supprimé"); }}>
-                      <Trash2 size={15} />
-                    </Button>
+                    {d.origin !== "Importé" && (
+                      <Button size="icon" variant="ghost" className="text-destructive" title="Supprimer"
+                        onClick={() => { db.remove("documents", d.id); toast.success("Document supprimé"); }}>
+                        <Trash2 size={15} />
+                      </Button>
+                    )}
                   </div>
+
                 </div>
               );
             })}
