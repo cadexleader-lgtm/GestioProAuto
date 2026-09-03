@@ -124,14 +124,61 @@ export function Documents() {
     else toast.error("Document sans données source");
   };
 
-  const filtered = docs
-    .filter((d) => filter === "all" || d.type === filter)
+  // Pièces jointes rattachées aux véhicules (carte grise, assurance, visite…)
+  const vehicleDocs = useMemo(
+    () => vehicles.flatMap((v: any) =>
+      (v.documents ?? []).map((f: any) => ({
+        id: `veh-${v.id}-${f.id}`,
+        type: "piece",
+        reference: f.name,
+        title: `${f.type || "Pièce"} — ${v.brand} ${v.model}`,
+        relatedTo: v.plate,
+        amount: 0,
+        createdAt: f.uploadedAt,
+        entityType: "vehicle" as const,
+        entityId: v.id,
+        entityLabel: `${v.brand} ${v.model} (${v.plate})`,
+        expiresAt: f.expiresAt,
+        origin: "Importé",
+        dataUrl: f.dataUrl,
+      }))),
+    [vehicles],
+  );
+
+  const allDocs = useMemo(() => [...docs, ...vehicleDocs], [docs, vehicleDocs]);
+
+  const entityOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    allDocs.forEach((d: any) => {
+      const key = d.entityId ? `${d.entityType}:${d.entityId}` : d.relatedTo ? `party:${d.relatedTo}` : "";
+      if (key) map.set(key, d.entityLabel || d.relatedTo);
+    });
+    return [...map].map(([key, label]) => ({ key, label }));
+  }, [allDocs]);
+
+  const daysLeft = (d: any) =>
+    d.expiresAt ? Math.ceil((+new Date(d.expiresAt) - Date.now()) / 86400000) : null;
+
+  const expiringCount = allDocs.filter((d: any) => {
+    const n = daysLeft(d);
+    return n !== null && n <= 30;
+  }).length;
+
+  const filtered = allDocs
+    .filter((d: any) => filter === "all" || d.type === filter)
+    .filter((d: any) => {
+      if (entity === "all") return true;
+      const key = d.entityId ? `${d.entityType}:${d.entityId}` : d.relatedTo ? `party:${d.relatedTo}` : "";
+      return key === entity;
+    })
+    .filter((d: any) => { if (!expiringOnly) return true; const n = daysLeft(d); return n !== null && n <= 30; })
     .filter((d) => !q || `${d.reference} ${d.title} ${d.relatedTo ?? ""}`.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
 
-  const monthTotal = docs
+  const monthTotal = allDocs
     .filter((d) => (d.createdAt || "").slice(0, 7) === today().slice(0, 7))
     .reduce((s, d) => s + (d.amount || 0), 0);
+
 
   const isLineDoc = kind === "facture" || kind === "proforma" || kind === "bon";
 
