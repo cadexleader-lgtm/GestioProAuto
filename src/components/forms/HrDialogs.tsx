@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { db } from "@/lib/demo-store";
+import { db, addExpense, archiveDocument } from "@/lib/demo-store";
 import { toast } from "sonner";
 
 const DEPTS = ["Direction","Ventes","Caisse","Stock","Finance","Logistique","RH","Cuisine","Service","Technique"];
