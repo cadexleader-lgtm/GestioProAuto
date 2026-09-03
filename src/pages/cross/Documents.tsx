@@ -184,14 +184,26 @@ export function Documents() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher…" className="pl-9 rounded-xl" />
             </div>
+            <select value={entity} onChange={(e) => setEntity(e.target.value)}
+              className="h-10 rounded-xl border bg-background px-3 text-sm w-full lg:w-56">
+              <option value="all">Toutes les entités</option>
+              {entityOptions.map((o) => (
+                <option key={o.key} value={o.key}>{o.label}</option>
+              ))}
+            </select>
+            <Button variant={expiringOnly ? "default" : "outline"} className="rounded-xl gap-1.5 shrink-0"
+              onClick={() => setExpiringOnly((v) => !v)}>
+              <CalendarClock size={15} /> Expire &lt; 30 j{expiringCount ? ` (${expiringCount})` : ""}
+            </Button>
             <Tabs value={filter} onValueChange={setFilter}>
               <TabsList className="rounded-xl overflow-x-auto max-w-full">
                 <TabsTrigger value="all" className="rounded-lg text-xs">Tous</TabsTrigger>
-                {TYPES.map((t) => (
+                {ALL_TYPES.map((t) => (
                   <TabsTrigger key={t.id} value={t.id} className="rounded-lg text-xs">{t.prefix}</TabsTrigger>
                 ))}
               </TabsList>
             </Tabs>
+
           </div>
 
           <div className="divide-y max-h-[520px] overflow-y-auto">
