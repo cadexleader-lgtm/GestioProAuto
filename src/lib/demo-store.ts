@@ -612,3 +612,34 @@ export function vehicleProfitability(vehicleId: string) {
   const profit = rentalRevenue + saleRevenue - totalCost;
   return { rentalRevenue, saleRevenue, maintCost, totalCost, profit };
 }
+
+/* ==============================================================
+ * COFFRE-FORT DOCUMENTAIRE — archivage centralisé.
+ * ============================================================== */
+export function archiveDocument(payload: {
+  type: string;
+  reference?: string;
+  title: string;
+  relatedTo?: string;
+  amount?: number;
+  entityType?: ArchivedDocument["entityType"];
+  entityId?: string;
+  entityLabel?: string;
+  expiresAt?: string;
+  origin?: string;
+  dataUrl?: string;
+  payload?: any;
+}): ArchivedDocument {
+  const year = new Date().getFullYear();
+  const count = db.list("documents").filter((d) => d.type === payload.type).length + 1;
+  const reference = payload.reference
+    ?? `${payload.type.slice(0, 3).toUpperCase()}-${year}-${String(count).padStart(4, "0")}`;
+  const existing = db.list("documents").find((d) => d.reference === reference);
+  if (existing) return existing;
+  return db.add("documents", {
+    ...payload,
+    reference,
+    origin: payload.origin ?? "Généré",
+    createdAt: new Date().toISOString(),
+  } as any);
+}
