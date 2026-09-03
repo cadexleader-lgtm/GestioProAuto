@@ -34,15 +34,32 @@ const TYPES: { id: DocKind; label: string; icon: any; prefix: string; tint: stri
   { id: "attestation", label: "Attestation",     icon: BadgeCheck,      prefix: "ATT", tint: "bg-purple-50 text-purple-700" },
 ];
 
+/** Types archivés automatiquement (non générables depuis cette page). */
+const AUTO_TYPES = [
+  { id: "contrat-vente",    label: "Contrat de vente",    icon: FileSignature, prefix: "VTE", tint: "bg-rose-50 text-rose-700" },
+  { id: "contrat-location", label: "Contrat de location", icon: ScrollText,    prefix: "LOC", tint: "bg-cyan-50 text-cyan-700" },
+  { id: "contrat-credit",   label: "Échéancier crédit",   icon: ScrollText,    prefix: "CRE", tint: "bg-orange-50 text-orange-700" },
+  { id: "bulletin",         label: "Bulletin de paie",    icon: Receipt,       prefix: "PAI", tint: "bg-teal-50 text-teal-700" },
+  { id: "piece",            label: "Pièce jointe",        icon: FileText,      prefix: "PJ",  tint: "bg-slate-100 text-slate-700" },
+] as const;
+
+const ALL_TYPES: { id: string; label: string; icon: any; prefix: string; tint: string }[] = [
+  ...TYPES, ...AUTO_TYPES.map((t) => ({ ...t })),
+];
+
 const emptyLine = (): InvoiceLine => ({ designation: "", detail: "", qty: 1, unitPrice: 0 });
 const today = () => new Date().toISOString().slice(0, 10);
 
 export function Documents() {
   const docs = useCollection("documents");
+  const vehicles = useCollection("vehicles");
   const profile = useCompanyProfile();
   const [kind, setKind] = useState<DocKind | null>(null);
   const [filter, setFilter] = useState<string>("all");
+  const [entity, setEntity] = useState<string>("all");
+  const [expiringOnly, setExpiringOnly] = useState(false);
   const [q, setQ] = useState("");
+
 
   const [form, setForm] = useState({
     party: "", phone: "", address: "", note: "", date: today(),
