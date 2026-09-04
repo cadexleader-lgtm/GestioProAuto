@@ -120,6 +120,10 @@ export interface Vehicle {
   repairFees: number;
   maintenanceFees: number;
   sellingPrice: number;
+  /** Prix plancher — seuil minimum de négociation */
+  minPrice?: number;
+  /** Prix marchand / de gros — pour les revendeurs */
+  wholesalePrice?: number;
   status: "available" | "sold" | "rented" | "maintenance";
   photo: string;
   image?: string;

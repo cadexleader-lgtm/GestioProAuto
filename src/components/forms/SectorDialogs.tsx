@@ -41,7 +41,7 @@ export function VehicleDialog({
             brand: "", model: "", year: new Date().getFullYear(), color: "Blanc",
             vin: "", plate: "", mileageKm: 0, fuel: "Essence", transmission: "Manuelle",
             purchasePrice: 0, importFees: 0, customsFees: 0, repairFees: 0, maintenanceFees: 0,
-            sellingPrice: 0, status: "available", photo: "🚗",
+            sellingPrice: 0, minPrice: 0, wholesalePrice: 0, status: "available", photo: "🚗",
             insuranceExpiry: "", techControlExpiry: "", carteGrise: "",
             image: "", notes: "", documents: [],
           },
@@ -50,6 +50,8 @@ export function VehicleDialog({
 
   const total = (form.purchasePrice || 0) + (form.importFees || 0) + (form.customsFees || 0) + (form.repairFees || 0) + (form.maintenanceFees || 0);
   const margin = (form.sellingPrice || 0) - total;
+  const marginWholesale = (form.wholesalePrice || 0) - total;
+  const marginFloor = (form.minPrice || 0) - total;
 
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -221,9 +223,22 @@ export function VehicleDialog({
             <div><Label>Douane</Label><Input type="number" value={form.customsFees || 0} onChange={(e) => setForm({ ...form, customsFees: +e.target.value })} /></div>
             <div><Label>Réparations</Label><Input type="number" value={form.repairFees || 0} onChange={(e) => setForm({ ...form, repairFees: +e.target.value })} /></div>
             <div><Label>Entretien</Label><Input type="number" value={form.maintenanceFees || 0} onChange={(e) => setForm({ ...form, maintenanceFees: +e.target.value })} /></div>
-            <div><Label>Prix de vente</Label><Input type="number" value={form.sellingPrice || 0} onChange={(e) => setForm({ ...form, sellingPrice: +e.target.value })} /></div>
-            <div className="col-span-2 p-3 bg-muted rounded-lg flex justify-between"><span>Coût total</span><strong>{total.toLocaleString()} FCFA</strong></div>
-            <div className="col-span-2 p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg flex justify-between"><span>Marge prévue</span><strong className="text-emerald-700 dark:text-emerald-400">{margin.toLocaleString()} FCFA</strong></div>
+            <div><Label>Prix affiché (public)</Label><Input type="number" value={form.sellingPrice || 0} onChange={(e) => setForm({ ...form, sellingPrice: +e.target.value })} /></div>
+            <div><Label>Prix marchand (gros)</Label><Input type="number" value={form.wholesalePrice || 0} onChange={(e) => setForm({ ...form, wholesalePrice: +e.target.value })} /></div>
+            <div><Label>Prix plancher (min négociation)</Label><Input type="number" value={form.minPrice || 0} onChange={(e) => setForm({ ...form, minPrice: +e.target.value })} /></div>
+            <div className="col-span-2 p-3 bg-muted rounded-lg flex justify-between"><span>Coût de revient total</span><strong>{total.toLocaleString()} FCFA</strong></div>
+            {([
+              ["Marge prix affiché", margin],
+              ["Marge prix marchand", marginWholesale],
+              ["Marge prix plancher", marginFloor],
+            ] as [string, number][]).map(([label, m]) => (
+              <div key={label} className={`col-span-2 p-3 rounded-lg flex justify-between ${m < 0 ? "bg-red-50 dark:bg-red-500/10" : "bg-emerald-50 dark:bg-emerald-500/10"}`}>
+                <span>{label}</span>
+                <strong className={m < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"}>
+                  {m.toLocaleString()} FCFA {m < 0 && "⚠️ Marge négative"}
+                </strong>
+              </div>
+            ))}
           </div>
         )}
 
