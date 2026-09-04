@@ -607,11 +607,30 @@ export function vehicleProfitability(vehicleId: string) {
   }, 0);
   const saleRevenue = sales.reduce((s, x) => s + x.amount, 0);
   const maintCost = maints.reduce((s, m) => s + (m.partsCost || 0) + (m.laborCost || 0) + (m.otherCost || 0), 0);
-  const baseCost = v.purchasePrice + v.importFees + v.customsFees + v.repairFees + v.maintenanceFees;
-  const totalCost = baseCost + maintCost;
+
+  // Dépenses d'exploitation rattachées au véhicule (carburant, réparations,
+  // assurance, lavage…) saisies dans le module Dépenses. Les dépenses issues
+  // d'une maintenance sont exclues : elles sont déjà comptées dans maintCost.
+  const linked = db.list("expenses").filter((e: any) =>
+    e.vehicleId === vehicleId && e.kind !== "maintenance");
+  const fuelCost = linked.filter((e: any) => e.category === "Carburant").reduce((s: number, e: any) => s + e.amount, 0);
+  const repairCost = linked
+    .filter((e: any) => e.category === "Maintenance" || e.category === "Réparation")
+    .reduce((s: number, e: any) => s + e.amount, 0);
+  const otherOpCost = linked.reduce((s: number, e: any) => s + e.amount, 0) - fuelCost - repairCost;
+  const operatingCost = fuelCost + repairCost + otherOpCost;
+
+  const acquisitionCost = v.purchasePrice + v.importFees + v.customsFees;
+  const baseCost = acquisitionCost + v.repairFees + v.maintenanceFees;
+  const totalCost = baseCost + maintCost + operatingCost;
   const profit = rentalRevenue + saleRevenue - totalCost;
-  return { rentalRevenue, saleRevenue, maintCost, totalCost, profit };
+  const margin = totalCost > 0 ? (profit / totalCost) * 100 : 0;
+  return {
+    rentalRevenue, saleRevenue, maintCost, totalCost, profit, margin,
+    acquisitionCost, baseCost, fuelCost, repairCost, otherOpCost, operatingCost,
+  };
 }
+
 
 /* ==============================================================
  * COFFRE-FORT DOCUMENTAIRE — archivage centralisé.
