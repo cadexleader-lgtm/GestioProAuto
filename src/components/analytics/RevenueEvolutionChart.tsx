@@ -63,16 +63,27 @@ export function RevenueEvolutionChart({ title = "Évolution CA vs Dépenses", cl
       return d.toISOString().slice(0, 10);
     };
 
+    // Le journal de caisse est la source unique de vérité : chaque dépense
+    // génère déjà une sortie de caisse, on ne l'additionne donc pas deux fois.
+    const cashOutKeys = new Set<string>();
     for (const m of cash) {
       const b = idx.get(bucketKey(m.date));
       if (!b) continue;
       if (m.type === "in") b.ca += m.amount;
-      else if (m.type === "out") b.depenses += m.amount;
+      else if (m.type === "out") {
+        b.depenses += m.amount;
+        cashOutKeys.add(`${m.label}|${m.amount}|${bucketKey(m.date)}`);
+      }
     }
+    // Dépenses orphelines (saisies sans mouvement de caisse correspondant)
     for (const e of expenses) {
-      const b = idx.get(bucketKey(e.date));
-      if (b) b.depenses += e.amount;
+      const key = bucketKey(e.date);
+      const b = idx.get(key);
+      if (!b) continue;
+      if (cashOutKeys.has(`${e.label}|${e.amount}|${key}`)) continue;
+      b.depenses += e.amount;
     }
+
 
     let running = 0;
     for (const b of buckets) {
