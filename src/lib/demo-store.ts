@@ -450,6 +450,10 @@ export function useHydrated() {
 export function addExpense(payload: {
   category: string; label: string; amount: number; date?: string;
   hasReceipt?: boolean; source?: string; paidBy?: string; paymentMethod?: string;
+  /** Rattachement analytique à un véhicule (carburant, réparation, entretien…) */
+  vehicleId?: string;
+  /** "maintenance" pour les dépenses générées par le module Maintenance */
+  kind?: string;
 }) {
   const date = payload.date ?? new Date().toISOString().slice(0, 10);
   const e = db.add("expenses", {
@@ -457,8 +461,10 @@ export function addExpense(payload: {
     date, hasReceipt: payload.hasReceipt ?? false,
     source: payload.source ?? "Manuel", paidBy: payload.paidBy,
     paymentMethod: payload.paymentMethod ?? "Caisse principale",
+    vehicleId: payload.vehicleId, kind: payload.kind,
   } as any);
   db.add("cash", {
+
     type: "out",
     label: payload.label,
     amount: payload.amount,
