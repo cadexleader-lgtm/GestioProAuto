@@ -250,6 +250,8 @@ export function SellVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
 
   const submit = () => {
     if (!f.customer) return toast.error("Nom du client requis");
+    if (vehicle.minPrice && (f.amount || 0) < vehicle.minPrice)
+      return toast.error(`Prix sous le plancher autorisé (${formatFCFA(vehicle.minPrice)}) — négociation bloquée`);
     if (f.payment === "credit") {
       const credit = db.add("vehicleCredits", {
         vehicleId: vehicle.id, customer: f.customer,
@@ -279,6 +281,15 @@ export function SellVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
           <div className="col-span-2"><Label>Client *</Label><Input value={f.customer || ""} onChange={(e) => setF({ ...f, customer: e.target.value })} /></div>
           <div><Label>Téléphone</Label><Input value={f.phone || ""} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
           <div><Label>Montant total</Label><MoneyInput value={f.amount} onChange={(v) => setF({ ...f, amount: v })} /></div>
+          <div className="col-span-2 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Paliers :</span>
+            <Button type="button" size="sm" variant="outline" className="h-7 text-xs rounded-full" onClick={() => setF({ ...f, amount: vehicle.sellingPrice })}>Affiché · {formatFCFA(vehicle.sellingPrice)}</Button>
+            {!!vehicle.wholesalePrice && <Button type="button" size="sm" variant="outline" className="h-7 text-xs rounded-full" onClick={() => setF({ ...f, amount: vehicle.wholesalePrice })}>Marchand · {formatFCFA(vehicle.wholesalePrice)}</Button>}
+            {!!vehicle.minPrice && <Button type="button" size="sm" variant="outline" className="h-7 text-xs rounded-full" onClick={() => setF({ ...f, amount: vehicle.minPrice })}>Plancher · {formatFCFA(vehicle.minPrice)}</Button>}
+          </div>
+          {!!vehicle.minPrice && (f.amount || 0) < vehicle.minPrice && (
+            <p className="col-span-2 text-xs font-semibold text-red-600 dark:text-red-400">⚠️ Montant inférieur au prix plancher ({formatFCFA(vehicle.minPrice)}) — la vente sera refusée.</p>
+          )}
           <div className="col-span-2"><Label>Mode</Label>
             <Select value={f.payment} onValueChange={(v) => setF({ ...f, payment: v })}><SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="cash">Cash / Comptant</SelectItem><SelectItem value="credit">À crédit</SelectItem></SelectContent>

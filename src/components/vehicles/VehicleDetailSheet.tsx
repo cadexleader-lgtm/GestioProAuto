@@ -65,7 +65,9 @@ export function VehicleDetailSheet({ vehicle, open, onOpenChange }: { vehicle: V
               </div>
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <Info label="Prix d'achat" value={formatFCFA(vehicle.purchasePrice)} />
-                <Info label="Prix de vente" value={formatFCFA(vehicle.sellingPrice)} />
+                <Info label="Prix affiché" value={formatFCFA(vehicle.sellingPrice)} />
+                {!!vehicle.wholesalePrice && <Info label="Prix marchand" value={formatFCFA(vehicle.wholesalePrice)} />}
+                {!!vehicle.minPrice && <Info label="Prix plancher" value={formatFCFA(vehicle.minPrice)} />}
               </div>
               {vehicle.notes && <div className="p-3 rounded-lg bg-muted text-sm">{vehicle.notes}</div>}
             </TabsContent>
