@@ -188,6 +188,7 @@ export interface Rental {
   dailyRate: number;
   deposit: number;
   advance?: number;
+  paidAmount?: number;
   totalAmount?: number;
   remaining?: number;
   returnedAt?: string;
@@ -197,6 +198,17 @@ export interface Rental {
   notes?: string;
   signatures?: { client?: string; vendor?: string; signedAt?: string };
   status: "reserved" | "active" | "returned" | "overdue" | "cancelled";
+}
+
+export interface RentalPayment {
+  id: string;
+  rentalId: string;
+  amount: number;
+  date: string;
+  currency: string;
+  method: string;
+  status?: string;
+  idempotency_key?: string;
 }
 export const rentals: Rental[] = [
   { id: "r1", vehicleId: "v4", customer: "Touriste Mr. Dupont", phone: "+221 77 000 11 22", startDate: "2026-06-04", endDate: "2026-06-12", dailyRate: 35_000, deposit: 200_000, status: "active" },

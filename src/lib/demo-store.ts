@@ -10,7 +10,7 @@ import {
   vehicles as seedVehicles, vehicleCredits as seedVCredits, rentals as seedRentals,
   appliances as seedAppliances, warranties as seedWarranties, proInvoices as seedProInvoices, applianceCredits as seedACredits,
   type Supplier, type Employee, type Expense, type CashMovement,
-  type Vehicle, type VehicleCredit, type Rental,
+  type Vehicle, type VehicleCredit, type Rental, type RentalPayment,
   type ApplianceProduct, type Warranty, type ProInvoice, type ApplianceCredit,
 } from "./demo-data";
 import { seedCategories, type Category } from "./categories-data";
@@ -156,6 +156,7 @@ type CollectionMap = {
   vehicles: Vehicle;
   vehicleCredits: VehicleCredit;
   rentals: Rental;
+  rentalPayments: RentalPayment;
   appliances: ApplianceProduct;
   warranties: Warranty;
   proInvoices: ProInvoice;
@@ -196,6 +197,7 @@ const seeds: { [K in keyof CollectionMap]: CollectionMap[K][] } = {
   vehicles: seedVehicles,
   vehicleCredits: seedVCredits,
   rentals: seedRentals,
+  rentalPayments: [],
   appliances: seedAppliances,
   warranties: seedWarranties,
   proInvoices: seedProInvoices,
@@ -239,6 +241,7 @@ const TABLES: Record<keyof CollectionMap, string> = {
   vehicles: "vehicles",
   vehicleCredits: "vehicle_credits",
   rentals: "rentals",
+  rentalPayments: "rental_payments",
   appliances: "appliances",
   warranties: "warranties",
   proInvoices: "pro_invoices",
@@ -369,6 +372,14 @@ export const db = {
     if (companyId) fireAndForget(sb.from(TABLES[name]).insert(row(id, withId)));
     return withId;
   },
+  upsertLocal<K extends keyof CollectionMap>(name: K, item: CollectionMap[K] & { id: string }): void {
+    const list = [...(stores[name] ?? [])] as any[];
+    const idx = list.findIndex((it: any) => it.id === item.id);
+    if (idx >= 0) list[idx] = item;
+    else list.unshift(item);
+    stores[name] = list as any;
+    notify(name);
+  },
   update<K extends keyof CollectionMap>(name: K, id: string, patch: Partial<CollectionMap[K]>): void {
     const list = [...(stores[name] ?? [])] as any[];
     const idx = list.findIndex((it: any) => it.id === id);
@@ -389,6 +400,26 @@ export const db = {
     if (companyId) {
       fireAndForget(sb.from(TABLES[name]).delete().eq("company_id", companyId).eq("id", id));
     }
+  },
+  /** Delete remotely first, then update local state after Supabase confirms it. */
+  async removeConfirmed<K extends keyof CollectionMap>(name: K, id: string): Promise<void> {
+    if (!companyId) {
+      throw new Error("Aucune entreprise active n'est disponible.");
+    }
+    const { data, error } = await sb
+      .from(TABLES[name])
+      .delete()
+      .eq("company_id", companyId)
+      .eq("id", id)
+      .select("id");
+    if (error) {
+      throw new Error(error.message || "La suppression du document a échoué.");
+    }
+    if (!data?.some((row: { id: string }) => row.id === id)) {
+      throw new Error("Suppression refusée ou document introuvable.");
+    }
+    stores[name] = ((stores[name] ?? []) as any[]).filter((it: any) => it.id !== id) as any;
+    notify(name);
   },
   /** Insert or update by id (used for singleton rows like company settings). */
   upsert<K extends keyof CollectionMap>(name: K, item: CollectionMap[K] & { id: string }): void {
@@ -434,6 +465,224 @@ export const db = {
   },
 };
 
+export interface ManualExpensePayload {
+  category: string;
+  label: string;
+  amount: number;
+  date?: string;
+  hasReceipt?: boolean;
+  paymentMethod?: string;
+  recurrent?: boolean;
+  note?: string;
+  idempotencyKey: string;
+  sourceId: string;
+}
+
+export async function recordManualExpense(payload: ManualExpensePayload) {
+  if (!companyId) {
+    throw new Error("Aucune entreprise active n'est disponible.");
+  }
+
+  const { data, error } = await sb.rpc("record_manual_expense", {
+    p_company_id: companyId,
+    p_source_id: payload.sourceId,
+    p_cash_account_id: payload.paymentMethod === "cash" ? "Caisse principale" : payload.paymentMethod,
+    p_amount: payload.amount,
+    p_currency: "XOF",
+    p_occurred_at: payload.date ? new Date(payload.date).toISOString() : new Date().toISOString(),
+    p_idempotency_key: payload.idempotencyKey,
+    p_description: payload.label,
+    p_metadata: {
+      category: payload.category,
+      hasReceipt: payload.hasReceipt ?? false,
+      recurrent: payload.recurrent ?? false,
+      note: payload.note ?? "",
+    },
+  });
+
+  if (error) {
+    throw new Error(error.message || "La dépense n'a pas pu être enregistrée.");
+  }
+
+  const expense = {
+    category: payload.category,
+    label: payload.label,
+    amount: payload.amount,
+    date: payload.date ?? new Date().toISOString().slice(0, 10),
+    hasReceipt: payload.hasReceipt ?? false,
+    source: "Manuel",
+    paymentMethod: payload.paymentMethod ?? "cash",
+    recurrent: payload.recurrent ?? false,
+    note: payload.note ?? "",
+    id: payload.sourceId,
+  } as any;
+  db.upsertLocal("expenses", expense);
+
+  const cashId = `manual-expense:${data.id}`;
+  db.upsertLocal("cash", {
+    id: cashId,
+    type: "out",
+    label: payload.label,
+    amount: payload.amount,
+    date: payload.date ?? new Date().toISOString(),
+    source: payload.paymentMethod === "cash" ? "Caisse principale" : payload.paymentMethod,
+    ledgerEntryId: data.id,
+  } as CashMovement);
+
+  return { ledgerEntry: data, expense };
+}
+
+export interface VehicleCashSalePayload {
+  saleId: string;
+  vehicleId: string;
+  customer: string;
+  phone?: string;
+  address?: string;
+  cin?: string;
+  amount: number;
+  method: VehicleSale["method"];
+  occurredAt?: string;
+  idempotencyKey: string;
+  metadata?: Record<string, unknown>;
+}
+
+export async function recordVehicleCashSale(payload: VehicleCashSalePayload) {
+  if (!companyId) {
+    throw new Error("Aucune entreprise active n'est disponible.");
+  }
+
+  const { data, error } = await sb.rpc("record_vehicle_cash_sale", {
+    p_company_id: companyId,
+    p_sale_id: payload.saleId,
+    p_vehicle_id: payload.vehicleId,
+    p_customer: payload.customer,
+    p_phone: payload.phone ?? "",
+    p_address: payload.address ?? "",
+    p_cin: payload.cin ?? "",
+    p_amount: payload.amount,
+    p_currency: "XOF",
+    p_method: payload.method ?? "Cash",
+    p_occurred_at: payload.occurredAt ?? new Date().toISOString(),
+    p_idempotency_key: payload.idempotencyKey,
+    p_metadata: payload.metadata ?? {},
+  });
+
+  if (error) {
+    throw new Error(error.message || "La vente comptant n'a pas pu être enregistrée.");
+  }
+
+  const vehicle = db.list("vehicles").find((item) => item.id === payload.vehicleId);
+  if (vehicle) db.upsertLocal("vehicles", { ...vehicle, status: "sold" });
+  db.upsertLocal("vehicleSales", {
+    ...(payload.metadata ?? {}),
+    id: payload.saleId,
+    vehicleId: payload.vehicleId,
+    customer: payload.customer,
+    phone: payload.phone,
+    address: payload.address,
+    cin: payload.cin,
+    amount: payload.amount,
+    date: (payload.occurredAt ?? new Date().toISOString()).slice(0, 10),
+    payment: "cash",
+    method: payload.method,
+    downPayment: payload.amount,
+    status: "done",
+  });
+
+  return data;
+}
+
+export interface VehicleCreditSalePayload {
+  saleId: string;
+  creditId: string;
+  vehicleId: string;
+  customer: string;
+  phone?: string;
+  idDocument?: string;
+  total: number;
+  downPayment: number;
+  totalMonths: number;
+  monthlyPayment: number;
+  firstDueDate: string;
+  currency: string;
+  method: VehicleSale["method"];
+  occurredAt?: string;
+  idempotencyKey: string;
+  metadata?: Record<string, unknown>;
+}
+
+export async function recordVehicleCreditSale(payload: VehicleCreditSalePayload) {
+  if (!companyId) {
+    throw new Error("Aucune entreprise active n'est disponible.");
+  }
+
+  const { data, error } = await sb.rpc("record_vehicle_credit_sale", {
+    p_company_id: companyId,
+    p_sale_id: payload.saleId,
+    p_credit_id: payload.creditId,
+    p_vehicle_id: payload.vehicleId,
+    p_customer: payload.customer,
+    p_phone: payload.phone ?? "",
+    p_id_document: payload.idDocument ?? "",
+    p_total: payload.total,
+    p_down_payment: payload.downPayment,
+    p_total_months: payload.totalMonths,
+    p_monthly_payment: payload.monthlyPayment,
+    p_first_due_date: payload.firstDueDate,
+    p_currency: payload.currency,
+    p_method: payload.method ?? "Cash",
+    p_occurred_at: payload.occurredAt ?? new Date().toISOString(),
+    p_idempotency_key: payload.idempotencyKey,
+    p_metadata: payload.metadata ?? {},
+  });
+
+  if (error) {
+    throw new Error(error.message || "La vente à crédit n'a pas pu être enregistrée.");
+  }
+
+  const vehicle = db.list("vehicles").find((item) => item.id === payload.vehicleId);
+  if (vehicle) db.upsertLocal("vehicles", { ...vehicle, status: "sold" });
+  db.upsertLocal("vehicleCredits", {
+    id: payload.creditId,
+    vehicleId: payload.vehicleId,
+    customer: payload.customer,
+    total: payload.total,
+    downPayment: payload.downPayment,
+    monthlyPayment: payload.monthlyPayment,
+    paidMonths: 0,
+    totalMonths: payload.totalMonths,
+    nextDueDate: payload.firstDueDate,
+    status: "ok",
+  });
+  db.upsertLocal("vehicleSales", {
+    ...(payload.metadata ?? {}),
+    id: payload.saleId,
+    vehicleId: payload.vehicleId,
+    customer: payload.customer,
+    phone: payload.phone,
+    amount: payload.total,
+    payment: "credit",
+    method: payload.method,
+    downPayment: payload.downPayment,
+    creditId: payload.creditId,
+    date: (payload.occurredAt ?? new Date().toISOString()).slice(0, 10),
+    status: "done",
+  });
+  if (payload.downPayment > 0 && data?.ledger_entry_id) {
+    db.upsertLocal("cash", {
+      id: data.cash_movement_id,
+      type: "in",
+      label: `Apport crédit — ${payload.customer}`,
+      amount: payload.downPayment,
+      date: payload.occurredAt ?? new Date().toISOString(),
+      source: payload.method,
+      ledgerEntryId: data.ledger_entry_id,
+    } as CashMovement);
+  }
+
+  return data;
+}
+
 
 // Hydration check (avoid SSR mismatch by re-reading after mount)
 export function useHydrated() {
@@ -474,43 +723,200 @@ export function addExpense(payload: {
   return e;
 }
 
-export function startRental(payload: Omit<Rental, "id">): Rental {
-  const r = db.add("rentals", payload);
-  db.update("vehicles", payload.vehicleId, { status: "rented" } as any);
-  if (payload.advance && payload.advance > 0) {
-    db.add("cash", {
+export async function recordPayrollPayment(payload: {
+  paymentId: string;
+  employeeId: string;
+  month: string;
+  baseSalary: number;
+  bonuses: number;
+  deductions: number;
+  advances: number;
+  currency: string;
+  method: string;
+  paidAt: string;
+  idempotencyKey: string;
+}) {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data, error } = await sb.rpc("record_payroll_payment", {
+    p_company_id: companyId,
+    p_payment_id: payload.paymentId,
+    p_employee_id: payload.employeeId,
+    p_month: payload.month,
+    p_base_salary: payload.baseSalary,
+    p_bonuses: payload.bonuses,
+    p_deductions: payload.deductions,
+    p_advances: payload.advances,
+    p_currency: payload.currency,
+    p_method: payload.method,
+    p_paid_at: payload.paidAt,
+    p_idempotency_key: payload.idempotencyKey,
+    p_metadata: {},
+  });
+
+  if (error) {
+    throw new Error(error.message || "Le paiement du salaire n'a pas pu être enregistré.");
+  }
+
+  if (data?.payslip) db.upsertLocal("payslips", { id: data.payslip_id, ...data.payslip });
+  if (data?.expense) db.upsertLocal("expenses", { id: data.expense_id, ...data.expense });
+  if (data?.cash) db.upsertLocal("cash", {
+    id: data.cash_movement_id,
+    ...data.cash,
+    ledgerEntryId: data.ledger_entry_id,
+  });
+  if (data?.document) db.upsertLocal("documents", { id: data.document_id, ...data.document });
+
+  return data;
+}
+
+export async function startRental(
+  payload: Omit<Rental, "id"> & { rentalId: string; idempotencyKey: string; currency: string; method: string },
+) {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data, error } = await sb.rpc("record_vehicle_rental", {
+    p_company_id: companyId,
+    p_rental_id: payload.rentalId,
+    p_vehicle_id: payload.vehicleId,
+    p_customer: payload.customer,
+    p_phone: payload.phone ?? "",
+    p_address: payload.address ?? "",
+    p_id_document: payload.idDocument ?? "",
+    p_license_number: payload.licenseNumber ?? "",
+    p_start_date: payload.startDate,
+    p_end_date: payload.endDate,
+    p_start_time: payload.startTime ?? "",
+    p_end_time: payload.endTime ?? "",
+    p_daily_rate: payload.dailyRate,
+    p_deposit: payload.deposit,
+    p_advance: payload.advance ?? 0,
+    p_currency: payload.currency,
+    p_method: payload.method,
+    p_idempotency_key: payload.idempotencyKey,
+    p_metadata: { notes: payload.notes ?? "" },
+  });
+
+  if (error) {
+    throw new Error(error.message || "La location n'a pas pu être enregistrée.");
+  }
+
+  const rental = data?.rental ? { id: data.rental_id, ...data.rental } as Rental : null;
+  if (rental) db.upsertLocal("rentals", rental);
+  const vehicle = db.list("vehicles").find((item) => item.id === payload.vehicleId);
+  if (vehicle) db.upsertLocal("vehicles", { ...vehicle, status: "rented" });
+  if (data?.cash_movement_id && data?.ledger_entry_id && (payload.advance ?? 0) > 0) {
+    db.upsertLocal("cash", {
+      id: data.cash_movement_id,
       type: "in",
       label: `Avance location — ${payload.customer}`,
       amount: payload.advance,
-      date: new Date().toISOString(),
-      source: "Location auto",
-    });
+      date: payload.startDate,
+      source: payload.method,
+      ledgerEntryId: data.ledger_entry_id,
+    } as CashMovement);
   }
-  return r;
+  return data;
 }
 
-export function returnRental(
+export async function recordRentalPayment(
   rentalId: string,
-  data: { returnedAt: string; returnKm?: number; fuelLevel?: string; conditionNote?: string },
+  payload: {
+    paymentId: string;
+    amount: number;
+    date: string;
+    currency: string;
+    method: string;
+    idempotencyKey: string;
+    note?: string;
+  },
 ) {
-  const r = db.list("rentals").find((x) => x.id === rentalId);
-  if (!r) return;
-  db.update("rentals", rentalId, { ...data, status: "returned" } as any);
-  const patch: any = { status: "available" };
-  if (data.returnKm && data.returnKm > 0) patch.mileageKm = data.returnKm;
-  db.update("vehicles", r.vehicleId, patch);
-  const due = typeof r.remaining === "number"
-    ? r.remaining
-    : Math.max(0, (r.totalAmount ?? 0) - (r.advance ?? 0));
-  if (due > 0) {
-    db.add("cash", {
-      type: "in",
-      label: `Solde location — ${r.customer}`,
-      amount: due,
-      date: new Date().toISOString(),
-      source: "Location auto",
-    });
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data, error } = await sb.rpc("record_rental_payment", {
+    p_company_id: companyId,
+    p_payment_id: payload.paymentId,
+    p_rental_id: rentalId,
+    p_amount: payload.amount,
+    p_payment_date: payload.date,
+    p_currency: payload.currency,
+    p_method: payload.method,
+    p_idempotency_key: payload.idempotencyKey,
+    p_metadata: { note: payload.note ?? "" },
+  });
+
+  if (error) {
+    throw new Error(error.message || "Le paiement de la location n'a pas pu être enregistré.");
   }
+
+  if (data?.rental) db.upsertLocal("rentals", { id: data.rental_id, ...data.rental });
+  if (data?.payment) db.upsertLocal("rentalPayments", { id: data.payment_id, ...data.payment });
+  if (data?.cash_movement_id && data?.ledger_entry_id) {
+    db.upsertLocal("cash", {
+      id: data.cash_movement_id,
+      type: "in",
+      label: "Paiement location",
+      amount: payload.amount,
+      date: payload.date,
+      source: payload.method,
+      ledgerEntryId: data.ledger_entry_id,
+    } as CashMovement);
+  }
+  return data;
+}
+
+export async function recordVehicleRentalReturn(
+  rentalId: string,
+  payload: {
+    returnDate: string;
+    returnKm: number;
+    fuelLevel?: string;
+    conditionNote?: string;
+    paymentId: string;
+    currency: string;
+    method: string;
+    idempotencyKey: string;
+  },
+) {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data, error } = await sb.rpc("record_vehicle_rental_return", {
+    p_company_id: companyId,
+    p_rental_id: rentalId,
+    p_return_date: payload.returnDate,
+    p_return_km: payload.returnKm,
+    p_fuel_level: payload.fuelLevel ?? "",
+    p_condition_note: payload.conditionNote ?? "",
+    p_payment_id: payload.paymentId,
+    p_currency: payload.currency,
+    p_method: payload.method,
+    p_idempotency_key: payload.idempotencyKey,
+    p_metadata: {},
+  });
+
+  if (error) {
+    throw new Error(error.message || "Le retour de la location n'a pas pu être enregistré.");
+  }
+
+  if (data?.rental) db.upsertLocal("rentals", { id: data.rental_id, ...data.rental });
+  const rental = db.list("rentals").find((item) => item.id === rentalId);
+  if (rental) {
+    const vehicle = db.list("vehicles").find((item) => item.id === rental.vehicleId);
+    if (vehicle) db.upsertLocal("vehicles", { ...vehicle, status: "available", mileageKm: payload.returnKm });
+  }
+  if (data?.payment) db.upsertLocal("rentalPayments", { id: data.payment_id, ...data.payment });
+  if (data?.cash_movement_id && data?.ledger_entry_id && data?.payment) {
+    db.upsertLocal("cash", {
+      id: data.cash_movement_id,
+      type: "in",
+      label: "Solde retour location",
+      amount: data.payment.amount,
+      date: payload.returnDate,
+      source: payload.method,
+      ledgerEntryId: data.ledger_entry_id,
+    } as CashMovement);
+  }
+  return data;
 }
 
 export function isRentalOverdue(r: Rental): boolean {
@@ -550,55 +956,102 @@ export function startVehicleMaintenance(payload: Omit<VehicleMaintenance, "id">)
   return m;
 }
 
-export function completeVehicleMaintenance(maintId: string) {
-  const m = db.list("vehicleMaintenances").find((x) => x.id === maintId);
-  if (!m) return;
-  db.update("vehicleMaintenances", maintId, {
-    status: "done",
-    dateOut: new Date().toISOString().slice(0, 10),
-  } as any);
-  const cost = (m.partsCost || 0) + (m.laborCost || 0) + (m.otherCost || 0);
-  if (cost > 0) {
-    addExpense({
-      category: "Maintenance",
-      label: `Maintenance véhicule — ${m.motif}`,
-      amount: cost,
-      paidBy: m.garage || "—",
-      source: "Automobile",
-      hasReceipt: true,
+export async function completeVehicleMaintenance(payload: {
+  maintenanceId: string;
+  completedAt: string;
+  currency: string;
+  paymentMethod: string;
+  idempotencyKey: string;
+  metadata?: Record<string, unknown>;
+}) {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data, error } = await sb.rpc("complete_vehicle_maintenance", {
+    p_company_id: companyId,
+    p_maintenance_id: payload.maintenanceId,
+    p_completed_at: payload.completedAt,
+    p_currency: payload.currency,
+    p_payment_method: payload.paymentMethod,
+    p_idempotency_key: payload.idempotencyKey,
+    p_metadata: payload.metadata ?? {},
+  });
+
+  if (error) {
+    throw new Error(error.message || "La clôture de la maintenance a échoué.");
+  }
+
+  if (data?.maintenance) {
+    db.upsertLocal("vehicleMaintenances", {
+      id: data.maintenance_id,
+      ...data.maintenance,
     });
   }
-  db.update("vehicles", m.vehicleId, { status: "available" } as any);
+
+  const vehicle = db.list("vehicles").find((item) => item.id === data?.vehicle_id);
+  if (vehicle) db.upsertLocal("vehicles", { ...vehicle, status: "available" });
+
+  if (data?.expense_id && data.expense) {
+    db.upsertLocal("expenses", { id: data.expense_id, ...data.expense });
+  }
+  if (data?.cash_movement_id && data.cash) {
+    db.upsertLocal("cash", {
+      id: data.cash_movement_id,
+      ...data.cash,
+      ledgerEntryId: data.ledger_entry_id,
+    } as CashMovement);
+  }
+
+  return data;
 }
 
-export function addVehicleCreditPayment(
+export async function addVehicleCreditPayment(
   creditId: string,
-  payload: { amount: number; date: string; method: VehiclePayment["method"]; note?: string },
+  payload: {
+    paymentId: string;
+    amount: number;
+    date: string;
+    method: VehiclePayment["method"];
+    currency: string;
+    idempotencyKey: string;
+    note?: string;
+  },
 ) {
-  const credit = db.list("vehicleCredits").find((c) => c.id === creditId);
-  if (!credit) return;
-  db.add("vehiclePayments", { creditId, ...payload });
-  const totalPaid = credit.downPayment
-    + db.list("vehiclePayments").filter((p) => p.creditId === creditId)
-        .reduce((s, p) => s + p.amount, 0);
-  const paidMonths = credit.monthlyPayment > 0
-    ? Math.min(credit.totalMonths, Math.floor(totalPaid / credit.monthlyPayment))
-    : credit.paidMonths;
-  const isDone = totalPaid >= credit.total;
-  const nextDue = new Date(payload.date);
-  nextDue.setMonth(nextDue.getMonth() + 1);
-  db.update("vehicleCredits", creditId, {
-    paidMonths,
-    status: isDone ? "ok" : (+new Date(credit.nextDueDate) < Date.now() ? "late" : "ok"),
-    nextDueDate: isDone ? credit.nextDueDate : nextDue.toISOString().slice(0, 10),
-  } as any);
-  db.add("cash", {
-    type: "in",
-    label: `Paiement crédit — ${credit.customer}`,
-    amount: payload.amount,
-    date: new Date().toISOString(),
-    source: payload.method,
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data, error } = await sb.rpc("record_vehicle_credit_payment", {
+    p_company_id: companyId,
+    p_payment_id: payload.paymentId,
+    p_credit_id: creditId,
+    p_amount: payload.amount,
+    p_payment_date: payload.date,
+    p_currency: payload.currency,
+    p_method: payload.method,
+    p_idempotency_key: payload.idempotencyKey,
+    p_metadata: { note: payload.note ?? "" },
   });
+
+  if (error) {
+    throw new Error(error.message || "Le paiement du crédit n'a pas pu être enregistré.");
+  }
+
+  if (data?.credit) {
+    db.upsertLocal("vehicleCredits", { id: creditId, ...data.credit });
+  }
+  if (data?.payment) {
+    db.upsertLocal("vehiclePayments", { id: payload.paymentId, ...data.payment });
+  }
+  if (data?.cash_movement_id && data?.ledger_entry_id) {
+    db.upsertLocal("cash", {
+      id: data.cash_movement_id,
+      type: "in",
+      label: `Paiement crédit`,
+      amount: payload.amount,
+      date: payload.date,
+      source: payload.method,
+      ledgerEntryId: data.ledger_entry_id,
+    } as CashMovement);
+  }
+  return data;
 }
 
 export function vehicleProfitability(vehicleId: string) {
@@ -617,8 +1070,13 @@ export function vehicleProfitability(vehicleId: string) {
   // Dépenses d'exploitation rattachées au véhicule (carburant, réparations,
   // assurance, lavage…) saisies dans le module Dépenses. Les dépenses issues
   // d'une maintenance sont exclues : elles sont déjà comptées dans maintCost.
-  const linked = db.list("expenses").filter((e: any) =>
-    e.vehicleId === vehicleId && e.kind !== "maintenance");
+  const linked = db.list("expenses").filter((e: any) => {
+    const isMaintenanceExpense = Boolean(e.maintenanceId)
+      || e.kind === "maintenance"
+      || String(e.source ?? "").toLowerCase() === "maintenance"
+      || e.source_type === "maintenance_completion";
+    return e.vehicleId === vehicleId && !isMaintenanceExpense;
+  });
   const fuelCost = linked.filter((e: any) => e.category === "Carburant").reduce((s: number, e: any) => s + e.amount, 0);
   const repairCost = linked
     .filter((e: any) => e.category === "Maintenance" || e.category === "Réparation")

@@ -14,7 +14,7 @@ import { useEffect } from "react";
 import { SUB_SECTORS_ARRAY } from "@/lib/sectors";
 import { db } from "@/lib/demo-store";
 import { Database, Trash2, Shield, Volume2 } from "lucide-react";
-import { ROLES, setRole, useRole } from "@/lib/roles";
+import { ROLES, useRole } from "@/lib/roles";
 import { isSoundEnabled, setSoundEnabled } from "@/lib/notifications";
 import { Switch } from "@/components/ui/switch";
 import { CompanyBrandingCard } from "@/components/settings/CompanyBrandingCard";
@@ -220,13 +220,13 @@ function RolesAndAlertsCard() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <p className="text-sm font-semibold mb-3">Rôle actif sur cet appareil</p>
+          <p className="text-sm font-semibold mb-3">Rôle réel de votre compte</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {ROLES.map((r) => (
               <button
                 key={r.id}
                 type="button"
-                onClick={() => { setRole(r.id); toast.success(`Rôle : ${r.label}`); }}
+                disabled
                 className={`text-left rounded-2xl border-2 p-4 transition-all ${role === r.id ? "border-primary bg-primary/5 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}
               >
                 <p className="font-display font-bold">{r.label}</p>
@@ -235,7 +235,7 @@ function RolesAndAlertsCard() {
             ))}
           </div>
           <p className="text-xs text-muted-foreground mt-3">
-            Le rôle limite les actions dans l'interface (suppressions, finances). Pour une sécurité serveur complète, activez l'authentification Cloud.
+            Le rôle est fourni par l'organisation et vérifié côté serveur. Cette interface ne permet pas de le modifier.
           </p>
         </div>
 
@@ -253,5 +253,3 @@ function RolesAndAlertsCard() {
     </Card>
   );
 }
-
-

@@ -16,8 +16,9 @@ import { vehicleCost } from "@/lib/demo-data";
 import { useCollection } from "@/lib/demo-store";
 import { VehicleDialog } from "@/components/forms/SectorDialogs";
 import {
-  RentVehicleDialog, SellVehicleDialog, MaintenanceVehicleDialog,
+  RentVehicleDialog, MaintenanceVehicleDialog,
 } from "@/components/vehicles/VehicleActionsDialogs";
+import { SaleWorkflowDialog } from "@/components/vehicles/SaleWorkflowDialog";
 import { VehicleDetailSheet } from "@/components/vehicles/VehicleDetailSheet";
 import type { Vehicle } from "@/lib/demo-data";
 
@@ -37,7 +38,7 @@ export function VehiculesList() {
   const [openAdd, setOpenAdd] = useState(false);
   const [editFor, setEditFor] = useState<Vehicle | null>(null);
   const [rentFor, setRentFor] = useState<Vehicle | null>(null);
-  const [sellFor, setSellFor] = useState<Vehicle | null>(null);
+  const [saleVehicle, setSaleVehicle] = useState<Vehicle | null>(null);
   const [maintFor, setMaintFor] = useState<Vehicle | null>(null);
   const [viewFor, setViewFor] = useState<Vehicle | null>(null);
 
@@ -135,7 +136,7 @@ export function VehiculesList() {
                       {v.status === "available" && (
                         <>
                           <DropdownMenuItem onClick={() => setRentFor(v)}><KeyRound size={14} className="mr-2" /> Louer</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setSellFor(v)}><ShoppingCart size={14} className="mr-2" /> Vendre</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setSaleVehicle(v)}><ShoppingCart size={14} className="mr-2" /> Vendre</DropdownMenuItem>
                         </>
                       )}
                       <DropdownMenuItem onClick={() => setMaintFor(v)} disabled={v.status === "sold"}><Wrench size={14} className="mr-2" /> Maintenance</DropdownMenuItem>
@@ -186,7 +187,11 @@ export function VehiculesList() {
       <VehicleDialog open={openAdd} onOpenChange={setOpenAdd} />
       <VehicleDialog vehicle={editFor} open={!!editFor} onOpenChange={(o) => !o && setEditFor(null)} />
       <RentVehicleDialog vehicle={rentFor} open={!!rentFor} onOpenChange={(o) => !o && setRentFor(null)} />
-      <SellVehicleDialog vehicle={sellFor} open={!!sellFor} onOpenChange={(o) => !o && setSellFor(null)} />
+      <SaleWorkflowDialog
+        open={!!saleVehicle}
+        initialVehicleId={saleVehicle?.id}
+        onOpenChange={(o) => !o && setSaleVehicle(null)}
+      />
       <MaintenanceVehicleDialog vehicle={maintFor} open={!!maintFor} onOpenChange={(o) => !o && setMaintFor(null)} />
       <VehicleDetailSheet vehicle={viewFor} open={!!viewFor} onOpenChange={(o) => !o && setViewFor(null)} />
     </div>

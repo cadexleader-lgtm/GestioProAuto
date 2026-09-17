@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { db, sellVehicle, useCollection } from "@/lib/demo-store";
+import { recordVehicleCreditSale, useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -16,6 +16,10 @@ export function NewCreditSaleDialog({ open, onOpenChange }: { open: boolean; onO
   const available = useMemo(() => vehicles.filter((v) => v.status === "available"), [vehicles]);
   const [step, setStep] = useState(0);
   const [f, setF] = useState<any>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [saleId, setSaleId] = useState(() => crypto.randomUUID());
+  const [creditId, setCreditId] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
     if (!open) return;
@@ -26,6 +30,9 @@ export function NewCreditSaleDialog({ open, onOpenChange }: { open: boolean; onO
       total: 0, downPayment: 0, totalMonths: 12, monthlyPayment: 0,
       firstDueDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
     });
+    setIdempotencyKey(crypto.randomUUID());
+    setSaleId(crypto.randomUUID());
+    setCreditId(crypto.randomUUID());
   }, [open]);
 
   const vehicle = vehicles.find((v) => v.id === f.vehicleId);
@@ -42,33 +49,34 @@ export function NewCreditSaleDialog({ open, onOpenChange }: { open: boolean; onO
     setStep((s) => Math.min(STEPS.length - 1, s + 1));
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (!f.vehicleId || !f.customer || !f.total) return toast.error("Champs requis manquants");
     const monthly = f.monthlyPayment || suggestedMonthly;
-    const credit = db.add("vehicleCredits", {
-      vehicleId: f.vehicleId,
-      customer: f.customer,
-      total: f.total,
-      downPayment: f.downPayment || 0,
-      monthlyPayment: monthly,
-      paidMonths: 0,
-      totalMonths: f.totalMonths,
-      nextDueDate: f.firstDueDate,
-      status: "ok",
-    });
-    const sale = sellVehicle({ vehicleId: f.vehicleId, customer: f.customer, phone: f.phone, amount: f.total, payment: "credit" });
-    db.update("vehicleSales", sale.id, { creditId: credit.id });
-    if (f.downPayment > 0) {
-      db.add("cash", {
-        type: "in",
-        label: `Apport crédit — ${f.customer}`,
-        amount: f.downPayment,
-        date: new Date().toISOString(),
-        source: "Vente auto",
+    setSubmitting(true);
+    try {
+      await recordVehicleCreditSale({
+        saleId,
+        creditId,
+        vehicleId: f.vehicleId,
+        customer: f.customer,
+        phone: f.phone,
+        idDocument: f.idDocument,
+        total: f.total,
+        downPayment: f.downPayment || 0,
+        totalMonths: f.totalMonths,
+        monthlyPayment: monthly,
+        firstDueDate: f.firstDueDate,
+        currency: "XOF",
+        method: "Cash",
+        idempotencyKey,
       });
+      toast.success("Vente à crédit créée");
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "La vente à crédit a échoué.");
+    } finally {
+      setSubmitting(false);
     }
-    toast.success("Vente à crédit créée");
-    onOpenChange(false);
   };
 
   return (
@@ -147,7 +155,7 @@ export function NewCreditSaleDialog({ open, onOpenChange }: { open: boolean; onO
             {step < STEPS.length - 1 ? (
               <Button onClick={next}>Suivant <ChevronRight size={14} /></Button>
             ) : (
-              <Button onClick={submit}><Check size={14} /> Créer le crédit</Button>
+              <Button onClick={submit} disabled={submitting}><Check size={14} /> Créer le crédit</Button>
             )}
           </div>
         </DialogFooter>

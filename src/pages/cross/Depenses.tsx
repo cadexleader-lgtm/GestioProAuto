@@ -4,12 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCollection, addExpense } from "@/lib/demo-store";
+import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
 import { Receipt, Plus, Image as ImageIcon, Search, Wrench, Users, Car, Store, TrendingDown, Wallet } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { ExpenseDialog } from "@/components/forms/FinanceDialogs";
-import { toast } from "sonner";
 
 const COLORS = ["hsl(221 83% 53%)","hsl(48 96% 53%)","hsl(142 71% 45%)","hsl(280 65% 60%)","hsl(340 75% 55%)","hsl(199 89% 48%)","hsl(25 95% 53%)","hsl(174 62% 47%)","hsl(258 75% 63%)","hsl(0 0% 60%)"];
 
@@ -32,7 +31,6 @@ function sourceOf(e: any): string {
 
 export function Depenses() {
   const expenses = useCollection("expenses");
-  const employees = useCollection("employees");
   const maintenances = useCollection("vehicleMaintenances");
   const cash = useCollection("cash");
 
@@ -87,22 +85,6 @@ export function Depenses() {
 
   const categories = useMemo(() => [...new Set(expenses.map(e => e.category))], [expenses]);
 
-  // Actions rapides synchronisées
-  const payrollTotal = employees.reduce((s, e: any) => s + (e.salary || 0), 0);
-  const alreadyPaid = expenses.some(e => e.category === "Salaires" && e.date.startsWith(monthKey));
-
-  const paySalaries = () => {
-    if (payrollTotal <= 0) return toast.error("Aucun salaire à payer");
-    addExpense({
-      category: "Salaires",
-      label: `Salaires ${new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}`,
-      amount: payrollTotal,
-      source: "RH",
-      hasReceipt: true,
-    });
-    toast.success(`Salaires payés — ${formatFCFA(payrollTotal)} décaissés de la caisse`);
-  };
-
   const pendingMaint = maintenances.filter((m: any) => m.status !== "done");
 
   return (
@@ -119,9 +101,14 @@ export function Depenses() {
 
       {/* Actions rapides */}
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" onClick={paySalaries} disabled={alreadyPaid}>
-          <Users size={14} /> {alreadyPaid ? "Salaires du mois payés" : `Payer salaires (${formatFCFA(payrollTotal)})`}
-        </Button>
+        <div className="flex flex-col gap-1">
+          <Button variant="outline" size="sm" disabled>
+            <Users size={14} /> Paiement groupé — bientôt disponible
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Le paiement individuel des salaires doit être effectué depuis Personnel. Le paiement groupé sera disponible prochainement.
+          </p>
+        </div>
         <Button variant="outline" size="sm" onClick={() => setCat("Maintenance")}>
           <Wrench size={14} /> Dépenses maintenance
         </Button>

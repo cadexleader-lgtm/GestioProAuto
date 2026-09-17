@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { db, addExpense, archiveDocument } from "@/lib/demo-store";
+import { db, recordPayrollPayment } from "@/lib/demo-store";
 import { toast } from "sonner";
 
 const DEPTS = ["Direction","Ventes","Caisse","Stock","Finance","Logistique","RH","Cuisine","Service","Technique"];
@@ -96,37 +96,50 @@ export function AttendanceDialog({ open, onOpenChange }: { open:boolean; onOpenC
 export function PayrollDialog({ open, onOpenChange }: { open:boolean; onOpenChange:(v:boolean)=>void }) {
   const employees = db.list("employees");
   const [form, setForm] = useState<any>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [paymentId, setPaymentId] = useState(() => crypto.randomUUID());
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
   useEffect(()=>{
     const first = employees[0];
     setForm({ employeeId: first?.id||"", month: new Date().toISOString().slice(0,7), baseSalary: first?.salary||0, bonuses:0, deductions:0, advances:0 });
+    if (open) {
+      setPaymentId(crypto.randomUUID());
+      setIdempotencyKey(crypto.randomUUID());
+      setSubmitting(false);
+    }
   },[open]);
   const net = (form.baseSalary||0) + (form.bonuses||0) - (form.deductions||0) - (form.advances||0);
-  const submit = () => {
+  const submit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
     const emp = employees.find(e => e.id === form.employeeId);
-    const name = emp ? `${emp.firstName} ${emp.lastName}` : "Employé";
-    const slip = db.add("payslips", { ...form, net, paidAt: new Date().toISOString() });
-    if (net > 0) {
-      addExpense({
-        category: "Salaires",
-        label: `Salaire ${form.month} — ${name}`,
-        amount: net,
-        source: "RH",
-        paidBy: name,
-        hasReceipt: true,
-      });
+    if (!emp) {
+      setSubmitting(false);
+      toast.error("Employé requis");
+      return;
     }
-    archiveDocument({
-      type: "bulletin",
-      title: `Bulletin de paie ${form.month} — ${name}`,
-      relatedTo: name,
-      amount: net,
-      entityType: "employee",
-      entityId: form.employeeId,
-      entityLabel: name,
-      payload: { ...form, net, slipId: slip.id },
-    });
-    toast.success("Bulletin généré · dépense et sortie de caisse enregistrées");
-    onOpenChange(false);
+    const paidAt = new Date().toISOString();
+    try {
+      await recordPayrollPayment({
+        paymentId,
+        employeeId: form.employeeId,
+        month: form.month,
+        baseSalary: Number(form.baseSalary) || 0,
+        bonuses: Number(form.bonuses) || 0,
+        deductions: Number(form.deductions) || 0,
+        advances: Number(form.advances) || 0,
+        currency: "XOF",
+        method: "Cash",
+        paidAt,
+        idempotencyKey,
+      });
+      toast.success("Bulletin généré · dépense et sortie de caisse enregistrées");
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Le paiement du salaire n'a pas pu être enregistré.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -146,7 +159,7 @@ export function PayrollDialog({ open, onOpenChange }: { open:boolean; onOpenChan
         <div><Label>Avances déjà versées</Label><Input type="number" value={form.advances} onChange={e=>setForm({...form,advances:+e.target.value})}/></div>
         <div className="p-3 bg-primary/10 rounded-lg flex justify-between"><span>Net à payer</span><strong className="text-primary text-lg">{net.toLocaleString()} FCFA</strong></div>
       </div>
-      <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>onOpenChange(false)}>Annuler</Button><Button onClick={submit}>Valider la paie</Button></DialogFooter>
+      <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>onOpenChange(false)} disabled={submitting}>Annuler</Button><Button onClick={submit} disabled={submitting}>{submitting ? "Enregistrement..." : "Valider la paie"}</Button></DialogFooter>
     </DialogContent></Dialog>
   );
 }

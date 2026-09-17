@@ -2,9 +2,16 @@ import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatFCFA } from "@/lib/format";
 import { Link } from "@tanstack/react-router";
-import { Car, TrendingUp, KeyRound, AlertTriangle, ArrowRight, Wrench, Wallet, DollarSign, Users } from "lucide-react";
+import { Car, KeyRound, AlertTriangle, ArrowRight, Wrench, Wallet, DollarSign, Users, ArrowDownLeft, ArrowUpRight, Scale } from "lucide-react";
 import { useCollection, vehicleProfitability } from "@/lib/demo-store";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+
+function businessDateKey(value: string | Date) {
+  // Date-only values are business dates: preserve them rather than parsing in UTC.
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
+  const date = new Date(value);
+  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+}
 
 export function VehiculesDashboard() {
   const vehicles = useCollection("vehicles");
@@ -12,27 +19,39 @@ export function VehiculesDashboard() {
   const sales = useCollection("vehicleSales");
   const credits = useCollection("vehicleCredits");
   const payments = useCollection("vehiclePayments");
+  const rentalPayments = useCollection("rentalPayments");
+  const cash = useCollection("cash");
 
   const stats = useMemo(() => {
-    const now = new Date();
-    const monthKey = (d: string | Date) => new Date(d).toISOString().slice(0, 7);
-    const currentMonth = now.toISOString().slice(0, 7);
+    const currentMonth = businessDateKey(new Date()).slice(0, 7);
+    const isCurrentMonth = (date: string) => businessDateKey(date).slice(0, 7) === currentMonth;
 
     // Revenus location : cumul (jours × tarif) des locations
-    const rentalRevenue = rentals.reduce((s, r) => {
-      const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / 86400000));
-      return s + days * (r.dailyRate || 0);
-    }, 0);
     const rentalRevenueMonth = rentals
-      .filter((r) => monthKey(r.startDate) === currentMonth)
+      .filter((r) => isCurrentMonth(r.startDate))
       .reduce((s, r) => {
         const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / 86400000));
         return s + days * (r.dailyRate || 0);
       }, 0);
 
     // Revenus vente
-    const saleRevenue = sales.reduce((s, x) => s + x.amount, 0);
-    const saleRevenueMonth = sales.filter((s) => monthKey(s.date) === currentMonth).reduce((a, b) => a + b.amount, 0);
+    const saleRevenueMonth = sales.filter((s) => isCurrentMonth(s.date)).reduce((a, b) => a + b.amount, 0);
+
+    // Cash is the operational source of truth. Ledger and business payment records
+    // are never added to it, preventing duplicate counting of the same operation.
+    const monthCash = cash.filter((movement) => isCurrentMonth(movement.date));
+    const cashInMonth = monthCash
+      .filter((movement) => movement.type === "in")
+      .reduce((sum, movement) => sum + movement.amount, 0);
+    const cashOutMonth = monthCash
+      .filter((movement) => movement.type === "out")
+      .reduce((sum, movement) => sum + movement.amount, 0);
+    const netCashMonth = cashInMonth - cashOutMonth;
+
+    // Reconciliation only: these payment records are already represented in cashInMonth.
+    const rentalPaymentsMonth = rentalPayments
+      .filter((payment) => isCurrentMonth(payment.date))
+      .reduce((sum, payment) => sum + payment.amount, 0);
 
     // Crédits restant à encaisser
     const creditsRemaining = credits.reduce((s, c) => {
@@ -41,10 +60,17 @@ export function VehiculesDashboard() {
     }, 0);
 
     const immobilized = vehicles.filter((v) => v.status === "maintenance" || v.status === "rented").length;
-    const monthTotal = rentalRevenueMonth + saleRevenueMonth;
-
-    return { rentalRevenue, saleRevenue, creditsRemaining, immobilized, monthTotal };
-  }, [vehicles, rentals, sales, credits, payments]);
+    return {
+      saleRevenueMonth,
+      rentalRevenueMonth,
+      rentalPaymentsMonth,
+      cashInMonth,
+      cashOutMonth,
+      netCashMonth,
+      creditsRemaining,
+      immobilized,
+    };
+  }, [vehicles, rentals, sales, credits, payments, rentalPayments, cash]);
 
   // Évolution 6 derniers mois
   const evolution = useMemo(() => {
@@ -52,11 +78,11 @@ export function VehiculesDashboard() {
     const now = new Date();
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = d.toISOString().slice(0, 7);
+      const key = businessDateKey(d).slice(0, 7);
       buckets.push({ month: key, label: d.toLocaleDateString("fr-FR", { month: "short" }), loc: 0, vente: 0 });
     }
     rentals.forEach((r) => {
-      const key = new Date(r.startDate).toISOString().slice(0, 7);
+      const key = businessDateKey(r.startDate).slice(0, 7);
       const b = buckets.find((x) => x.month === key);
       if (b) {
         const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / 86400000));
@@ -64,7 +90,7 @@ export function VehiculesDashboard() {
       }
     });
     sales.forEach((s) => {
-      const key = new Date(s.date).toISOString().slice(0, 7);
+      const key = businessDateKey(s.date).slice(0, 7);
       const b = buckets.find((x) => x.month === key);
       if (b) b.vente += s.amount;
     });
@@ -100,20 +126,26 @@ export function VehiculesDashboard() {
 
       {/* KPIs prioritaires */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <Kpi icon={<DollarSign className="text-emerald-600" />} label="CA du mois" value={formatFCFA(stats.monthTotal)} tone="emerald" />
-        <Kpi icon={<KeyRound className="text-indigo-600" />} label="Revenus location" value={formatFCFA(stats.rentalRevenue)} tone="indigo" />
-        <Kpi icon={<TrendingUp className="text-blue-600" />} label="Revenus vente" value={formatFCFA(stats.saleRevenue)} tone="blue" />
-        <Kpi icon={<Wallet className="text-violet-600" />} label="Crédit restant" value={formatFCFA(stats.creditsRemaining)} tone="violet" />
+        <Kpi icon={<DollarSign className="text-emerald-600" />} label="CA signé du mois" value={formatFCFA(stats.saleRevenueMonth)} tone="emerald" />
+        <Kpi icon={<ArrowDownLeft className="text-blue-600" />} label="Encaissements du mois" value={formatFCFA(stats.cashInMonth)} tone="blue" />
+        <Kpi icon={<ArrowUpRight className="text-rose-600" />} label="Décaissements du mois" value={formatFCFA(stats.cashOutMonth)} tone="rose" />
+        <Kpi icon={<Scale className="text-indigo-600" />} label="Trésorerie nette du mois" value={formatFCFA(stats.netCashMonth)} tone="indigo" />
+        <Kpi icon={<Wallet className="text-violet-600" />} label="Créances en cours" value={formatFCFA(stats.creditsRemaining)} tone="violet" />
+        <Kpi icon={<KeyRound className="text-cyan-600" />} label="Locations contractées du mois" value={formatFCFA(stats.rentalRevenueMonth)} tone="cyan" />
         <Kpi icon={<AlertTriangle className="text-amber-600" />} label="Véhicules immobilisés" value={String(stats.immobilized)} tone="amber" />
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        Les locations sont rattachées commercialement au mois de leur début. Les paiements de location enregistrés ce mois ({formatFCFA(stats.rentalPaymentsMonth)}) sont déjà inclus dans les encaissements de caisse.
+      </p>
 
       {/* Évolution des revenus */}
       <Card className="shadow-sm">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-display font-semibold">Évolution des revenus</h3>
-              <p className="text-xs text-muted-foreground">6 derniers mois — location + vente</p>
+              <h3 className="font-display font-semibold">Évolution du CA signé</h3>
+              <p className="text-xs text-muted-foreground">6 derniers mois — ventes signées + contrats de location, sans assimilation à la trésorerie</p>
             </div>
           </div>
           <div className="h-[280px]">
@@ -222,13 +254,15 @@ export function VehiculesDashboard() {
   );
 }
 
-function Kpi({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone: "emerald" | "indigo" | "blue" | "violet" | "amber" }) {
+function Kpi({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone: "emerald" | "indigo" | "blue" | "violet" | "amber" | "rose" | "cyan" }) {
   const tones = {
     emerald: "from-white to-emerald-50 border-emerald-200/70",
     indigo: "from-white to-indigo-50 border-indigo-200/70",
     blue: "from-white to-blue-50 border-blue-200/70",
     violet: "from-white to-violet-50 border-violet-200/70",
     amber: "from-white to-amber-50 border-amber-200/70",
+    rose: "from-white to-rose-50 border-rose-200/70",
+    cyan: "from-white to-cyan-50 border-cyan-200/70",
   };
   return (
     <Card className={`bg-gradient-to-br ${tones[tone]} hover:-translate-y-0.5 transition-all`}>

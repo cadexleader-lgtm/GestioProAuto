@@ -10,11 +10,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { User2, CalendarDays, Wallet, ClipboardCheck, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import {
-  startRental, sellVehicle, startVehicleMaintenance,
+  startRental, recordRentalPayment, recordVehicleCashSale, recordVehicleCreditSale, startVehicleMaintenance,
   addVehicleCreditPayment, db,
 } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import type { Vehicle, VehicleCredit } from "@/lib/demo-data";
+import type { Vehicle, VehicleCredit, Rental } from "@/lib/demo-data";
 
 const glass = "backdrop-blur-xl bg-white/85 dark:bg-slate-900/80 border border-white/40 dark:border-white/10";
 
@@ -28,11 +28,17 @@ const RENT_STEPS = [
 
 export function RentVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Vehicle | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [rentalId, setRentalId] = useState(() => crypto.randomUUID());
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
   const today = new Date().toISOString().slice(0, 10);
   const [f, setF] = useState<any>({});
   useEffect(() => {
     if (open) {
       setStep(0);
+      setSubmitting(false);
+      setRentalId(crypto.randomUUID());
+      setIdempotencyKey(crypto.randomUUID());
       setF({
         customer: "", phone: "", address: "", idDocument: "", licenseNumber: "",
         startDate: today, endDate: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
@@ -63,19 +69,31 @@ export function RentVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
     setStep((s) => Math.min(RENT_STEPS.length - 1, s + 1));
   };
 
-  const submit = () => {
+  const submit = async () => {
+    if (submitting) return;
     if (!f.customer) return toast.error("Nom du client requis");
-    startRental({
-      vehicleId: vehicle.id,
-      customer: f.customer, phone: f.phone, address: f.address,
-      idDocument: f.idDocument, licenseNumber: f.licenseNumber,
-      startDate: f.startDate, endDate: f.endDate, startTime: f.startTime, endTime: f.endTime,
-      dailyRate: f.dailyRate, deposit: f.deposit, advance: f.advance,
-      totalAmount: total, remaining, notes: f.notes,
-      status: "active",
-    });
-    toast.success(`${vehicle.brand} ${vehicle.model} loué à ${f.customer}`);
-    onOpenChange(false);
+    setSubmitting(true);
+    try {
+      await startRental({
+        vehicleId: vehicle.id,
+        customer: f.customer, phone: f.phone, address: f.address,
+        idDocument: f.idDocument, licenseNumber: f.licenseNumber,
+        startDate: f.startDate, endDate: f.endDate, startTime: f.startTime, endTime: f.endTime,
+        dailyRate: f.dailyRate, deposit: f.deposit, advance: f.advance,
+        totalAmount: total, remaining, notes: f.notes,
+        status: "active",
+        rentalId,
+        idempotencyKey,
+        currency: "XOF",
+        method: f.method || "Cash",
+      });
+      toast.success(`${vehicle.brand} ${vehicle.model} loué à ${f.customer}`);
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "La location n'a pas pu être enregistrée.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -212,7 +230,7 @@ export function RentVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
           {step < RENT_STEPS.length - 1 ? (
             <Button onClick={next} className="gap-1">Suivant <ChevronRight size={16} /></Button>
           ) : (
-            <Button onClick={submit} className="gap-1"><Check size={16} /> Confirmer la location</Button>
+            <Button onClick={submit} disabled={submitting} className="gap-1"><Check size={16} /> {submitting ? "Enregistrement..." : "Confirmer la location"}</Button>
           )}
         </DialogFooter>
       </DialogContent>
@@ -236,36 +254,157 @@ function RecapBlock({ title, rows }: { title: string; rows: [string, string][] }
   );
 }
 
+export function RentalPaymentDialog({ rental, open, onOpenChange }: {
+  rental: Rental | null;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const [amount, setAmount] = useState(0);
+  const [date, setDate] = useState("");
+  const [method, setMethod] = useState("Cash");
+  const [note, setNote] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [paymentId, setPaymentId] = useState(() => crypto.randomUUID());
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+
+  useEffect(() => {
+    if (open && rental) {
+      setAmount(Math.min(rental.remaining ?? 0, rental.dailyRate));
+      setDate(new Date().toISOString().slice(0, 10));
+      setMethod("Cash");
+      setNote("");
+      setPaymentId(crypto.randomUUID());
+      setIdempotencyKey(crypto.randomUUID());
+    }
+  }, [open, rental]);
+
+  if (!rental) return null;
+  const remaining = Math.max(0, rental.remaining ?? 0);
+
+  const submit = async () => {
+    if (submitting) return;
+    if (amount <= 0 || amount > remaining) {
+      toast.error("Le montant doit être positif et ne pas dépasser le solde restant.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await recordRentalPayment(rental.id, {
+        paymentId,
+        amount,
+        date,
+        currency: "XOF",
+        method,
+        idempotencyKey,
+        note,
+      });
+      toast.success("Paiement de location enregistré");
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Le paiement n'a pas pu être enregistré.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className={`max-w-md ${glass}`}>
+        <DialogHeader>
+          <DialogTitle>Paiement de location</DialogTitle>
+          <DialogDescription>Solde restant : {formatFCFA(remaining)}</DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-3 mt-2">
+          <div><Label>Montant</Label><MoneyInput value={amount} onChange={setAmount} /></div>
+          <div><Label>Date</Label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+          <div className="col-span-2"><Label>Méthode</Label>
+            <Select value={method} onValueChange={setMethod}><SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{["Cash", "Wave", "Orange Money", "Virement", "Chèque"].map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="col-span-2"><Label>Note</Label><Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} /></div>
+        </div>
+        <DialogFooter className="mt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
+          <Button onClick={submit} disabled={submitting}>{submitting ? "Enregistrement..." : "Enregistrer le paiement"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 /* -------- Vendre ------------------------------------------------------ */
 export function SellVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Vehicle | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   const [f, setF] = useState<any>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [saleId, setSaleId] = useState(() => crypto.randomUUID());
+  const [creditId, setCreditId] = useState(() => crypto.randomUUID());
   useEffect(() => {
-    if (open && vehicle) setF({
-      customer: "", phone: "", amount: vehicle.sellingPrice, payment: "cash",
-      downPayment: 0, monthlyPayment: 0, totalMonths: 12,
-    });
+    if (open && vehicle) {
+      setF({
+        customer: "", phone: "", amount: vehicle.sellingPrice, payment: "cash",
+        downPayment: 0, monthlyPayment: 0, totalMonths: 12,
+      });
+      setIdempotencyKey(crypto.randomUUID());
+      setSaleId(crypto.randomUUID());
+      setCreditId(crypto.randomUUID());
+    }
   }, [open, vehicle]);
   if (!vehicle) return null;
 
-  const submit = () => {
+  const submit = async () => {
+    if (submitting) return;
     if (!f.customer) return toast.error("Nom du client requis");
     if (vehicle.minPrice && (f.amount || 0) < vehicle.minPrice)
       return toast.error(`Prix sous le plancher autorisé (${formatFCFA(vehicle.minPrice)}) — négociation bloquée`);
     if (f.payment === "credit") {
-      const credit = db.add("vehicleCredits", {
-        vehicleId: vehicle.id, customer: f.customer,
-        total: f.amount, downPayment: f.downPayment, monthlyPayment: f.monthlyPayment,
-        paidMonths: 0, totalMonths: f.totalMonths,
-        nextDueDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
-        status: "ok",
-      });
-      const sale = sellVehicle({ vehicleId: vehicle.id, customer: f.customer, phone: f.phone, amount: f.amount, payment: "credit" });
-      db.update("vehicleSales", sale.id, { creditId: credit.id });
-      toast.success("Vente à crédit enregistrée");
+      setSubmitting(true);
+      try {
+        const nextDueDate = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+        await recordVehicleCreditSale({
+          saleId,
+          creditId,
+          vehicleId: vehicle.id,
+          customer: f.customer,
+          phone: f.phone,
+          total: f.amount,
+          downPayment: f.downPayment || 0,
+          totalMonths: f.totalMonths,
+          monthlyPayment: f.monthlyPayment,
+          firstDueDate: nextDueDate,
+          currency: "XOF",
+          method: "Cash",
+          idempotencyKey,
+        });
+        toast.success("Vente à crédit enregistrée");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "La vente à crédit a échoué.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
     } else {
-      sellVehicle({ vehicleId: vehicle.id, customer: f.customer, phone: f.phone, amount: f.amount, payment: "cash" });
-      toast.success("Vente enregistrée");
+      setSubmitting(true);
+      try {
+        await recordVehicleCashSale({
+          saleId,
+          vehicleId: vehicle.id,
+          customer: f.customer,
+          phone: f.phone,
+          amount: f.amount,
+          method: "Cash",
+          idempotencyKey,
+        });
+        toast.success("Vente comptant enregistrée");
+        onOpenChange(false);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "La vente comptant a échoué.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
     }
     onOpenChange(false);
   };
@@ -308,7 +447,7 @@ export function SellVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
         </div>
         <DialogFooter className="mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-          <Button onClick={submit}>Valider la vente</Button>
+          <Button onClick={submit} disabled={submitting}>Valider la vente</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -362,7 +501,7 @@ export function MaintenanceVehicleDialog({ vehicle, open, onOpenChange }: { vehi
         </div>
         <DialogFooter className="mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-          <Button onClick={submit}>Enregistrer</Button>
+          <Button onClick={submit} disabled={submitting}>Enregistrer</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -373,12 +512,43 @@ export function MaintenanceVehicleDialog({ vehicle, open, onOpenChange }: { vehi
 export function ReturnRentalDialog({ rentalId, vehicle, open, onOpenChange, onConfirm }: {
   rentalId: string | null; vehicle: Vehicle | null;
   open: boolean; onOpenChange: (v: boolean) => void;
-  onConfirm: (data: { returnedAt: string; returnKm?: number; fuelLevel?: string; conditionNote?: string }) => void;
+  onConfirm: (data: {
+    returnDate: string; returnKm: number; fuelLevel?: string; conditionNote?: string;
+    paymentId: string; currency: string; method: string; idempotencyKey: string;
+  }) => Promise<void>;
 }) {
   const [f, setF] = useState<any>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [paymentId, setPaymentId] = useState(() => crypto.randomUUID());
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
   useEffect(() => {
-    if (open) setF({ returnedAt: new Date().toISOString().slice(0, 10), returnKm: vehicle?.mileageKm || 0, fuelLevel: "Plein", conditionNote: "" });
+    if (open) {
+      setF({ returnedAt: new Date().toISOString().slice(0, 10), returnKm: vehicle?.mileageKm || 0, fuelLevel: "Plein", conditionNote: "" });
+      setPaymentId(crypto.randomUUID());
+      setIdempotencyKey(crypto.randomUUID());
+      setSubmitting(false);
+    }
   }, [open, vehicle]);
+  const submit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await onConfirm({
+        returnDate: f.returnedAt,
+        returnKm: Number(f.returnKm),
+        fuelLevel: f.fuelLevel,
+        conditionNote: f.conditionNote,
+        paymentId,
+        currency: "XOF",
+        method: "Cash",
+        idempotencyKey,
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Le retour n'a pas pu être enregistré.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
   if (!rentalId) return null;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -398,8 +568,8 @@ export function ReturnRentalDialog({ rentalId, vehicle, open, onOpenChange, onCo
           <div className="col-span-2"><Label>État / Observations</Label><Textarea rows={3} value={f.conditionNote || ""} onChange={(e) => setF({ ...f, conditionNote: e.target.value })} /></div>
         </div>
         <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-          <Button onClick={() => { onConfirm(f); onOpenChange(false); }}>Valider le retour</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Annuler</Button>
+          <Button onClick={submit} disabled={submitting}>{submitting ? "Enregistrement..." : "Valider le retour"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -409,15 +579,38 @@ export function ReturnRentalDialog({ rentalId, vehicle, open, onOpenChange, onCo
 /* -------- Paiement crédit -------------------------------------------- */
 export function CreditPaymentDialog({ credit, open, onOpenChange }: { credit: VehicleCredit | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   const [f, setF] = useState<any>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [paymentId, setPaymentId] = useState(() => crypto.randomUUID());
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
   useEffect(() => {
-    if (open && credit) setF({ amount: credit.monthlyPayment, date: new Date().toISOString().slice(0, 10), method: "Cash", note: "" });
+    if (open && credit) {
+      setF({ amount: credit.monthlyPayment, date: new Date().toISOString().slice(0, 10), method: "Cash", note: "" });
+      setPaymentId(crypto.randomUUID());
+      setIdempotencyKey(crypto.randomUUID());
+    }
   }, [open, credit]);
   if (!credit) return null;
-  const submit = () => {
+  const submit = async () => {
+    if (submitting) return;
     if (!f.amount) return toast.error("Montant requis");
-    addVehicleCreditPayment(credit.id, { amount: f.amount, date: f.date, method: f.method, note: f.note });
-    toast.success("Paiement enregistré");
-    onOpenChange(false);
+    setSubmitting(true);
+    try {
+      await addVehicleCreditPayment(credit.id, {
+        paymentId,
+        amount: f.amount,
+        date: f.date,
+        method: f.method,
+        currency: "XOF",
+        idempotencyKey,
+        note: f.note,
+      });
+      toast.success("Paiement enregistré");
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Le paiement n'a pas pu être enregistré.");
+    } finally {
+      setSubmitting(false);
+    }
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

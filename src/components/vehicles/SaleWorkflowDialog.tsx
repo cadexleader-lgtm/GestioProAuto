@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { useCollection, db, type VehicleSale } from "@/lib/demo-store";
+import { useCollection, recordVehicleCashSale, recordVehicleCreditSale, type VehicleSale } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
 import {
   User, FileText, Car, Wallet, KeyRound, CheckCircle2,
@@ -16,7 +16,11 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-interface Props { open: boolean; onOpenChange: (v: boolean) => void; }
+interface Props {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  initialVehicleId?: string;
+}
 
 type Doc = NonNullable<VehicleSale["documents"]>[number];
 
@@ -29,7 +33,7 @@ const STEPS = [
   { id: 6, label: "Finalisation", icon: CheckCircle2 },
 ];
 
-export function SaleWorkflowDialog({ open, onOpenChange }: Props) {
+export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Props) {
   const vehicles = useCollection("vehicles");
   const availables = vehicles.filter((v) => v.status === "available");
   const [step, setStep] = useState(1);
@@ -65,6 +69,21 @@ export function SaleWorkflowDialog({ open, onOpenChange }: Props) {
   // Step 6
   const [insuranceExpiry, setInsuranceExpiry] = useState("");
   const [techControlExpiry, setTechControlExpiry] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [saleId, setSaleId] = useState(() => crypto.randomUUID());
+  const [creditId, setCreditId] = useState(() => crypto.randomUUID());
+
+  useEffect(() => {
+    if (open && initialVehicleId) {
+      const vehicle = vehicles.find((item) => item.id === initialVehicleId && item.status === "available");
+      if (vehicle) {
+        setVehicleId(vehicle.id);
+        setAmount(vehicle.sellingPrice);
+        setDeliveryKm(vehicle.mileageKm);
+      }
+    }
+  }, [open, initialVehicleId, vehicles]);
 
   const monthly = payment === "credit" && months > 0
     ? Math.round((amount - downPayment) / months) : 0;
@@ -87,6 +106,9 @@ export function SaleWorkflowDialog({ open, onOpenChange }: Props) {
     setDeliveryDate(today); setDeliveryKm(0); setFuelLevel("Plein");
     setConditionNote(""); setSigned(false);
     setInsuranceExpiry(""); setTechControlExpiry("");
+    setIdempotencyKey(crypto.randomUUID());
+    setSaleId(crypto.randomUUID());
+    setCreditId(crypto.randomUUID());
   };
 
   const handleFiles = async (files: FileList | null) => {
@@ -106,68 +128,73 @@ export function SaleWorkflowDialog({ open, onOpenChange }: Props) {
     }
   };
 
-  const finalize = () => {
+  const finalize = async () => {
     if (!selectedVehicle) return;
-    const financed = amount - downPayment;
-    let creditId: string | undefined;
-    if (payment === "credit" && financed > 0) {
-      const nextDue = new Date(); nextDue.setMonth(nextDue.getMonth() + 1);
-      const credit = db.add("vehicleCredits", {
+    if (submitting) return;
+    if (payment === "cash") {
+      setSubmitting(true);
+      try {
+        await recordVehicleCashSale({
+          saleId,
+          vehicleId,
+          customer,
+          phone,
+          address,
+          cin,
+          amount,
+          method,
+          idempotencyKey,
+          metadata: {
+            documents,
+            delivery: { date: deliveryDate, km: deliveryKm, fuelLevel, conditionNote, signed },
+            reminders: { insuranceExpiry: insuranceExpiry || undefined, techControlExpiry: techControlExpiry || undefined },
+          },
+        });
+        toast.success("Vente comptant enregistrée");
+        reset();
+        onOpenChange(false);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "La vente comptant a échoué.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const nextDue = new Date();
+      nextDue.setMonth(nextDue.getMonth() + 1);
+      await recordVehicleCreditSale({
+        saleId,
+        creditId,
         vehicleId,
         customer,
+        phone,
         total: amount,
         downPayment,
-        monthlyPayment: monthly,
-        paidMonths: 0,
         totalMonths: months,
-        nextDueDate: nextDue.toISOString().slice(0, 10),
-        status: "ok",
+        monthlyPayment: monthly,
+        firstDueDate: nextDue.toISOString().slice(0, 10),
+        currency: "XOF",
+        method,
+        idempotencyKey,
+        metadata: {
+          address,
+          cin,
+          documents,
+          delivery: { date: deliveryDate, km: deliveryKm, fuelLevel, conditionNote, signed },
+          reminders: { insuranceExpiry: insuranceExpiry || undefined, techControlExpiry: techControlExpiry || undefined },
+        },
       });
-      creditId = credit.id;
+      toast.success("Vente à crédit enregistrée");
+      reset();
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "La vente à crédit a échoué.");
+    } finally {
+      setSubmitting(false);
     }
-
-    db.add("vehicleSales", {
-      vehicleId,
-      customer,
-      phone,
-      address,
-      cin,
-      amount,
-      date: today,
-      payment,
-      method,
-      downPayment: payment === "credit" ? downPayment : amount,
-      creditId,
-      documents,
-      delivery: { date: deliveryDate, km: deliveryKm, fuelLevel, conditionNote, signed },
-      reminders: {
-        insuranceExpiry: insuranceExpiry || undefined,
-        techControlExpiry: techControlExpiry || undefined,
-        nextDueDate: creditId ? new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().slice(0, 10) : undefined,
-      },
-      status: "done",
-    });
-
-    db.update("vehicles", vehicleId, {
-      status: "sold",
-      insuranceExpiry: insuranceExpiry || selectedVehicle.insuranceExpiry,
-      techControlExpiry: techControlExpiry || selectedVehicle.techControlExpiry,
-    } as any);
-
-    const cashIn = payment === "cash" ? amount : downPayment;
-    if (cashIn > 0) {
-      db.add("cash", {
-        type: "in",
-        label: `Vente véhicule — ${customer} (${selectedVehicle.brand} ${selectedVehicle.model})`,
-        amount: cashIn,
-        date: new Date().toISOString(),
-        source: method,
-      });
-    }
-
-    toast.success("Vente finalisée avec traçabilité complète");
-    reset();
-    onOpenChange(false);
   };
 
   return (
@@ -252,7 +279,7 @@ export function SaleWorkflowDialog({ open, onOpenChange }: Props) {
               <h3 className="font-semibold">Sélection du véhicule</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
                 {availables.length === 0 && <p className="text-sm text-muted-foreground col-span-2">Aucun véhicule disponible.</p>}
-                {availables.map((v) => (
+                {(initialVehicleId ? availables.filter((v) => v.id === initialVehicleId) : availables).map((v) => (
                   <button key={v.id} onClick={() => { setVehicleId(v.id); setAmount(v.sellingPrice); setDeliveryKm(v.mileageKm); }}
                     className={cn("p-3 rounded-xl border-2 text-left transition", vehicleId === v.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50")}>
                     <div className="flex items-center gap-2">
@@ -362,7 +389,7 @@ export function SaleWorkflowDialog({ open, onOpenChange }: Props) {
               Suivant <ChevronRight size={16} />
             </Button>
           ) : (
-            <Button onClick={finalize} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={finalize} disabled={submitting} className="bg-emerald-600 hover:bg-emerald-700">
               <CheckCircle2 size={16} /> Finaliser la vente
             </Button>
           )}

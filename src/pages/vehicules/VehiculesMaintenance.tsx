@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,8 @@ export function VehiculesMaintenance() {
   const [filter, setFilter] = useState<"all" | "active" | "done">("active");
   const [openAdd, setOpenAdd] = useState(false);
   const [selectVehicle, setSelectVehicle] = useState<string>("");
+  const [completingId, setCompletingId] = useState<string | null>(null);
+  const completionKeys = useRef<Record<string, string>>({});
 
   const stats = useMemo(() => {
     const active = items.filter((m) => m.status !== "done").length;
@@ -58,9 +60,30 @@ export function VehiculesMaintenance() {
     toast.success("Statut mis à jour");
   };
 
-  const handleComplete = (id: string) => {
-    completeVehicleMaintenance(id);
-    toast.success("Maintenance terminée — véhicule à nouveau disponible");
+  const handleComplete = async (id: string) => {
+    if (completingId) return;
+    const idempotencyKey = completionKeys.current[id] ?? crypto.randomUUID();
+    completionKeys.current[id] = idempotencyKey;
+    setCompletingId(id);
+    try {
+      const result = await completeVehicleMaintenance({
+        maintenanceId: id,
+        completedAt: new Date().toISOString().slice(0, 10),
+        currency: "XOF",
+        paymentMethod: "Cash",
+        idempotencyKey,
+        metadata: {},
+      });
+      toast.success(
+        result?.amount > 0
+          ? "Maintenance terminée et dépense enregistrée"
+          : "Maintenance terminée — aucun paiement à enregistrer",
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "La maintenance n'a pas été clôturée.");
+    } finally {
+      setCompletingId(null);
+    }
   };
 
   return (
@@ -143,8 +166,8 @@ export function VehiculesMaintenance() {
                           <SelectItem value="parts_wait">Attente pièces</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button size="sm" onClick={() => handleComplete(m.id)}>
-                        <CheckCircle2 size={14} /> Terminer
+                      <Button size="sm" disabled={completingId === m.id} onClick={() => void handleComplete(m.id)}>
+                        <CheckCircle2 size={14} /> {completingId === m.id ? "Clôture..." : "Terminer"}
                       </Button>
                     </>
                   )}

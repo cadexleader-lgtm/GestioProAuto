@@ -726,6 +726,38 @@ export type Database = {
           },
         ]
       }
+      rental_payments: {
+        Row: {
+          company_id: string
+          created_at: string
+          data: Json
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          data?: Json
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rental_payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reservations: {
         Row: {
           company_id: string
@@ -1083,7 +1115,132 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      record_vehicle_cash_sale: {
+        Args: {
+          p_company_id: string
+          p_sale_id: string
+          p_vehicle_id: string
+          p_customer: string
+          p_phone: string
+          p_address: string
+          p_cin: string
+          p_amount: number
+          p_currency: string
+          p_method: string
+          p_occurred_at: string
+          p_idempotency_key: string
+          p_metadata?: Json
+        }
+        Returns: Json
+      }
+      record_vehicle_rental: {
+        Args: {
+          p_company_id: string
+          p_rental_id: string
+          p_vehicle_id: string
+          p_customer: string
+          p_phone: string
+          p_address: string
+          p_id_document: string
+          p_license_number: string
+          p_start_date: string
+          p_end_date: string
+          p_start_time: string
+          p_end_time: string
+          p_daily_rate: number
+          p_deposit: number
+          p_advance: number
+          p_currency: string
+          p_method: string
+          p_idempotency_key: string
+          p_metadata?: Json
+        }
+        Returns: Json
+      }
+      record_rental_payment: {
+        Args: {
+          p_company_id: string
+          p_payment_id: string
+          p_rental_id: string
+          p_amount: number
+          p_payment_date: string
+          p_currency: string
+          p_method: string
+          p_idempotency_key: string
+          p_metadata?: Json
+        }
+        Returns: Json
+      }
+      record_vehicle_rental_return: {
+        Args: {
+          p_company_id: string
+          p_rental_id: string
+          p_return_date: string
+          p_return_km: number
+          p_fuel_level: string
+          p_condition_note: string
+          p_payment_id: string
+          p_currency: string
+          p_method: string
+          p_idempotency_key: string
+          p_metadata?: Json
+        }
+        Returns: Json
+      }
+      record_payroll_payment: {
+        Args: {
+          p_company_id: string
+          p_payment_id: string
+          p_employee_id: string
+          p_month: string
+          p_base_salary: number
+          p_bonuses: number
+          p_deductions: number
+          p_advances: number
+          p_currency: string
+          p_method: string
+          p_paid_at: string
+          p_idempotency_key: string
+          p_metadata?: Json
+        }
+        Returns: Json
+      }
+      record_vehicle_credit_sale: {
+        Args: {
+          p_company_id: string
+          p_sale_id: string
+          p_credit_id: string
+          p_vehicle_id: string
+          p_customer: string
+          p_phone: string
+          p_id_document: string
+          p_total: number
+          p_down_payment: number
+          p_total_months: number
+          p_monthly_payment: number
+          p_first_due_date: string
+          p_currency: string
+          p_method: string
+          p_occurred_at: string
+          p_idempotency_key: string
+          p_metadata?: Json
+        }
+        Returns: Json
+      }
+      record_vehicle_credit_payment: {
+        Args: {
+          p_company_id: string
+          p_payment_id: string
+          p_credit_id: string
+          p_amount: number
+          p_payment_date: string
+          p_currency: string
+          p_method: string
+          p_idempotency_key: string
+          p_metadata?: Json
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "patron" | "manager" | "terrain"

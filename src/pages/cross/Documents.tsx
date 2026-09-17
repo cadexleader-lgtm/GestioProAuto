@@ -15,6 +15,7 @@ import {
   ScrollText, FileSignature, ClipboardList, BadgeCheck, RefreshCw, CalendarClock,
 } from "lucide-react";
 import { useCollection, db } from "@/lib/demo-store";
+import { useRole } from "@/lib/roles";
 import { formatFCFA } from "@/lib/format";
 import { useCompanyProfile } from "@/lib/company-profile";
 import {
@@ -54,12 +55,14 @@ export function Documents() {
   const docs = useCollection("documents");
   const vehicles = useCollection("vehicles");
   const profile = useCompanyProfile();
+  const role = useRole();
+  const canAccessDocuments = role === "patron" || role === "manager";
   const [kind, setKind] = useState<DocKind | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const [entity, setEntity] = useState<string>("all");
   const [expiringOnly, setExpiringOnly] = useState(false);
   const [q, setQ] = useState("");
-
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     party: "", phone: "", address: "", note: "", date: today(),
@@ -141,6 +144,29 @@ export function Documents() {
     else toast.error("Document sans données source");
   };
 
+  const isPayrollDocument = (d: any) => {
+    const payload = d.payload ?? {};
+    return d.type === "bulletin"
+      || Boolean(d.payslipId ?? payload.payslipId)
+      || Boolean(
+        (d.employeeId ?? payload.employeeId)
+        && (d.paymentId ?? d.payment_id ?? payload.paymentId ?? payload.payment_id),
+      );
+  };
+
+  const removeDocument = async (d: any) => {
+    if (isPayrollDocument(d) || deletingId) return;
+    setDeletingId(d.id);
+    try {
+      await db.removeConfirmed("documents", d.id);
+      toast.success("Document supprimé");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Le document n'a pas été supprimé.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   // Pièces jointes rattachées aux véhicules (carte grise, assurance, visite…)
   const vehicleDocs = useMemo(
     () => vehicles.flatMap((v: any) =>
@@ -198,6 +224,21 @@ export function Documents() {
 
 
   const isLineDoc = kind === "facture" || kind === "proforma" || kind === "bon";
+
+  if (!canAccessDocuments) {
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Documents</h1>
+        </div>
+        <Card className="border-amber-200 bg-amber-50/60 shadow-sm">
+          <CardContent className="p-6 text-sm text-amber-900">
+            Accès aux documents restreint à votre rôle
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -281,6 +322,7 @@ export function Documents() {
               const Icon = t?.icon ?? FileText;
               const n = daysLeft(d);
               const isAuto = !TYPES.some((x) => x.id === d.type);
+              const isPayroll = isPayrollDocument(d);
               return (
                 <div key={d.id} className="flex items-center gap-3 px-4 sm:px-6 py-4 hover:bg-muted/30">
                   <div className={`w-10 h-10 rounded-xl ${t?.tint ?? "bg-slate-100 text-slate-600"} flex items-center justify-center shrink-0`}>
@@ -311,18 +353,21 @@ export function Documents() {
                         <Download size={15} />
                       </Button>
                     )}
-                    {!isAuto && (
+                    {!isAuto && !isPayroll && (
                       <Button size="icon" variant="ghost" title="Régénérer" onClick={() => regenerate(d)}>
                         <RefreshCw size={15} />
                       </Button>
                     )}
-                    <Button size="icon" variant="ghost" title="Envoyer par WhatsApp"
-                      onClick={() => sendWhatsApp(d.payload?.phone || "", `Bonjour, voici votre document ${d.reference}.`)}>
-                      <Send size={15} />
-                    </Button>
-                    {d.origin !== "Importé" && (
+                    {!isPayroll && (
+                      <Button size="icon" variant="ghost" title="Envoyer par WhatsApp"
+                        onClick={() => sendWhatsApp(d.payload?.phone || "", `Bonjour, voici votre document ${d.reference}.`)}>
+                        <Send size={15} />
+                      </Button>
+                    )}
+                    {d.origin !== "Importé" && !isPayroll && (
                       <Button size="icon" variant="ghost" className="text-destructive" title="Supprimer"
-                        onClick={() => { db.remove("documents", d.id); toast.success("Document supprimé"); }}>
+                        disabled={deletingId === d.id}
+                        onClick={() => void removeDocument(d)}>
                         <Trash2 size={15} />
                       </Button>
                     )}

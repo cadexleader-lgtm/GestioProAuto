@@ -1,12 +1,9 @@
 /**
- * Lightweight role system (client-side, persisted in localStorage).
+ * Client-side role display backed by the authenticated tenant membership.
  * 3 rôles: Patron (tout), Manager (opérations, pas de suppression bulk),
  * Terrain (lecture + saisie basique).
- *
- * NB: c'est un garde-fou UX, pas une sécurité serveur. La vraie sécurité
- * reposera sur Supabase RLS quand les collections seront migrées.
  */
-import { useSyncExternalStore } from "react";
+import { useTenant } from "./tenant";
 
 export type Role = "patron" | "manager" | "terrain";
 
@@ -23,28 +20,8 @@ export const ROLES: RoleMeta[] = [
   { id: "terrain", label: "Terrain", description: "Saisie & consultation — pas d'accès finances.",       color: "bg-slate-100 text-slate-700 border-slate-200" },
 ];
 
-const KEY = "gestiopro.role";
-let current: Role = "patron";
-const listeners = new Set<() => void>();
-
-function load() {
-  if (typeof window === "undefined") return;
-  try { current = (window.localStorage.getItem(KEY) as Role) || "patron"; } catch {}
-}
-load();
-
-export function setRole(r: Role) {
-  current = r;
-  try { window.localStorage.setItem(KEY, r); } catch {}
-  listeners.forEach((l) => l());
-}
-
 export function useRole(): Role {
-  return useSyncExternalStore(
-    (cb) => { listeners.add(cb); return () => listeners.delete(cb); },
-    () => current,
-    () => "patron",
-  );
+  return useTenant().role ?? "terrain";
 }
 
 /** Retourne true si le rôle peut effectuer une action donnée. */

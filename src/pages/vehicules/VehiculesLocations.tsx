@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCollection, startRental, returnRental, isRentalOverdue } from "@/lib/demo-store";
+import { useCollection, startRental, recordVehicleRentalReturn, isRentalOverdue } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
 import { KeyRound, Plus, AlertTriangle, Calendar, CheckCircle2, RotateCcw, FileText, MessageCircle, Archive, ChevronDown, MapPin, Car } from "lucide-react";
 import { toast } from "sonner";
-import { RentVehicleDialog, ReturnRentalDialog } from "@/components/vehicles/VehicleActionsDialogs";
+import { RentVehicleDialog, RentalPaymentDialog, ReturnRentalDialog } from "@/components/vehicles/VehicleActionsDialogs";
 import { VehicleDetailSheet } from "@/components/vehicles/VehicleDetailSheet";
 import { generateRentalContract, sendWhatsApp } from "@/lib/vehicle-pdf";
 import type { Rental } from "@/lib/demo-data";
@@ -28,6 +28,7 @@ export function VehiculesLocations() {
   const [openPicker, setOpenPicker] = useState(false);
   const [pickedId, setPickedId] = useState<string>("");
   const [returnId, setReturnId] = useState<string | null>(null);
+  const [paymentId, setPaymentId] = useState<string | null>(null);
   const [rentVehicleId, setRentVehicleId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -64,9 +65,10 @@ export function VehiculesLocations() {
   };
 
   const handleReturn = (id: string) => setReturnId(id);
-  const confirmReturn = (data: any) => {
+  const confirmReturn = async (data: any) => {
     if (!returnId) return;
-    returnRental(returnId, data);
+    await recordVehicleRentalReturn(returnId, data);
+    setReturnId(null);
     toast.success("Véhicule retourné — disponible à nouveau");
   };
 
@@ -143,6 +145,9 @@ export function VehiculesLocations() {
                   {(r.displayStatus === "active" || r.displayStatus === "overdue") && (
                     <Button size="sm" variant="outline" onClick={() => handleReturn(r.id)}><RotateCcw size={14} /> Retourner</Button>
                   )}
+                  {(r.displayStatus === "active" || r.displayStatus === "overdue") && (r.remaining ?? 0) > 0 && (
+                     <Button size="sm" variant="outline" onClick={() => setPaymentId(r.id)}>Paiement</Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -213,6 +218,11 @@ export function VehiculesLocations() {
       </Dialog>
 
       <RentVehicleDialog vehicle={rentVehicle} open={!!rentVehicleId} onOpenChange={(o) => !o && setRentVehicleId(null)} />
+      <RentalPaymentDialog
+        rental={paymentId ? rentals.find((x) => x.id === paymentId) ?? null : null}
+        open={!!paymentId}
+        onOpenChange={(o) => !o && setPaymentId(null)}
+      />
       <VehicleDetailSheet
         vehicle={detailId ? vehicles.find((x) => x.id === detailId) ?? null : null}
         open={!!detailId}

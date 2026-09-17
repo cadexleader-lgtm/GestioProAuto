@@ -7,19 +7,35 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { db } from "@/lib/demo-store";
+import { recordManualExpense } from "@/lib/demo-store";
 import { EXPENSE_CATEGORIES } from "@/lib/demo-data";
 import { toast } from "sonner";
 
 export function ExpenseDialog({ open, onOpenChange }: { open:boolean; onOpenChange:(v:boolean)=>void }) {
   const [form, setForm] = useState<any>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [requestIdentity, setRequestIdentity] = useState({ sourceId: "", idempotencyKey: "" });
   useEffect(()=>{ setForm({ category:"Loyer", label:"", amount:0, date: new Date().toISOString().slice(0,10), hasReceipt:false, paymentMethod:"cash", recurrent:false, note:""}); },[open]);
-  const submit = () => {
+  useEffect(() => {
+    if (open) {
+      const requestId = crypto.randomUUID();
+      setRequestIdentity({ sourceId: requestId, idempotencyKey: `manual-expense:${requestId}` });
+    }
+  }, [open]);
+  const submit = async () => {
     if (!form.label || !form.amount) return toast.error("Libellé et montant requis");
-    db.add("expenses", form);
-    db.add("cash", { type:"out", label: form.label, amount: form.amount, date: new Date(form.date).toISOString(), source: form.paymentMethod==="cash"?"Caisse principale":form.paymentMethod });
-    toast.success("Dépense enregistrée");
-    onOpenChange(false);
+    if (isSaving) return;
+
+    setIsSaving(true);
+    try {
+      await recordManualExpense({ ...form, ...requestIdentity });
+      toast.success("Dépense enregistrée");
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "La dépense n'a pas pu être enregistrée.");
+    } finally {
+      setIsSaving(false);
+    }
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-w-lg">
@@ -46,7 +62,7 @@ export function ExpenseDialog({ open, onOpenChange }: { open:boolean; onOpenChan
         <div className="flex items-center justify-between p-3 rounded-lg border"><Label>Dépense récurrente (mensuelle)</Label><Switch checked={form.recurrent} onCheckedChange={v=>setForm({...form,recurrent:v})}/></div>
         <div><Label>Note</Label><Textarea value={form.note} onChange={e=>setForm({...form,note:e.target.value})} rows={2}/></div>
       </div>
-      <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>onOpenChange(false)}>Annuler</Button><Button onClick={submit}>Enregistrer</Button></DialogFooter>
+      <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>onOpenChange(false)} disabled={isSaving}>Annuler</Button><Button onClick={submit} disabled={isSaving}>{isSaving ? "Enregistrement..." : "Enregistrer"}</Button></DialogFooter>
     </DialogContent></Dialog>
   );
 }
