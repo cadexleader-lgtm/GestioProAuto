@@ -7,7 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { useCollection, recordVehicleCashSale, recordVehicleCreditSale, type VehicleSale } from "@/lib/demo-store";
+import {
+  createPendingPrivateDocument,
+  privateDocumentSummary,
+  recordVehicleCashSale,
+  recordVehicleCreditSale,
+  uploadPrivateDocument,
+  useCollection,
+  type PendingPrivateDocument,
+} from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
 import {
   User, FileText, Car, Wallet, KeyRound, CheckCircle2,
@@ -21,8 +29,6 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   initialVehicleId?: string;
 }
-
-type Doc = NonNullable<VehicleSale["documents"]>[number];
 
 const STEPS = [
   { id: 1, label: "Client", icon: User },
@@ -45,7 +51,7 @@ export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Pro
   const [cin, setCin] = useState("");
 
   // Step 2
-  const [documents, setDocuments] = useState<Doc[]>([]);
+  const [documents, setDocuments] = useState<PendingPrivateDocument[]>([]);
 
   // Step 3
   const [vehicleId, setVehicleId] = useState<string>("");
@@ -115,17 +121,35 @@ export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Pro
     if (!files) return;
     for (const f of Array.from(files)) {
       if (f.size > 5 * 1024 * 1024) { toast.error(`${f.name}: fichier > 5MB`); continue; }
-      const dataUrl = await new Promise<string>((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(r.result as string);
-        r.onerror = rej;
-        r.readAsDataURL(f);
-      });
       setDocuments((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), name: f.name, type: f.type, dataUrl, uploadedAt: new Date().toISOString(), size: f.size },
+        createPendingPrivateDocument(f),
       ]);
     }
+  };
+
+  const archiveSaleDocuments = async () => {
+    if (documents.length === 0) return;
+    await Promise.all(documents.map((doc) => uploadPrivateDocument({
+      file: doc.file,
+      documentId: doc.id,
+      type: "piece",
+      title: doc.name,
+      reference: doc.name,
+      relatedTo: selectedVehicle?.plate,
+      entityType: "sale",
+      entityId: saleId,
+      entityLabel: `${customer} — ${selectedVehicle?.brand ?? ""} ${selectedVehicle?.model ?? ""}`.trim(),
+      relationType: payment === "credit" ? "credit_sale_attachment" : "cash_sale_attachment",
+      metadata: {
+        saleId,
+        creditId: payment === "credit" ? creditId : undefined,
+        vehicleId,
+        customer,
+        source: "sale_workflow",
+        summary: privateDocumentSummary(doc),
+      },
+    })));
   };
 
   const finalize = async () => {
@@ -145,12 +169,17 @@ export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Pro
           method,
           idempotencyKey,
           metadata: {
-            documents,
+            documents: documents.map(privateDocumentSummary),
             delivery: { date: deliveryDate, km: deliveryKm, fuelLevel, conditionNote, signed },
             reminders: { insuranceExpiry: insuranceExpiry || undefined, techControlExpiry: techControlExpiry || undefined },
           },
         });
         toast.success("Vente comptant enregistrée");
+        try {
+          await archiveSaleDocuments();
+        } catch (error) {
+          toast.error(error instanceof Error ? `Vente enregistrée, document non archivé : ${error.message}` : "Vente enregistrée, document non archivé.");
+        }
         reset();
         onOpenChange(false);
       } catch (error) {
@@ -182,12 +211,17 @@ export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Pro
         metadata: {
           address,
           cin,
-          documents,
+          documents: documents.map(privateDocumentSummary),
           delivery: { date: deliveryDate, km: deliveryKm, fuelLevel, conditionNote, signed },
           reminders: { insuranceExpiry: insuranceExpiry || undefined, techControlExpiry: techControlExpiry || undefined },
         },
       });
       toast.success("Vente à crédit enregistrée");
+      try {
+        await archiveSaleDocuments();
+      } catch (error) {
+        toast.error(error instanceof Error ? `Vente enregistrée, document non archivé : ${error.message}` : "Vente enregistrée, document non archivé.");
+      }
       reset();
       onOpenChange(false);
     } catch (error) {

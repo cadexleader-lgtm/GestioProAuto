@@ -134,7 +134,16 @@ export interface VehicleSale {
   method?: "Cash" | "Wave" | "Orange Money" | "Virement" | "Chèque";
   downPayment?: number;
   creditId?: string;
-  documents?: { id: string; name: string; type: string; dataUrl: string; uploadedAt: string; size: number }[];
+  documents?: {
+    id: string;
+    name: string;
+    type: string;
+    uploadedAt: string;
+    size: number;
+    dataUrl?: string;
+    storageBucket?: string;
+    storagePath?: string;
+  }[];
   delivery?: { date: string; km: number; fuelLevel: string; conditionNote?: string; signed: boolean };
   reminders?: { insuranceExpiry?: string; techControlExpiry?: string; nextDueDate?: string };
   signatures?: { client?: string; vendor?: string; signedAt?: string };
@@ -357,6 +366,183 @@ function fireAndForget(p: Promise<any>) {
   p.then((res: any) => {
     if (res?.error) console.error("[gestiopro] sync error", res.error.message ?? res.error);
   }).catch((e) => console.error("[gestiopro] sync error", e));
+}
+
+export type PrivateDocumentEntityType =
+  | "vehicle"
+  | "customer"
+  | "sale"
+  | "credit"
+  | "rental"
+  | "contract"
+  | "maintenance"
+  | "payment"
+  | "employee"
+  | "expense"
+  | "cash_movement"
+  | "ledger_entry"
+  | "company";
+
+export interface PendingPrivateDocument {
+  id: string;
+  file: File;
+  name: string;
+  type: string;
+  size: number;
+  uploadedAt: string;
+}
+
+export interface PrivateDocumentSummary {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  uploadedAt: string;
+  storageBucket?: string;
+  storagePath?: string;
+  dataUrl?: string;
+}
+
+export function createPendingPrivateDocument(file: File): PendingPrivateDocument {
+  return {
+    id: crypto.randomUUID(),
+    file,
+    name: file.name,
+    type: file.type || "application/octet-stream",
+    size: file.size,
+    uploadedAt: new Date().toISOString(),
+  };
+}
+
+export function privateDocumentSummary(doc: PendingPrivateDocument | PrivateDocumentSummary): PrivateDocumentSummary {
+  return {
+    id: doc.id,
+    name: doc.name,
+    type: doc.type,
+    size: doc.size,
+    uploadedAt: doc.uploadedAt,
+    storageBucket: (doc as PrivateDocumentSummary).storageBucket,
+    storagePath: (doc as PrivateDocumentSummary).storagePath,
+    dataUrl: (doc as PrivateDocumentSummary).dataUrl,
+  };
+}
+
+function safeStorageFileName(name: string) {
+  const trimmed = name.trim() || "document";
+  return trimmed
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120) || "document";
+}
+
+export async function uploadPrivateDocument(input: {
+  file: File;
+  documentId?: string;
+  type: string;
+  title: string;
+  reference?: string;
+  relatedTo?: string;
+  amount?: number;
+  entityType: PrivateDocumentEntityType;
+  entityId: string;
+  entityLabel?: string;
+  relationType?: string;
+  expiresAt?: string;
+  origin?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<ArchivedDocument> {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const documentId = input.documentId ?? crypto.randomUUID();
+  const bucket = "company-documents";
+  const storagePath = `${companyId}/${documentId}/${safeStorageFileName(input.file.name)}`;
+  const mimeType = input.file.type || "application/octet-stream";
+  const now = new Date().toISOString();
+
+  const { error: uploadError } = await sb.storage
+    .from(bucket)
+    .upload(storagePath, input.file, {
+      contentType: mimeType,
+      upsert: true,
+    });
+
+  if (uploadError) {
+    throw new Error(uploadError.message || "Le fichier n'a pas pu Ãªtre envoyÃ© dans le stockage privÃ©.");
+  }
+
+  const documentData: ArchivedDocument = {
+    id: documentId,
+    type: input.type,
+    reference: input.reference ?? input.file.name,
+    title: input.title,
+    relatedTo: input.relatedTo,
+    amount: input.amount,
+    createdAt: now,
+    entityType: input.entityType as ArchivedDocument["entityType"],
+    entityId: input.entityId,
+    entityLabel: input.entityLabel,
+    expiresAt: input.expiresAt,
+    origin: input.origin ?? "ImportÃ©",
+    storageBucket: bucket,
+    storagePath,
+    mimeType,
+    size: input.file.size,
+    originalName: input.file.name,
+    payload: {
+      ...(input.metadata ?? {}),
+      storageBucket: bucket,
+      storagePath,
+      mimeType,
+      size: input.file.size,
+      originalName: input.file.name,
+    },
+  };
+
+  const { error: docError } = await sb
+    .from("documents")
+    .upsert(row(documentId, documentData), { onConflict: "company_id,id" });
+
+  if (docError) {
+    await sb.storage.from(bucket).remove([storagePath]);
+    throw new Error(docError.message || "Le document n'a pas pu Ãªtre archivÃ©.");
+  }
+
+  const { error: relationError } = await sb
+    .from("document_relations")
+    .insert({
+      company_id: companyId,
+      document_id: documentId,
+      entity_type: input.entityType,
+      entity_id: input.entityId,
+      relation_type: input.relationType ?? "attachment",
+      metadata: input.metadata ?? {},
+    });
+
+  if (relationError && relationError.code !== "23505") {
+    await sb.from("documents").delete().eq("company_id", companyId).eq("id", documentId);
+    await sb.storage.from(bucket).remove([storagePath]);
+    throw new Error(relationError.message || "Le document n'a pas pu Ãªtre reliÃ© Ã  son dossier.");
+  }
+
+  db.upsertLocal("documents", documentData);
+  return documentData;
+}
+
+export async function getPrivateDocumentUrl(doc: { dataUrl?: string; storageBucket?: string; storagePath?: string }) {
+  if (doc.dataUrl) return doc.dataUrl;
+  if (!doc.storagePath) throw new Error("Aucun fichier privÃ© n'est associÃ© Ã  ce document.");
+
+  const { data, error } = await sb.storage
+    .from(doc.storageBucket ?? "company-documents")
+    .createSignedUrl(doc.storagePath, 60);
+
+  if (error || !data?.signedUrl) {
+    throw new Error(error?.message || "Lien de tÃ©lÃ©chargement indisponible.");
+  }
+
+  return data.signedUrl;
 }
 
 export const db = {

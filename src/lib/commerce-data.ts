@@ -96,8 +96,13 @@ export interface ArchivedDocument {
   amount?: number;
   createdAt: string;
   dataUrl?: string;
+  storageBucket?: string;
+  storagePath?: string;
+  mimeType?: string;
+  size?: number;
+  originalName?: string;
   /** Entité rattachée : véhicule, client, employé… */
-  entityType?: "vehicle" | "customer" | "employee" | "supplier" | "other";
+  entityType?: "vehicle" | "customer" | "employee" | "supplier" | "sale" | "credit" | "rental" | "maintenance" | "payment" | "company" | "other";
   entityId?: string;
   entityLabel?: string;
   /** Date d'expiration (assurance, visite technique, contrat…) */

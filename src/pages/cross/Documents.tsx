@@ -14,7 +14,7 @@ import {
   FileText, Download, Send, Search, Plus, Trash2, FileSpreadsheet, Receipt,
   ScrollText, FileSignature, ClipboardList, BadgeCheck, RefreshCw, CalendarClock,
 } from "lucide-react";
-import { useCollection, db } from "@/lib/demo-store";
+import { useCollection, db, getPrivateDocumentUrl } from "@/lib/demo-store";
 import { useRole } from "@/lib/roles";
 import { formatFCFA } from "@/lib/format";
 import { useCompanyProfile } from "@/lib/company-profile";
@@ -168,6 +168,17 @@ export function Documents() {
   };
 
   // Pièces jointes rattachées aux véhicules (carte grise, assurance, visite…)
+  const downloadDocument = async (d: any) => {
+    try {
+      const a = document.createElement("a");
+      a.href = await getPrivateDocumentUrl(d);
+      a.download = d.originalName || d.reference || d.title || "document";
+      a.click();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "TÃ©lÃ©chargement indisponible.");
+    }
+  };
+
   const vehicleDocs = useMemo(
     () => vehicles.flatMap((v: any) =>
       (v.documents ?? []).map((f: any) => ({
@@ -343,9 +354,9 @@ export function Documents() {
                   )}
                   <p className="font-bold text-sm hidden sm:block whitespace-nowrap">{d.amount ? formatFCFA(d.amount) : "—"}</p>
                   <div className="flex gap-0.5 shrink-0">
-                    {d.dataUrl ? (
-                      <Button size="icon" variant="ghost" title="Télécharger" asChild>
-                        <a href={d.dataUrl} download={d.reference}><Download size={15} /></a>
+                    {d.dataUrl || d.storagePath ? (
+                      <Button size="icon" variant="ghost" title="Télécharger" onClick={() => downloadDocument(d)}>
+                        <Download size={15} />
                       </Button>
                     ) : (
                       <Button size="icon" variant="ghost" title={isAuto ? "PDF disponible depuis le module d'origine" : "Retélécharger le PDF"}

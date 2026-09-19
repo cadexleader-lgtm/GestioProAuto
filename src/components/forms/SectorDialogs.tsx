@@ -4,7 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { db } from "@/lib/demo-store";
+import {
+  createPendingPrivateDocument,
+  db,
+  getPrivateDocumentUrl,
+  privateDocumentSummary,
+  uploadPrivateDocument,
+  type PendingPrivateDocument,
+} from "@/lib/demo-store";
 import { toast } from "sonner";
 import { Check, ChevronLeft, ChevronRight, Upload, FileText, Download, Trash2 } from "lucide-react";
 import type { Vehicle } from "@/lib/demo-data";
@@ -30,14 +37,19 @@ export function VehicleDialog({
   const isEdit = !!vehicle;
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<any>({});
+  const [pendingDocs, setPendingDocs] = useState<PendingPrivateDocument[]>([]);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setStep(0);
+    setPendingDocs([]);
+    setSubmitting(false);
     setForm(
       vehicle
         ? { ...vehicle, documents: vehicle.documents || [] }
         : {
+            id: crypto.randomUUID(),
             brand: "", model: "", year: new Date().getFullYear(), color: "Blanc",
             vin: "", plate: "", mileageKm: 0, fuel: "Essence", transmission: "Manuelle",
             purchasePrice: 0, importFees: 0, customsFees: 0, repairFees: 0, maintenanceFees: 0,
@@ -69,24 +81,7 @@ export function VehicleDialog({
         toast.error(`${file.name} : trop volumineux (max 5 Mo)`);
         return;
       }
-      const r = new FileReader();
-      r.onload = () => {
-        setForm((f: any) => ({
-          ...f,
-          documents: [
-            ...(f.documents || []),
-            {
-              id: `doc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-              name: file.name,
-              type: file.type || "application/octet-stream",
-              size: file.size,
-              dataUrl: r.result as string,
-              uploadedAt: new Date().toISOString(),
-            },
-          ],
-        }));
-      };
-      r.readAsDataURL(file);
+      setPendingDocs((items) => [...items, createPendingPrivateDocument(file)]);
     });
     e.target.value = "";
   };
@@ -94,11 +89,15 @@ export function VehicleDialog({
   const removeDoc = (id: string) =>
     setForm((f: any) => ({ ...f, documents: f.documents.filter((d: any) => d.id !== id) }));
 
-  const downloadDoc = (d: any) => {
-    const a = document.createElement("a");
-    a.href = d.dataUrl;
-    a.download = d.name;
-    a.click();
+  const downloadDoc = async (d: any) => {
+    try {
+      const a = document.createElement("a");
+      a.href = await getPrivateDocumentUrl(d);
+      a.download = d.name;
+      a.click();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "TÃ©lÃ©chargement indisponible.");
+    }
   };
 
   const canNext = () => {
@@ -125,6 +124,64 @@ export function VehicleDialog({
     }
     onOpenChange(false);
   };
+
+  const submitVehicle = async () => {
+    if (!form.brand || !form.model) {
+      setStep(0);
+      return toast.error("Marque et modÃ¨le requis");
+    }
+    if (submitting) return;
+
+    setSubmitting(true);
+    const vehicleId = vehicle?.id ?? form.id ?? crypto.randomUUID();
+    const vehicleLabel = `${form.brand} ${form.model}${form.plate ? ` (${form.plate})` : ""}`;
+    const cleanForm = {
+      ...form,
+      id: vehicleId,
+      documents: (form.documents || []).filter((d: any) => d.dataUrl),
+    };
+
+    try {
+      if (isEdit && vehicle) {
+        db.update("vehicles", vehicle.id, cleanForm);
+      } else {
+        db.add("vehicles", cleanForm);
+      }
+
+      if (pendingDocs.length > 0) {
+        try {
+          await Promise.all(pendingDocs.map((doc) => uploadPrivateDocument({
+            file: doc.file,
+            documentId: doc.id,
+            type: "piece",
+            title: doc.name,
+            reference: doc.name,
+            relatedTo: form.plate,
+            entityType: "vehicle",
+            entityId: vehicleId,
+            entityLabel: vehicleLabel,
+            relationType: "vehicle_attachment",
+            expiresAt: form.insuranceExpiry || form.techControlExpiry || undefined,
+            metadata: {
+              vehicleId,
+              vehiclePlate: form.plate,
+              source: "vehicle_dialog",
+              summary: privateDocumentSummary(doc),
+            },
+          })));
+          setPendingDocs([]);
+        } catch (error) {
+          toast.error(error instanceof Error ? `VÃ©hicule enregistrÃ©, document non archivÃ© : ${error.message}` : "VÃ©hicule enregistrÃ©, document non archivÃ©.");
+        }
+      }
+
+      toast.success(isEdit ? "VÃ©hicule mis Ã  jour" : "VÃ©hicule ajoutÃ©");
+      onOpenChange(false);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  void submit;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -266,7 +323,7 @@ export function VehicleDialog({
               </Label>
             </div>
 
-            {(form.documents?.length || 0) === 0 ? (
+            {(form.documents?.length || 0) === 0 && pendingDocs.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-4">Aucun document</p>
             ) : (
               <ul className="space-y-2">
@@ -279,6 +336,16 @@ export function VehicleDialog({
                     </div>
                     <Button type="button" size="icon" variant="ghost" onClick={() => downloadDoc(d)}><Download size={14} /></Button>
                     <Button type="button" size="icon" variant="ghost" onClick={() => removeDoc(d.id)}><Trash2 size={14} className="text-rose-600" /></Button>
+                  </li>
+                ))}
+                {pendingDocs.map((d) => (
+                  <li key={d.id} className="flex items-center gap-3 p-3 rounded-lg border bg-white/60 dark:bg-slate-900/40">
+                    <FileText size={18} className="text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{d.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{(d.size / 1024).toFixed(0)} Ko · En attente d'archivage privé</p>
+                    </div>
+                    <Button type="button" size="icon" variant="ghost" onClick={() => setPendingDocs((items) => items.filter((item) => item.id !== d.id))}><Trash2 size={14} className="text-rose-600" /></Button>
                   </li>
                 ))}
               </ul>
@@ -299,7 +366,7 @@ export function VehicleDialog({
             {step < STEPS.length - 1 ? (
               <Button onClick={next}>Suivant <ChevronRight size={14} /></Button>
             ) : (
-              <Button onClick={submit}><Check size={14} /> {isEdit ? "Enregistrer les modifications" : "Créer le véhicule"}</Button>
+              <Button onClick={submitVehicle} disabled={submitting}><Check size={14} /> {isEdit ? "Enregistrer les modifications" : "Créer le véhicule"}</Button>
             )}
           </div>
         </DialogFooter>

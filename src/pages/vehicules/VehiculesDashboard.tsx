@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatFCFA } from "@/lib/format";
 import { Link } from "@tanstack/react-router";
-import { Car, KeyRound, AlertTriangle, ArrowRight, Wrench, Wallet, DollarSign, Users, ArrowDownLeft, ArrowUpRight, Scale } from "lucide-react";
+import { Car, KeyRound, AlertTriangle, ArrowRight, Wrench, Wallet, DollarSign, Users, ArrowDownLeft, ArrowUpRight, Scale, TrendingUp, TrendingDown } from "lucide-react";
 import { useCollection, vehicleProfitability } from "@/lib/demo-store";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
