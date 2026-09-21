@@ -718,6 +718,109 @@ export async function recordManualExpense(payload: ManualExpensePayload) {
   return { ledgerEntry: data, expense };
 }
 
+export interface CashMovementPayload {
+  movementId: string;
+  type: "in" | "out";
+  cashAccountId: string;
+  amount: number;
+  label: string;
+  occurredAt?: string;
+  idempotencyKey: string;
+  metadata?: Record<string, unknown>;
+}
+
+export async function recordCashMovement(payload: CashMovementPayload) {
+  if (!companyId) {
+    throw new Error("Aucune entreprise active n'est disponible.");
+  }
+
+  const { data, error } = await sb.rpc("record_cash_movement", {
+    p_company_id: companyId,
+    p_movement_id: payload.movementId,
+    p_type: payload.type,
+    p_cash_account_id: payload.cashAccountId,
+    p_amount: payload.amount,
+    p_currency: "XOF",
+    p_occurred_at: payload.occurredAt ?? new Date().toISOString(),
+    p_idempotency_key: payload.idempotencyKey,
+    p_description: payload.label,
+    p_metadata: payload.metadata ?? {},
+  });
+
+  if (error) {
+    throw new Error(error.message || "Le mouvement de caisse n'a pas pu être enregistré.");
+  }
+
+  db.upsertLocal("cash", {
+    id: `manual-cash:${data.id}`,
+    type: payload.type,
+    label: payload.label,
+    amount: payload.amount,
+    date: payload.occurredAt ?? new Date().toISOString(),
+    source: payload.cashAccountId,
+    ledgerEntryId: data.id,
+  } as CashMovement);
+
+  return data;
+}
+
+export interface CashTransferPayload {
+  transferId: string;
+  sourceAccountId: string;
+  destinationAccountId: string;
+  amount: number;
+  occurredAt?: string;
+  idempotencyKey: string;
+  metadata?: Record<string, unknown>;
+}
+
+export async function recordCashTransfer(payload: CashTransferPayload) {
+  if (!companyId) {
+    throw new Error("Aucune entreprise active n'est disponible.");
+  }
+
+  const { data, error } = await sb.rpc("record_cash_transfer", {
+    p_company_id: companyId,
+    p_transfer_id: payload.transferId,
+    p_source_account_id: payload.sourceAccountId,
+    p_destination_account_id: payload.destinationAccountId,
+    p_amount: payload.amount,
+    p_currency: "XOF",
+    p_occurred_at: payload.occurredAt ?? new Date().toISOString(),
+    p_idempotency_key: payload.idempotencyKey,
+    p_metadata: payload.metadata ?? {},
+  });
+
+  if (error) {
+    throw new Error(error.message || "Le virement n'a pas pu être enregistré.");
+  }
+
+  if (data?.out) {
+    db.upsertLocal("cash", {
+      id: `manual-cash:${data.out.id}`,
+      type: "out",
+      label: data.out.description,
+      amount: payload.amount,
+      date: payload.occurredAt ?? new Date().toISOString(),
+      source: payload.sourceAccountId,
+      ledgerEntryId: data.out.id,
+    } as CashMovement);
+  }
+  if (data?.in) {
+    db.upsertLocal("cash", {
+      id: `manual-cash:${data.in.id}`,
+      type: "in",
+      label: data.in.description,
+      amount: payload.amount,
+      date: payload.occurredAt ?? new Date().toISOString(),
+      source: payload.destinationAccountId,
+      ledgerEntryId: data.in.id,
+    } as CashMovement);
+  }
+
+  return data;
+}
+
 export interface VehicleCashSalePayload {
   saleId: string;
   vehicleId: string;

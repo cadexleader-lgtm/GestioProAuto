@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { recordManualExpense } from "@/lib/demo-store";
+import { recordManualExpense, recordCashMovement, recordCashTransfer } from "@/lib/demo-store";
 import { EXPENSE_CATEGORIES } from "@/lib/demo-data";
 import { toast } from "sonner";
 
@@ -69,17 +69,47 @@ export function ExpenseDialog({ open, onOpenChange }: { open:boolean; onOpenChan
 
 export function CashMovementDialog({ open, onOpenChange, type }: { open:boolean; onOpenChange:(v:boolean)=>void; type:"in"|"out"|"transfer" }) {
   const [form, setForm] = useState<any>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [requestId, setRequestId] = useState("");
   useEffect(()=>{ setForm({ label:"", amount:0, source:"Caisse principale", destination:"Wave", reason:""}); },[open]);
-  const submit = () => {
+  useEffect(() => { if (open) setRequestId(crypto.randomUUID()); }, [open]);
+  const submit = async () => {
     if (!form.amount) return toast.error("Montant requis");
-    if (type==="transfer") {
-      db.add("cash", { type:"out", label:`Transfert vers ${form.destination}`, amount: form.amount, date: new Date().toISOString(), source: form.source });
-      db.add("cash", { type:"in",  label:`Transfert depuis ${form.source}`,    amount: form.amount, date: new Date().toISOString(), source: form.destination });
-    } else {
-      db.add("cash", { type, label: form.label||(type==="in"?"Entrée":"Sortie"), amount: form.amount, date: new Date().toISOString(), source: form.source });
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const occurredAt = new Date().toISOString();
+      if (type === "transfer") {
+        if (form.source === form.destination) {
+          toast.error("La caisse source et la caisse destination doivent être différentes.");
+          return;
+        }
+        await recordCashTransfer({
+          transferId: requestId,
+          sourceAccountId: form.source,
+          destinationAccountId: form.destination,
+          amount: form.amount,
+          occurredAt,
+          idempotencyKey: `cash-transfer:${requestId}`,
+        });
+      } else {
+        await recordCashMovement({
+          movementId: requestId,
+          type,
+          cashAccountId: form.source,
+          amount: form.amount,
+          label: form.label || (type === "in" ? "Entrée" : "Sortie"),
+          occurredAt,
+          idempotencyKey: `manual-cash:${requestId}`,
+        });
+      }
+      toast.success("Mouvement enregistré");
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Le mouvement n'a pas pu être enregistré.");
+    } finally {
+      setSubmitting(false);
     }
-    toast.success("Mouvement enregistré");
-    onOpenChange(false);
   };
   const title = type==="in"?"Entrée de caisse":type==="out"?"Sortie de caisse":"Virement entre caisses";
   return (
@@ -99,7 +129,7 @@ export function CashMovementDialog({ open, onOpenChange, type }: { open:boolean;
           </Select>
         </div>}
       </div>
-      <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>onOpenChange(false)}>Annuler</Button><Button onClick={submit}>Valider</Button></DialogFooter>
+      <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>onOpenChange(false)} disabled={submitting}>Annuler</Button><Button onClick={submit} disabled={submitting}>{submitting ? "Enregistrement..." : "Valider"}</Button></DialogFooter>
     </DialogContent></Dialog>
   );
 }

@@ -457,20 +457,28 @@ export function SellVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
 /* -------- Maintenance ------------------------------------------------- */
 export function MaintenanceVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Vehicle | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   const [f, setF] = useState<any>({});
+  const [submitting, setSubmitting] = useState(false);
   useEffect(() => {
     if (open) setF({
       motif: "", type: "Réparation", garage: "", priority: "medium",
       dateIn: new Date().toISOString().slice(0, 10),
       status: "pending", partsCost: 0, laborCost: 0, otherCost: 0, notes: "",
     });
+    setSubmitting(false);
   }, [open]);
   if (!vehicle) return null;
 
   const submit = () => {
     if (!f.motif) return toast.error("Motif requis");
-    startVehicleMaintenance({ ...f, vehicleId: vehicle.id });
-    toast.success("Véhicule placé en maintenance");
-    onOpenChange(false);
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      startVehicleMaintenance({ ...f, vehicleId: vehicle.id });
+      toast.success("Véhicule placé en maintenance");
+      onOpenChange(false);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -500,8 +508,8 @@ export function MaintenanceVehicleDialog({ vehicle, open, onOpenChange }: { vehi
           <div className="col-span-2"><Label>Notes</Label><Textarea rows={2} value={f.notes || ""} onChange={(e) => setF({ ...f, notes: e.target.value })} /></div>
         </div>
         <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-          <Button onClick={submit} disabled={submitting}>Enregistrer</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Annuler</Button>
+          <Button onClick={submit} disabled={submitting}>{submitting ? "Enregistrement..." : "Enregistrer"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
