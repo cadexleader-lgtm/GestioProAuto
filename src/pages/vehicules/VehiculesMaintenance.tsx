@@ -3,10 +3,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/ui/money-input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCollection, completeVehicleMaintenance, db } from "@/lib/demo-store";
+import { useCollection, completeVehicleMaintenance, updateVehicleMaintenance } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { Wrench, Plus, AlertTriangle, Clock, CheckCircle2, TrendingDown } from "lucide-react";
+import { Wrench, Plus, AlertTriangle, Clock, CheckCircle2, TrendingDown, Pencil } from "lucide-react";
 import { MaintenanceVehicleDialog } from "@/components/vehicles/VehicleActionsDialogs";
 import { toast } from "sonner";
 import type { VehicleMaintenance } from "@/lib/demo-store";
@@ -28,6 +32,9 @@ export function VehiculesMaintenance() {
   const [selectVehicle, setSelectVehicle] = useState<string>("");
   const [completingId, setCompletingId] = useState<string | null>(null);
   const completionKeys = useRef<Record<string, string>>({});
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<any>({});
 
   const stats = useMemo(() => {
     const active = items.filter((m) => m.status !== "done").length;
@@ -55,9 +62,43 @@ export function VehiculesMaintenance() {
 
   const chosenVehicle = selectVehicle ? vehicles.find((v) => v.id === selectVehicle) ?? null : null;
 
-  const handleUpdateStatus = (id: string, s: VehicleMaintenance["status"]) => {
-    db.update("vehicleMaintenances", id, { status: s } as any);
-    toast.success("Statut mis à jour");
+  const handleUpdateStatus = async (id: string, s: VehicleMaintenance["status"]) => {
+    if (updatingId) return;
+    setUpdatingId(id);
+    try {
+      await updateVehicleMaintenance({ maintenanceId: id, status: s });
+      toast.success("Statut mis à jour");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Le statut n'a pas pu être mis à jour.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const openEdit = (m: VehicleMaintenance) => {
+    setEditForm({ partsCost: m.partsCost || 0, laborCost: m.laborCost || 0, otherCost: m.otherCost || 0, garage: m.garage || "", notes: m.notes || "" });
+    setEditingId(m.id);
+  };
+
+  const saveEdit = async () => {
+    if (!editingId || updatingId) return;
+    setUpdatingId(editingId);
+    try {
+      await updateVehicleMaintenance({
+        maintenanceId: editingId,
+        partsCost: editForm.partsCost,
+        laborCost: editForm.laborCost,
+        otherCost: editForm.otherCost,
+        garage: editForm.garage,
+        notes: editForm.notes,
+      });
+      toast.success("Coûts mis à jour");
+      setEditingId(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Les coûts n'ont pas pu être mis à jour.");
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   const handleComplete = async (id: string) => {
@@ -157,7 +198,7 @@ export function VehiculesMaintenance() {
                 <div className="mt-3 flex flex-wrap gap-2 items-center">
                   {m.status !== "done" && (
                     <>
-                      <Select value={m.status} onValueChange={(v) => handleUpdateStatus(m.id, v as VehicleMaintenance["status"])}>
+                      <Select value={m.status} disabled={updatingId === m.id} onValueChange={(v) => void handleUpdateStatus(m.id, v as VehicleMaintenance["status"])}>
                         <SelectTrigger className="w-44 h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="pending">En attente</SelectItem>
@@ -166,6 +207,9 @@ export function VehiculesMaintenance() {
                           <SelectItem value="parts_wait">Attente pièces</SelectItem>
                         </SelectContent>
                       </Select>
+                      <Button size="sm" variant="outline" disabled={updatingId === m.id || completingId === m.id} onClick={() => openEdit(m)}>
+                        <Pencil size={14} /> Coûts
+                      </Button>
                       <Button size="sm" disabled={completingId === m.id} onClick={() => void handleComplete(m.id)}>
                         <CheckCircle2 size={14} /> {completingId === m.id ? "Clôture..." : "Terminer"}
                       </Button>
@@ -200,6 +244,25 @@ export function VehiculesMaintenance() {
         open={openAdd}
         onOpenChange={(o) => { setOpenAdd(o); if (!o) setSelectVehicle(""); }}
       />
+
+      <Dialog open={!!editingId} onOpenChange={(o) => { if (!o) setEditingId(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Modifier les coûts</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Pièces</Label><MoneyInput value={editForm.partsCost} onChange={(v) => setEditForm({ ...editForm, partsCost: v })} /></div>
+              <div><Label>Main-d'œuvre</Label><MoneyInput value={editForm.laborCost} onChange={(v) => setEditForm({ ...editForm, laborCost: v })} /></div>
+            </div>
+            <div><Label>Autres frais</Label><MoneyInput value={editForm.otherCost} onChange={(v) => setEditForm({ ...editForm, otherCost: v })} /></div>
+            <div><Label>Garage / Technicien</Label><Input value={editForm.garage || ""} onChange={(e) => setEditForm({ ...editForm, garage: e.target.value })} /></div>
+            <div><Label>Notes</Label><Textarea rows={2} value={editForm.notes || ""} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} /></div>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setEditingId(null)} disabled={!!updatingId}>Annuler</Button>
+            <Button onClick={() => void saveEdit()} disabled={!!updatingId}>{updatingId === editingId ? "Enregistrement..." : "Enregistrer"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

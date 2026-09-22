@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { User2, CalendarDays, Wallet, ClipboardCheck, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import {
-  startRental, recordRentalPayment, recordVehicleCashSale, recordVehicleCreditSale, startVehicleMaintenance,
+  startRental, recordRentalPayment, recordVehicleCashSale, recordVehicleCreditSale, openVehicleMaintenance,
   addVehicleCreditPayment, db,
 } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
@@ -458,24 +458,44 @@ export function SellVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
 export function MaintenanceVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Vehicle | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   const [f, setF] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
+  const [requestIdentity, setRequestIdentity] = useState({ maintenanceId: "", idempotencyKey: "" });
   useEffect(() => {
-    if (open) setF({
-      motif: "", type: "Réparation", garage: "", priority: "medium",
-      dateIn: new Date().toISOString().slice(0, 10),
-      status: "pending", partsCost: 0, laborCost: 0, otherCost: 0, notes: "",
-    });
+    if (open) {
+      setF({
+        motif: "", type: "Réparation", garage: "", priority: "medium",
+        dateIn: new Date().toISOString().slice(0, 10),
+        status: "pending", partsCost: 0, laborCost: 0, otherCost: 0, notes: "",
+      });
+      const requestId = crypto.randomUUID();
+      setRequestIdentity({ maintenanceId: requestId, idempotencyKey: `maintenance-open:${requestId}` });
+    }
     setSubmitting(false);
   }, [open]);
   if (!vehicle) return null;
 
-  const submit = () => {
+  const submit = async () => {
     if (!f.motif) return toast.error("Motif requis");
     if (submitting) return;
     setSubmitting(true);
     try {
-      startVehicleMaintenance({ ...f, vehicleId: vehicle.id });
+      await openVehicleMaintenance({
+        maintenanceId: requestIdentity.maintenanceId,
+        vehicleId: vehicle.id,
+        motif: f.motif,
+        type: f.type,
+        garage: f.garage,
+        priority: f.priority,
+        dateIn: f.dateIn,
+        partsCost: f.partsCost,
+        laborCost: f.laborCost,
+        otherCost: f.otherCost,
+        notes: f.notes,
+        idempotencyKey: requestIdentity.idempotencyKey,
+      });
       toast.success("Véhicule placé en maintenance");
       onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "La maintenance n'a pas pu être ouverte.");
     } finally {
       setSubmitting(false);
     }

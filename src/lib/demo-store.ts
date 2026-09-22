@@ -1239,10 +1239,83 @@ export function sellVehicle(payload: {
   return sale;
 }
 
-export function startVehicleMaintenance(payload: Omit<VehicleMaintenance, "id">): VehicleMaintenance {
-  const m = db.add("vehicleMaintenances", payload);
-  db.update("vehicles", payload.vehicleId, { status: "maintenance" } as any);
-  return m;
+export async function openVehicleMaintenance(payload: {
+  maintenanceId: string;
+  vehicleId: string;
+  motif: string;
+  type: string;
+  garage?: string;
+  priority: string;
+  dateIn: string;
+  partsCost?: number;
+  laborCost?: number;
+  otherCost?: number;
+  notes?: string;
+  idempotencyKey: string;
+}): Promise<VehicleMaintenance> {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data, error } = await sb.rpc("open_vehicle_maintenance", {
+    p_company_id: companyId,
+    p_maintenance_id: payload.maintenanceId,
+    p_vehicle_id: payload.vehicleId,
+    p_motif: payload.motif,
+    p_type: payload.type,
+    p_garage: payload.garage ?? "",
+    p_priority: payload.priority,
+    p_date_in: payload.dateIn,
+    p_parts_cost: payload.partsCost ?? 0,
+    p_labor_cost: payload.laborCost ?? 0,
+    p_other_cost: payload.otherCost ?? 0,
+    p_notes: payload.notes ?? "",
+    p_idempotency_key: payload.idempotencyKey,
+    p_metadata: {},
+  });
+
+  if (error) {
+    throw new Error(error.message || "La maintenance n'a pas pu être ouverte.");
+  }
+
+  const maintenance = { id: data.maintenance_id, ...data.maintenance } as VehicleMaintenance;
+  db.upsertLocal("vehicleMaintenances", maintenance);
+
+  const vehicle = db.list("vehicles").find((v) => v.id === payload.vehicleId);
+  if (vehicle) db.upsertLocal("vehicles", { ...vehicle, status: "maintenance" });
+
+  return maintenance;
+}
+
+export async function updateVehicleMaintenance(payload: {
+  maintenanceId: string;
+  status?: VehicleMaintenance["status"];
+  partsCost?: number;
+  laborCost?: number;
+  otherCost?: number;
+  garage?: string;
+  notes?: string;
+  priority?: string;
+}): Promise<VehicleMaintenance> {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data, error } = await sb.rpc("update_vehicle_maintenance", {
+    p_company_id: companyId,
+    p_maintenance_id: payload.maintenanceId,
+    p_status: payload.status ?? null,
+    p_parts_cost: payload.partsCost ?? null,
+    p_labor_cost: payload.laborCost ?? null,
+    p_other_cost: payload.otherCost ?? null,
+    p_garage: payload.garage ?? null,
+    p_notes: payload.notes ?? null,
+    p_priority: payload.priority ?? null,
+  });
+
+  if (error) {
+    throw new Error(error.message || "La maintenance n'a pas pu être mise à jour.");
+  }
+
+  const maintenance = { id: data.maintenance_id, ...data.maintenance } as VehicleMaintenance;
+  db.upsertLocal("vehicleMaintenances", maintenance);
+  return maintenance;
 }
 
 export async function completeVehicleMaintenance(payload: {
