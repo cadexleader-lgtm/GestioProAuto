@@ -40,18 +40,28 @@ export function TeamCard() {
     if (!company?.id) return;
     setLoading(true);
     const sb = supabase as any;
-    const { data, error } = await sb
+    const { data: rows, error } = await sb
       .from("company_members")
-      .select("user_id, role, profiles(full_name)")
+      .select("user_id, role")
       .eq("company_id", company.id)
       .order("created_at", { ascending: true });
-    if (!error) {
-      setMembers((data ?? []).map((m: any) => ({
-        userId: m.user_id,
-        role: m.role,
-        fullName: m.profiles?.full_name ?? null,
-      })));
+
+    if (error || !rows) {
+      setLoading(false);
+      return;
     }
+
+    const userIds = rows.map((r: any) => r.user_id);
+    const { data: profileRows } = userIds.length
+      ? await sb.from("profiles").select("id, full_name").in("id", userIds)
+      : { data: [] };
+    const nameById = new Map((profileRows ?? []).map((p: any) => [p.id, p.full_name]));
+
+    setMembers(rows.map((m: any) => ({
+      userId: m.user_id,
+      role: m.role,
+      fullName: nameById.get(m.user_id) ?? null,
+    })));
     setLoading(false);
   };
 
