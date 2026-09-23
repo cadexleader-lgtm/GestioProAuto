@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
-import { useCollection, vehicleProfitability } from "@/lib/demo-store";
+import {
+  useCollection, vehicleProfitability, rentalContractedAmount,
+  signedRevenueInRange, creditPaymentsInRange, creditOutstandingTotal,
+} from "@/lib/demo-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -29,36 +32,28 @@ export function VehiculesRapports() {
   }, [vehicles, sales, rentals, maints]);
 
   const totals = useMemo(() => {
-    const salesInPeriod = sales.filter((s) => +new Date(s.date) >= cutoff);
-    const paymentsInPeriod = payments.filter((p) => +new Date(p.date) >= cutoff);
-    const rentalRev = rentals
-      .filter((r) => +new Date(r.startDate) >= cutoff)
-      .reduce((s, r) => {
-        const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / 86400000));
-        return s + days * r.dailyRate;
-      }, 0);
-    const saleRev = salesInPeriod.reduce((s, x) => s + x.amount, 0);
-    const creditRev = paymentsInPeriod.reduce((s, p) => s + p.amount, 0);
+    const inPeriod = (iso: string) => +new Date(iso) >= cutoff;
+    // Source unique (demo-store.ts) : le CA "vente" inclut déjà le montant plein
+    // des ventes à crédit signées sur la période. Les paiements d'échéance reçus
+    // (creditRev ci-dessous) sont un indicateur de trésorerie séparé — les
+    // additionner à saleRev double-compterait la même vente à crédit deux fois.
+    const { saleRevenue: saleRev, rentalRevenue: rentalRev, total: totalRev } = signedRevenueInRange(inPeriod);
+    const creditRev = creditPaymentsInRange(inPeriod);
     const maintCost = maints
       .filter((m) => +new Date(m.dateIn) >= cutoff)
       .reduce((s, m) => s + (m.partsCost || 0) + (m.laborCost || 0) + (m.otherCost || 0), 0);
-    const outstanding = credits.reduce((s, c) => {
-      const paid = c.downPayment + payments.filter((p) => p.creditId === c.id).reduce((a, p) => a + p.amount, 0);
-      return s + Math.max(0, c.total - paid);
-    }, 0);
-    return { rentalRev, saleRev, creditRev, maintCost, outstanding, totalRev: rentalRev + saleRev + creditRev };
+    const outstanding = creditOutstandingTotal();
+    return { rentalRev, saleRev, creditRev, maintCost, outstanding, totalRev };
   }, [sales, rentals, credits, payments, maints, cutoff]);
 
   const topClients = useMemo(() => {
+    // Chaque vente à crédit a déjà une ligne vehicleSales au montant plein — ne
+    // pas réadditionner les paiements de vehicleCredits par-dessus (même bug que
+    // totals ci-dessus, corrigé ici aussi).
     const map = new Map<string, number>();
     sales.forEach((s) => map.set(s.customer, (map.get(s.customer) || 0) + s.amount));
     rentals.forEach((r) => {
-      const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / 86400000));
-      map.set(r.customer, (map.get(r.customer) || 0) + days * r.dailyRate);
-    });
-    credits.forEach((c) => {
-      const paid = c.downPayment + payments.filter((p) => p.creditId === c.id).reduce((a, p) => a + p.amount, 0);
-      if (paid > 0) map.set(c.customer, (map.get(c.customer) || 0) + paid);
+      map.set(r.customer, (map.get(r.customer) || 0) + rentalContractedAmount(r));
     });
     return Array.from(map.entries())
       .map(([name, amount]) => ({ name, amount }))
@@ -66,10 +61,12 @@ export function VehiculesRapports() {
       .slice(0, 10);
   }, [sales, rentals, credits, payments]);
 
+  // Ventilation du CA signé (Ventes + Locations = totals.totalRev, exactement).
+  // "Encaissements crédit" est une notion de trésorerie distincte (voir KPI
+  // ci-dessous) — l'inclure ici recompterait une vente à crédit deux fois.
   const revenueSplit = [
     { name: "Ventes", value: totals.saleRev, color: "hsl(220 90% 55%)" },
     { name: "Locations", value: totals.rentalRev, color: "hsl(160 70% 45%)" },
-    { name: "Crédits encaissés", value: totals.creditRev, color: "hsl(38 90% 55%)" },
   ].filter((x) => x.value > 0);
 
   return (
@@ -134,7 +131,7 @@ export function VehiculesRapports() {
 
         <Card className="shadow-sm rounded-2xl">
           <CardHeader>
-            <CardTitle>Ventilation des revenus</CardTitle>
+            <CardTitle>Ventilation du CA signé</CardTitle>
           </CardHeader>
           <CardContent>
             {revenueSplit.length === 0 ? (

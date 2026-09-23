@@ -1419,16 +1419,67 @@ export async function addVehicleCreditPayment(
   return data;
 }
 
+/* ==============================================================
+ * SOURCE UNIQUE — CA signé / trésorerie réelle / encours crédit.
+ * Utilisées par VehiculesDashboard, VehiculesRapports et tout futur
+ * écran financier auto — ne pas recalculer indépendamment ailleurs
+ * (voir roadmap item 17 : 3 définitions du CA avant cette source unique).
+ * ============================================================== */
+
+/** Montant contracté d'une location = jours × tarif journalier. */
+export function rentalContractedAmount(r: Pick<Rental, "startDate" | "endDate" | "dailyRate">): number {
+  const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / 86400000));
+  return days * (r.dailyRate || 0);
+}
+
+/**
+ * CA signé (contracté) sur une période : ventes véhicule (cash + crédit, montant
+ * plein — le crédit n'est pas recompté à chaque échéance) + locations contractées.
+ * Ne reflète PAS la trésorerie réelle encaissée (voir cashFlowInRange).
+ * `inRange` reçoit la date métier brute (string) — laisse l'appelant choisir sa
+ * propre stratégie de comparaison (clé "YYYY-MM", cutoff epoch, etc.) plutôt que
+ * d'imposer un parsing de date qui décale les dates-seules (sans heure) selon le
+ * fuseau de l'appareil.
+ */
+export function signedRevenueInRange(inRange: (isoDate: string) => boolean) {
+  const saleRevenue = db.list("vehicleSales").filter((s) => inRange(s.date)).reduce((s, x) => s + x.amount, 0);
+  const rentalRevenue = db.list("rentals").filter((r) => inRange(r.startDate)).reduce((s, r) => s + rentalContractedAmount(r), 0);
+  return { saleRevenue, rentalRevenue, total: saleRevenue + rentalRevenue };
+}
+
+/**
+ * Trésorerie réelle (mouvements de caisse) sur une période. Exclut les virements
+ * internes entre comptes (`sourceType === "manual_cash_transfer"`) : un virement
+ * Wave → Caisse principale n'est ni un encaissement ni un décaissement métier.
+ */
+export function cashFlowInRange(inRange: (isoDate: string) => boolean) {
+  const moves = db.list("cash").filter((m) => m.sourceType !== "manual_cash_transfer" && inRange(m.date));
+  const cashIn = moves.filter((m) => m.type === "in").reduce((s, m) => s + m.amount, 0);
+  const cashOut = moves.filter((m) => m.type === "out").reduce((s, m) => s + m.amount, 0);
+  return { cashIn, cashOut, net: cashIn - cashOut };
+}
+
+/** Somme des paiements de crédit reçus sur une période (déjà comptés dans cashFlowInRange — informatif, pas à additionner au CA signé). */
+export function creditPaymentsInRange(inRange: (isoDate: string) => boolean) {
+  return db.list("vehiclePayments").filter((p) => inRange(p.date)).reduce((s, p) => s + p.amount, 0);
+}
+
+/** Solde total restant dû sur tous les crédits véhicule en cours. */
+export function creditOutstandingTotal(): number {
+  const payments = db.list("vehiclePayments");
+  return db.list("vehicleCredits").reduce((s, c) => {
+    const paid = c.downPayment + payments.filter((p) => p.creditId === c.id).reduce((a, p) => a + p.amount, 0);
+    return s + Math.max(0, c.total - paid);
+  }, 0);
+}
+
 export function vehicleProfitability(vehicleId: string) {
   const v = db.list("vehicles").find((x) => x.id === vehicleId);
   if (!v) return null;
   const rentals = db.list("rentals").filter((r) => r.vehicleId === vehicleId);
   const sales = db.list("vehicleSales").filter((s) => s.vehicleId === vehicleId);
   const maints = db.list("vehicleMaintenances").filter((m) => m.vehicleId === vehicleId);
-  const rentalRevenue = rentals.reduce((s, r) => {
-    const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / 86400000));
-    return s + days * r.dailyRate;
-  }, 0);
+  const rentalRevenue = rentals.reduce((s, r) => s + rentalContractedAmount(r), 0);
   const saleRevenue = sales.reduce((s, x) => s + x.amount, 0);
   const maintCost = maints.reduce((s, m) => s + (m.partsCost || 0) + (m.laborCost || 0) + (m.otherCost || 0), 0);
 

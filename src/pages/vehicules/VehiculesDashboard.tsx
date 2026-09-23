@@ -3,7 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatFCFA } from "@/lib/format";
 import { Link } from "@tanstack/react-router";
 import { Car, KeyRound, AlertTriangle, ArrowRight, Wrench, Wallet, DollarSign, Users, ArrowDownLeft, ArrowUpRight, Scale, TrendingUp, TrendingDown } from "lucide-react";
-import { useCollection, vehicleProfitability } from "@/lib/demo-store";
+import {
+  useCollection, vehicleProfitability, rentalContractedAmount,
+  signedRevenueInRange, cashFlowInRange, creditOutstandingTotal,
+} from "@/lib/demo-store";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useRole } from "@/lib/roles";
 
@@ -28,39 +31,17 @@ export function VehiculesDashboard() {
     const currentMonth = businessDateKey(new Date()).slice(0, 7);
     const isCurrentMonth = (date: string) => businessDateKey(date).slice(0, 7) === currentMonth;
 
-    // Revenus location : cumul (jours × tarif) des locations
-    const rentalRevenueMonth = rentals
-      .filter((r) => isCurrentMonth(r.startDate))
-      .reduce((s, r) => {
-        const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / 86400000));
-        return s + days * (r.dailyRate || 0);
-      }, 0);
-
-    // Revenus vente
-    const saleRevenueMonth = sales.filter((s) => isCurrentMonth(s.date)).reduce((a, b) => a + b.amount, 0);
-
-    // Cash is the operational source of truth. Ledger and business payment records
-    // are never added to it, preventing duplicate counting of the same operation.
-    const monthCash = cash.filter((movement) => isCurrentMonth(movement.date));
-    const cashInMonth = monthCash
-      .filter((movement) => movement.type === "in")
-      .reduce((sum, movement) => sum + movement.amount, 0);
-    const cashOutMonth = monthCash
-      .filter((movement) => movement.type === "out")
-      .reduce((sum, movement) => sum + movement.amount, 0);
-    const netCashMonth = cashInMonth - cashOutMonth;
+    // Source unique (demo-store.ts) : même calcul que Rapports auto et la
+    // rentabilité par véhicule, jamais réimplémenté ici (roadmap item 17).
+    const { saleRevenue: saleRevenueMonth, rentalRevenue: rentalRevenueMonth } = signedRevenueInRange(isCurrentMonth);
+    const { cashIn: cashInMonth, cashOut: cashOutMonth, net: netCashMonth } = cashFlowInRange(isCurrentMonth);
 
     // Reconciliation only: these payment records are already represented in cashInMonth.
     const rentalPaymentsMonth = rentalPayments
       .filter((payment) => isCurrentMonth(payment.date))
       .reduce((sum, payment) => sum + payment.amount, 0);
 
-    // Crédits restant à encaisser
-    const creditsRemaining = credits.reduce((s, c) => {
-      const paid = c.downPayment + payments.filter((p) => p.creditId === c.id).reduce((x, p) => x + p.amount, 0);
-      return s + Math.max(0, c.total - paid);
-    }, 0);
-
+    const creditsRemaining = creditOutstandingTotal();
     const immobilized = vehicles.filter((v) => v.status === "maintenance" || v.status === "rented").length;
     return {
       saleRevenueMonth,
@@ -86,10 +67,7 @@ export function VehiculesDashboard() {
     rentals.forEach((r) => {
       const key = businessDateKey(r.startDate).slice(0, 7);
       const b = buckets.find((x) => x.month === key);
-      if (b) {
-        const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / 86400000));
-        b.loc += days * (r.dailyRate || 0);
-      }
+      if (b) b.loc += rentalContractedAmount(r);
     });
     sales.forEach((s) => {
       const key = businessDateKey(s.date).slice(0, 7);
@@ -112,8 +90,7 @@ export function VehiculesDashboard() {
   const topCustomers = useMemo(() => {
     const map = new Map<string, number>();
     rentals.forEach((r) => {
-      const days = Math.max(1, Math.round((+new Date(r.endDate) - +new Date(r.startDate)) / 86400000));
-      map.set(r.customer, (map.get(r.customer) || 0) + days * (r.dailyRate || 0));
+      map.set(r.customer, (map.get(r.customer) || 0) + rentalContractedAmount(r));
     });
     sales.forEach((s) => map.set(s.customer, (map.get(s.customer) || 0) + s.amount));
     return Array.from(map.entries()).map(([name, total]) => ({ name, total })).sort((a, b) => b.total - a.total).slice(0, 5);
