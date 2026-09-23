@@ -5,6 +5,7 @@ import { useGetCompany, useUpdateCompany, getGetCompanyQueryKey } from "@workspa
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -14,7 +15,7 @@ import { useEffect } from "react";
 import { SUB_SECTORS_ARRAY } from "@/lib/sectors";
 import { db } from "@/lib/demo-store";
 import { Database, Trash2, Shield, Volume2 } from "lucide-react";
-import { ROLES, useRole } from "@/lib/roles";
+import { ROLES, useRole, can } from "@/lib/roles";
 import { isSoundEnabled, setSoundEnabled } from "@/lib/notifications";
 import { Switch } from "@/components/ui/switch";
 import { CompanyBrandingCard } from "@/components/settings/CompanyBrandingCard";
@@ -41,6 +42,11 @@ export function Settings() {
   const queryClient = useQueryClient();
   const { data: company, isLoading } = useGetCompany();
   const updateCompany = useUpdateCompany();
+  const role = useRole();
+  const canWipe = can(role, "wipe.data");
+  const [wipeConfirm, setWipeConfirm] = useState("");
+  const [wiping, setWiping] = useState(false);
+  const [wipeOpen, setWipeOpen] = useState(false);
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -168,14 +174,19 @@ export function Settings() {
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Repartez d'une base totalement vierge pour l'exploitation réelle. Votre profil
-            d'entreprise et vos paramètres de documents sont conservés.
+            d'entreprise et vos paramètres de documents sont conservés. L'historique financier
+            déjà clôturé (ventes, paiements, locations, paie) est protégé et ne sera pas effacé
+            par cette action.
           </p>
+          {!canWipe && (
+            <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              Réservé au rôle Patron.
+            </p>
+          )}
           <div className="flex flex-wrap gap-3">
-
-
-            <AlertDialog>
+            <AlertDialog open={wipeOpen} onOpenChange={(open) => { setWipeOpen(open); if (!open) setWipeConfirm(""); }}>
               <AlertDialogTrigger asChild>
-                <Button type="button" variant="destructive" className="rounded-xl">
+                <Button type="button" variant="destructive" className="rounded-xl" disabled={!canWipe}>
                   <Trash2 size={16} /> Vider toutes les données
                 </Button>
               </AlertDialogTrigger>
@@ -188,17 +199,45 @@ export function Settings() {
                     est conservé. Cette action est irréversible.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+                <div className="space-y-1.5">
+                  <Label htmlFor="wipe-confirm" className="text-sm">
+                    Tapez <strong>{company?.name}</strong> pour confirmer
+                  </Label>
+                  <Input
+                    id="wipe-confirm"
+                    value={wipeConfirm}
+                    onChange={(e) => setWipeConfirm(e.target.value)}
+                    placeholder={company?.name}
+                    className="rounded-xl"
+                    autoComplete="off"
+                  />
+                </div>
                 <AlertDialogFooter>
                   <AlertDialogCancel className="rounded-xl">Annuler</AlertDialogCancel>
                   <AlertDialogAction
                     className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    onClick={() => {
-                      void db.wipeAll().then(() =>
-                        toast.success("Toutes les données ont été effacées"),
-                      );
+                    disabled={wiping || !company?.name || wipeConfirm !== company.name}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      if (wiping) return;
+                      setWiping(true);
+                      try {
+                        const { cleared, blocked } = await db.wipeAll();
+                        toast.success(`${cleared.length} collection(s) vidée(s)`, {
+                          description: blocked.length
+                            ? `Protégées et non touchées (historique financier) : ${blocked.length} table(s).`
+                            : undefined,
+                        });
+                        setWipeConfirm("");
+                        setWipeOpen(false);
+                      } catch (error) {
+                        toast.error(error instanceof Error ? error.message : "La purge a échoué.");
+                      } finally {
+                        setWiping(false);
+                      }
                     }}
                   >
-                    Oui, tout vider
+                    {wiping ? "Suppression..." : "Oui, tout vider"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

@@ -641,13 +641,28 @@ export const db = {
       await sb.from(TABLES[name]).insert(items.map((it: any) => row(it.id ?? uid("s"), it)));
     }
   },
-  /** Wipe ALL collections for the current company. */
-  async wipeAll(): Promise<void> {
+  /**
+   * Wipe ALL collections for the current company. Ne vide localement que ce qui a
+   * réellement été supprimé côté serveur — plusieurs tables (ventes, mouvements de
+   * caisse, ledger, locations, paie, maintenance) ont leur DELETE révoqué pour
+   * `authenticated` (historique financier protégé), la suppression y échoue donc
+   * silencieusement côté Postgres et ne doit pas non plus vider l'état local.
+   */
+  async wipeAll(): Promise<{ cleared: string[]; blocked: string[] }> {
+    const cleared: string[] = [];
+    const blocked: string[] = [];
     for (const k of ALL_KEYS) {
+      if (!companyId) { blocked.push(k); continue; }
+      const { error } = await sb.from(TABLES[k]).delete().eq("company_id", companyId);
+      if (error) {
+        blocked.push(k);
+        continue;
+      }
+      cleared.push(k);
       stores[k] = [] as any;
       notify(k);
-      if (companyId) await sb.from(TABLES[k]).delete().eq("company_id", companyId);
     }
+    return { cleared, blocked };
   },
   /** Load the full demo dataset into the current company. */
   async loadDemo(): Promise<void> {
