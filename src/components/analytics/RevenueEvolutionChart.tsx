@@ -67,6 +67,9 @@ export function RevenueEvolutionChart({ title = "Évolution CA vs Dépenses", cl
     // génère déjà une sortie de caisse, on ne l'additionne donc pas deux fois.
     const cashOutKeys = new Set<string>();
     for (const m of cash) {
+      // Un virement interne (Wave -> Caisse principale...) n'est ni du CA ni une
+      // dépense : c'est juste de l'argent qui change de compte au sein de l'entreprise.
+      if (m.sourceType === "manual_cash_transfer") continue;
       const b = idx.get(bucketKey(m.date));
       if (!b) continue;
       if (m.type === "in") b.ca += m.amount;

@@ -804,6 +804,7 @@ export async function recordCashTransfer(payload: CashTransferPayload) {
       date: payload.occurredAt ?? new Date().toISOString(),
       source: payload.sourceAccountId,
       ledgerEntryId: data.out.id,
+      sourceType: "manual_cash_transfer",
     } as CashMovement);
   }
   if (data?.in) {
@@ -813,6 +814,7 @@ export async function recordCashTransfer(payload: CashTransferPayload) {
       label: data.in.description,
       amount: payload.amount,
       date: payload.occurredAt ?? new Date().toISOString(),
+      sourceType: "manual_cash_transfer",
       source: payload.destinationAccountId,
       ledgerEntryId: data.in.id,
     } as CashMovement);

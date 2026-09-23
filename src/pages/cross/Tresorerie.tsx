@@ -38,8 +38,14 @@ export function Tresorerie() {
     .sort((a, b) => (a.date < b.date ? 1 : -1)),
   [cashMovements, period, account]);
 
-  const periodIn = periodMoves.filter(m => m.type === "in").reduce((s, m) => s + m.amount, 0);
-  const periodOut = periodMoves.filter(m => m.type === "out").reduce((s, m) => s + m.amount, 0);
+  // Les virements internes (Wave -> Caisse principale, etc.) déplacent de l'argent
+  // entre comptes de l'entreprise mais ne sont ni un vrai encaissement ni un vrai
+  // décaissement métier : on les exclut de ces 2 indicateurs pour ne pas gonfler
+  // artificiellement les deux à la fois. Ils restent visibles dans le journal et
+  // comptent bien dans le solde de chaque compte.
+  const periodMovesReal = periodMoves.filter(m => m.sourceType !== "manual_cash_transfer");
+  const periodIn = periodMovesReal.filter(m => m.type === "in").reduce((s, m) => s + m.amount, 0);
+  const periodOut = periodMovesReal.filter(m => m.type === "out").reduce((s, m) => s + m.amount, 0);
   const net = periodIn - periodOut;
 
   const accounts = useMemo(() => {
@@ -83,7 +89,7 @@ export function Tresorerie() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Kpi label="Solde de caisse" value={formatFCFA(balance)} icon={<Wallet size={17} className="text-primary" />} tone="primary" />
+        <Kpi label="Solde total (tous comptes)" value={formatFCFA(balance)} icon={<Wallet size={17} className="text-primary" />} tone="primary" />
         <Kpi label="Encaissements" value={formatFCFA(periodIn)} icon={<ArrowDownLeft size={17} className="text-emerald-600" />} tone="emerald" />
         <Kpi label="Décaissements" value={formatFCFA(periodOut)} icon={<ArrowUpRight size={17} className="text-rose-600" />} tone="rose" />
         <Kpi
@@ -118,7 +124,8 @@ export function Tresorerie() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="rounded-2xl shadow-sm">
           <CardContent className="p-6">
-            <h3 className="font-display font-semibold mb-4 inline-flex items-center gap-2"><PiggyBank size={16} /> Caisses & comptes</h3>
+            <h3 className="font-display font-semibold mb-1 inline-flex items-center gap-2"><PiggyBank size={16} /> Caisses & comptes</h3>
+            <p className="text-xs text-muted-foreground mb-4">Solde réel de chaque compte — c'est ici qu'il faut vérifier, pas seulement le total ci-dessus.</p>
             <div className="space-y-2">
               {accounts.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">Aucun mouvement</p>}
               {accounts.map(a => (
@@ -167,7 +174,12 @@ export function Tresorerie() {
                     {m.type === "in" ? <ArrowDownLeft size={17} /> : <ArrowUpRight size={17} />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">{m.label}</p>
+                    <p className="font-semibold text-sm truncate inline-flex items-center gap-1.5">
+                      {m.label}
+                      {m.sourceType === "manual_cash_transfer" && (
+                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0 font-normal">Virement interne</Badge>
+                      )}
+                    </p>
                     <p className="text-xs text-muted-foreground truncate">
                       {m.source} · {new Date(m.date).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}
                     </p>

@@ -89,6 +89,11 @@ export interface CashMovement {
   amount: number;
   date: string;
   source: string;
+  ledgerEntryId?: string;
+  /** "manual_cash_transfer" pour un virement interne entre 2 comptes de l'entreprise :
+   * affecte le solde de chaque compte mais n'est pas un vrai encaissement/décaissement
+   * métier (pas d'argent qui entre/sort de l'entreprise). */
+  sourceType?: string;
 }
 
 export const cashMovements: CashMovement[] = [
