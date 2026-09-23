@@ -13,6 +13,7 @@ import {
 import {
   FileText, Download, Send, Search, Plus, Trash2, FileSpreadsheet, Receipt,
   ScrollText, FileSignature, ClipboardList, BadgeCheck, RefreshCw, CalendarClock,
+  ShieldAlert,
 } from "lucide-react";
 import { useCollection, db, getPrivateDocumentUrl, uploadPrivateDocument } from "@/lib/demo-store";
 import { useRole } from "@/lib/roles";
@@ -379,8 +380,73 @@ export function Documents() {
     .filter((d) => (d.createdAt || "").slice(0, 7) === today().slice(0, 7))
     .reduce((s, d) => s + (d.amount || 0), 0);
 
+  // Documents sensibles (bulletins de paie) séparés des documents généraux :
+  // même s'ils partagent les mêmes filtres, ils s'affichent dans une archive
+  // à part, clairement identifiée, pour éviter de les mélanger aux factures/
+  // contrats courants pendant qu'on parcourt les archives.
+  const filteredGeneral = filtered.filter((d) => !isPayrollDocument(d));
+  const filteredPayroll = filtered.filter((d) => isPayrollDocument(d));
 
   const isLineDoc = kind === "facture" || kind === "proforma" || kind === "bon";
+
+  const renderDocRow = (d: any) => {
+    const t = ALL_TYPES.find((x) => x.id === d.type);
+    const Icon = t?.icon ?? FileText;
+    const n = daysLeft(d);
+    const isAuto = !TYPES.some((x) => x.id === d.type);
+    const isPayroll = isPayrollDocument(d);
+    return (
+      <div key={d.id} className="flex items-center gap-3 px-4 sm:px-6 py-4 hover:bg-muted/30">
+        <div className={`w-10 h-10 rounded-xl ${t?.tint ?? "bg-slate-100 text-slate-600"} flex items-center justify-center shrink-0`}>
+          <Icon size={17} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm truncate">{d.reference}</p>
+          <p className="text-xs text-muted-foreground truncate">
+            {d.title} · {new Date(d.createdAt).toLocaleDateString("fr-FR")}
+            {d.entityLabel ? ` · ${d.entityLabel}` : ""}
+          </p>
+        </div>
+        {n !== null && (
+          <Badge variant="outline"
+            className={`hidden sm:inline-flex rounded-lg text-[11px] ${n < 0 ? "border-rose-300 bg-rose-50 text-rose-700" : n <= 30 ? "border-amber-300 bg-amber-50 text-amber-800" : "border-slate-200"}`}>
+            {n < 0 ? `Expiré (${-n} j)` : `Expire dans ${n} j`}
+          </Badge>
+        )}
+        <p className="font-bold text-sm hidden sm:block whitespace-nowrap">{d.amount ? formatFCFA(d.amount) : "—"}</p>
+        <div className="flex gap-0.5 shrink-0">
+          {d.dataUrl || d.storagePath ? (
+            <Button size="icon" variant="ghost" title="Télécharger" onClick={() => downloadDocument(d)}>
+              <Download size={15} />
+            </Button>
+          ) : (
+            <Button size="icon" variant="ghost" title={isAuto ? "PDF disponible depuis le module d'origine" : "Retélécharger le PDF"}
+              disabled={isAuto} onClick={() => regenerate(d)}>
+              <Download size={15} />
+            </Button>
+          )}
+          {!isAuto && !isPayroll && (
+            <Button size="icon" variant="ghost" title="Régénérer" onClick={() => regenerate(d)}>
+              <RefreshCw size={15} />
+            </Button>
+          )}
+          {!isPayroll && (
+            <Button size="icon" variant="ghost" title="Envoyer par WhatsApp"
+              onClick={() => sendWhatsApp(d.payload?.phone || "", `Bonjour, voici votre document ${d.reference}.`)}>
+              <Send size={15} />
+            </Button>
+          )}
+          {d.origin !== "Importé" && !isPayroll && (
+            <Button size="icon" variant="ghost" className="text-destructive" title="Supprimer"
+              disabled={deletingId === d.id}
+              onClick={() => void removeDocument(d)}>
+              <Trash2 size={15} />
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   if (!canAccessDocuments) {
     return <RestrictedAccess title="Documents" message="Accès aux documents restreint à votre rôle." />;
@@ -427,7 +493,7 @@ export function Documents() {
             <div>
               <h3 className="font-display font-semibold">Archives</h3>
               <p className="text-xs text-muted-foreground">
-                {docs.length} document(s) · {formatFCFA(monthTotal)} ce mois-ci
+                {docs.filter((d) => !isPayrollDocument(d)).length} document(s) · {formatFCFA(monthTotal)} ce mois-ci
               </p>
             </div>
             <div className="flex-1" />
@@ -469,73 +535,34 @@ export function Documents() {
           </div>
 
           <div className="divide-y max-h-[520px] overflow-y-auto">
-            {filtered.length === 0 && (
+            {filteredGeneral.length === 0 && (
               <div className="p-12 text-center text-sm text-muted-foreground">
                 Aucun document. Choisissez un modèle ci-dessus pour commencer.
               </div>
             )}
-            {filtered.map((d: any) => {
-              const t = ALL_TYPES.find((x) => x.id === d.type);
-              const Icon = t?.icon ?? FileText;
-              const n = daysLeft(d);
-              const isAuto = !TYPES.some((x) => x.id === d.type);
-              const isPayroll = isPayrollDocument(d);
-              return (
-                <div key={d.id} className="flex items-center gap-3 px-4 sm:px-6 py-4 hover:bg-muted/30">
-                  <div className={`w-10 h-10 rounded-xl ${t?.tint ?? "bg-slate-100 text-slate-600"} flex items-center justify-center shrink-0`}>
-                    <Icon size={17} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">{d.reference}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {d.title} · {new Date(d.createdAt).toLocaleDateString("fr-FR")}
-                      {d.entityLabel ? ` · ${d.entityLabel}` : ""}
-                    </p>
-                  </div>
-                  {n !== null && (
-                    <Badge variant="outline"
-                      className={`hidden sm:inline-flex rounded-lg text-[11px] ${n < 0 ? "border-rose-300 bg-rose-50 text-rose-700" : n <= 30 ? "border-amber-300 bg-amber-50 text-amber-800" : "border-slate-200"}`}>
-                      {n < 0 ? `Expiré (${-n} j)` : `Expire dans ${n} j`}
-                    </Badge>
-                  )}
-                  <p className="font-bold text-sm hidden sm:block whitespace-nowrap">{d.amount ? formatFCFA(d.amount) : "—"}</p>
-                  <div className="flex gap-0.5 shrink-0">
-                    {d.dataUrl || d.storagePath ? (
-                      <Button size="icon" variant="ghost" title="Télécharger" onClick={() => downloadDocument(d)}>
-                        <Download size={15} />
-                      </Button>
-                    ) : (
-                      <Button size="icon" variant="ghost" title={isAuto ? "PDF disponible depuis le module d'origine" : "Retélécharger le PDF"}
-                        disabled={isAuto} onClick={() => regenerate(d)}>
-                        <Download size={15} />
-                      </Button>
-                    )}
-                    {!isAuto && !isPayroll && (
-                      <Button size="icon" variant="ghost" title="Régénérer" onClick={() => regenerate(d)}>
-                        <RefreshCw size={15} />
-                      </Button>
-                    )}
-                    {!isPayroll && (
-                      <Button size="icon" variant="ghost" title="Envoyer par WhatsApp"
-                        onClick={() => sendWhatsApp(d.payload?.phone || "", `Bonjour, voici votre document ${d.reference}.`)}>
-                        <Send size={15} />
-                      </Button>
-                    )}
-                    {d.origin !== "Importé" && !isPayroll && (
-                      <Button size="icon" variant="ghost" className="text-destructive" title="Supprimer"
-                        disabled={deletingId === d.id}
-                        onClick={() => void removeDocument(d)}>
-                        <Trash2 size={15} />
-                      </Button>
-                    )}
-                  </div>
-
-                </div>
-              );
-            })}
+            {filteredGeneral.map((d: any) => renderDocRow(d))}
           </div>
         </CardContent>
       </Card>
+
+      {/* Archives RH — séparées, jamais mélangées aux documents généraux */}
+      {filteredPayroll.length > 0 && (
+        <Card className="shadow-sm border-amber-200">
+          <CardContent className="p-0">
+            <div className="p-5 border-b bg-amber-50/40 rounded-t-xl">
+              <h3 className="font-display font-semibold inline-flex items-center gap-2 text-amber-900">
+                <ShieldAlert size={16} /> Bulletins de paie (RH — sensible)
+              </h3>
+              <p className="text-xs text-amber-800/80 mt-0.5">
+                {filteredPayroll.length} document(s) · visibles uniquement par patron/manager, non modifiables, non supprimables.
+              </p>
+            </div>
+            <div className="divide-y max-h-[400px] overflow-y-auto">
+              {filteredPayroll.map((d: any) => renderDocRow(d))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Générateur */}
       <Dialog open={!!kind} onOpenChange={(v) => !v && setKind(null)}>
