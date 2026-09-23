@@ -12,8 +12,11 @@ import { NewCreditSaleDialog } from "@/components/vehicles/NewCreditSaleDialog";
 import { generateCreditSchedule, sendWhatsApp } from "@/lib/vehicle-pdf";
 import { toast } from "sonner";
 import type { VehicleCredit } from "@/lib/demo-data";
+import { useRole, can } from "@/lib/roles";
 
 export function VehiculesCredits() {
+  const role = useRole();
+  const canManageCredit = can(role, "manage.credit");
   const credits = useCollection("vehicleCredits");
   const vehicles = useCollection("vehicles");
   const payments = useCollection("vehiclePayments");
@@ -46,7 +49,8 @@ export function VehiculesCredits() {
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Ventes à crédit</h1>
           <p className="text-muted-foreground mt-1 text-sm">Suivi des échéances, paiements et alertes.</p>
         </div>
-        <Button onClick={() => setOpenNew(true)} className="shadow-lg shadow-primary/20">
+        <Button onClick={() => setOpenNew(true)} className="shadow-lg shadow-primary/20" disabled={!canManageCredit}
+          title={canManageCredit ? undefined : "Réservé aux rôles Manager et Patron"}>
           <Plus size={16} /> Nouvelle vente à crédit
         </Button>
       </div>
@@ -177,7 +181,7 @@ export function VehiculesCredits() {
 
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-display font-semibold">Historique des paiements</h4>
-                  <Button size="sm" disabled={remaining === 0} onClick={() => { setOpenPay(openDetail); }}><Plus size={14} /> Ajouter</Button>
+                  <Button size="sm" disabled={remaining === 0 || !canManageCredit} onClick={() => { setOpenPay(openDetail); }}><Plus size={14} /> Ajouter</Button>
                 </div>
 
                 <div className="space-y-2">

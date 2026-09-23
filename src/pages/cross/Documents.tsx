@@ -23,6 +23,7 @@ import {
   type InvoiceLine,
 } from "@/lib/pdf/templates";
 import { SignaturePad } from "@/components/ui/signature-pad";
+import { RestrictedAccess } from "@/components/RestrictedAccess";
 import { toast } from "sonner";
 
 type DocKind = "facture" | "proforma" | "recu" | "bon" | "attestation";
@@ -382,18 +383,7 @@ export function Documents() {
   const isLineDoc = kind === "facture" || kind === "proforma" || kind === "bon";
 
   if (!canAccessDocuments) {
-    return (
-      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Documents</h1>
-        </div>
-        <Card className="border-amber-200 bg-amber-50/60 shadow-sm">
-          <CardContent className="p-6 text-sm text-amber-900">
-            Accès aux documents restreint à votre rôle
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <RestrictedAccess title="Documents" message="Accès aux documents restreint à votre rôle." />;
   }
 
   return (

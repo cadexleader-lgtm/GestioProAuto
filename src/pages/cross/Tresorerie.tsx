@@ -8,6 +8,8 @@ import { formatFCFA } from "@/lib/format";
 import { ArrowDownLeft, ArrowUpRight, Wallet, ArrowLeftRight, Scale, PiggyBank, Receipt } from "lucide-react";
 import { CashMovementDialog } from "@/components/forms/FinanceDialogs";
 import { RevenueEvolutionChart } from "@/components/analytics/RevenueEvolutionChart";
+import { RestrictedAccess } from "@/components/RestrictedAccess";
+import { useRole, can } from "@/lib/roles";
 
 type Period = "day" | "month" | "year" | "all";
 
@@ -23,6 +25,7 @@ function normalizeCashAccount(source: string): string {
 }
 
 export function Tresorerie() {
+  const role = useRole();
   const cashMovements = useCollection("cash");
   const expenses = useCollection("expenses");
   const [type, setType] = useState<"in"|"out"|"transfer"|null>(null);
@@ -83,6 +86,10 @@ export function Tresorerie() {
     });
     return rows.reverse();
   }, [periodMoves]);
+
+  if (!can(role, "view.finance")) {
+    return <RestrictedAccess title="Trésorerie & Caisse" message="Accès à la trésorerie restreint à votre rôle." />;
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

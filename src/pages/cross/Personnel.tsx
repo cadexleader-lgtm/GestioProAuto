@@ -5,6 +5,7 @@ import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
 import { Plus, Phone, Mail, Clock, Wallet } from "lucide-react";
 import { EmployeeDialog, AttendanceDialog, PayrollDialog } from "@/components/forms/HrDialogs";
+import { useRole, can } from "@/lib/roles";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   present: { label: "Présent",  cls: "bg-emerald-50 text-emerald-700" },
@@ -14,6 +15,8 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 };
 
 export function Personnel() {
+  const role = useRole();
+  const canPay = can(role, "manage.payroll");
   const employees = useCollection("employees");
   const attendance = useCollection("attendance");
   const payslips = useCollection("payslips");
@@ -36,7 +39,8 @@ export function Personnel() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => setOpenAtt(true)}><Clock size={16}/> Pointer</Button>
-          <Button variant="outline" onClick={() => setOpenPay(true)}><Wallet size={16}/> Payer salaire</Button>
+          <Button variant="outline" onClick={() => setOpenPay(true)} disabled={!canPay}
+            title={canPay ? undefined : "Réservé aux rôles Manager et Patron"}><Wallet size={16}/> Payer salaire</Button>
           <Button onClick={() => setOpenEmp(true)}><Plus size={16} /> Ajouter employé</Button>
         </div>
       </div>

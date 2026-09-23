@@ -9,8 +9,11 @@ import { ShoppingCart, Search, FileText, MessageCircle, TrendingUp, Wallet, Pack
 import { generateSaleInvoice, sendWhatsApp } from "@/lib/vehicle-pdf";
 import { toast } from "sonner";
 import { SaleWorkflowDialog } from "@/components/vehicles/SaleWorkflowDialog";
+import { useRole, can } from "@/lib/roles";
 
 export function VehiculesVentes() {
+  const role = useRole();
+  const canSell = can(role, "create.sale");
   const sales = useCollection("vehicleSales");
   const vehicles = useCollection("vehicles");
   const [q, setQ] = useState("");
@@ -61,7 +64,8 @@ export function VehiculesVentes() {
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Ventes de véhicules</h1>
           <p className="text-muted-foreground mt-1 text-sm">Historique complet des ventes cash et à crédit.</p>
         </div>
-        <Button onClick={() => setWorkflowOpen(true)} size="lg" className="shadow-lg">
+        <Button onClick={() => setWorkflowOpen(true)} size="lg" className="shadow-lg" disabled={!canSell}
+          title={canSell ? undefined : "Réservé aux rôles Manager et Patron"}>
           <Plus size={18} /> Nouveau dossier de vente
         </Button>
       </div>

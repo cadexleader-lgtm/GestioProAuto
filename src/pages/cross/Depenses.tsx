@@ -9,6 +9,8 @@ import { formatFCFA } from "@/lib/format";
 import { Receipt, Plus, Image as ImageIcon, Search, Wrench, Users, Car, Store, TrendingDown, Wallet } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { ExpenseDialog } from "@/components/forms/FinanceDialogs";
+import { RestrictedAccess } from "@/components/RestrictedAccess";
+import { useRole, can } from "@/lib/roles";
 
 const COLORS = ["hsl(221 83% 53%)","hsl(48 96% 53%)","hsl(142 71% 45%)","hsl(280 65% 60%)","hsl(340 75% 55%)","hsl(199 89% 48%)","hsl(25 95% 53%)","hsl(174 62% 47%)","hsl(258 75% 63%)","hsl(0 0% 60%)"];
 
@@ -30,6 +32,7 @@ function sourceOf(e: any): string {
 }
 
 export function Depenses() {
+  const role = useRole();
   const expenses = useCollection("expenses");
   const maintenances = useCollection("vehicleMaintenances");
   const cash = useCollection("cash");
@@ -86,6 +89,10 @@ export function Depenses() {
   const categories = useMemo(() => [...new Set(expenses.map(e => e.category))], [expenses]);
 
   const pendingMaint = maintenances.filter((m: any) => m.status !== "done");
+
+  if (!can(role, "view.finance")) {
+    return <RestrictedAccess title="Dépenses" message="Accès aux dépenses restreint à votre rôle." />;
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
