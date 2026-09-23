@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as InscriptionRouteImport } from './routes/inscription'
+import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppCategoriesRouteImport } from './routes/app.categories'
 import { Route as AppClientsRouteImport } from './routes/app.clients'
@@ -61,6 +62,11 @@ const ConnexionRoute = ConnexionRouteImport.update({
 const InscriptionRoute = InscriptionRouteImport.update({
   id: '/inscription',
   path: '/inscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
+  id: '/reinitialiser-mot-de-passe',
+  path: '/reinitialiser-mot-de-passe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -214,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
+  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/app/categories': typeof AppCategoriesRoute
   '/app/clients': typeof AppClientsRoute
   '/app/depenses': typeof AppDepensesRoute
@@ -248,6 +255,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
+  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/app/categories': typeof AppCategoriesRoute
   '/app/clients': typeof AppClientsRoute
   '/app/depenses': typeof AppDepensesRoute
@@ -284,6 +292,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
+  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/app/categories': typeof AppCategoriesRoute
   '/app/clients': typeof AppClientsRoute
   '/app/depenses': typeof AppDepensesRoute
@@ -321,6 +330,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/connexion'
     | '/inscription'
+    | '/reinitialiser-mot-de-passe'
     | '/app/categories'
     | '/app/clients'
     | '/app/depenses'
@@ -355,6 +365,7 @@ export interface FileRouteTypes {
     | '/'
     | '/connexion'
     | '/inscription'
+    | '/reinitialiser-mot-de-passe'
     | '/app/categories'
     | '/app/clients'
     | '/app/depenses'
@@ -390,6 +401,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/connexion'
     | '/inscription'
+    | '/reinitialiser-mot-de-passe'
     | '/app/categories'
     | '/app/clients'
     | '/app/depenses'
@@ -426,6 +438,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   ConnexionRoute: typeof ConnexionRoute
   InscriptionRoute: typeof InscriptionRoute
+  ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -456,6 +469,13 @@ declare module '@tanstack/react-router' {
       path: '/inscription'
       fullPath: '/inscription'
       preLoaderRoute: typeof InscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reinitialiser-mot-de-passe': {
+      id: '/reinitialiser-mot-de-passe'
+      path: '/reinitialiser-mot-de-passe'
+      fullPath: '/reinitialiser-mot-de-passe'
+      preLoaderRoute: typeof ReinitialiserMotDePasseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/': {
@@ -735,6 +755,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   ConnexionRoute: ConnexionRoute,
   InscriptionRoute: InscriptionRoute,
+  ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -28,6 +28,10 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<"login" | "forgot">("login");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   // If already signed in, bounce to /app
   useEffect(() => {
@@ -51,6 +55,25 @@ function LoginPage() {
     }
     toast.success("Connexion réussie");
     navigate({ to: search.redirect ?? "/app" });
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) {
+      toast.error("Renseignez votre email");
+      return;
+    }
+    if (resetLoading) return;
+    setResetLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+      redirectTo: `${window.location.origin}/reinitialiser-mot-de-passe`,
+    });
+    setResetLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setResetSent(true);
   };
 
   const handleGoogle = async () => {
@@ -80,59 +103,111 @@ function LoginPage() {
         </Link>
 
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-8 backdrop-blur">
-          <h1 className="font-display text-2xl font-bold tracking-tight">Bon retour 👋</h1>
-          <p className="mt-2 text-sm text-white/60">Connectez-vous à votre espace GestioPro.</p>
+          {mode === "login" ? (
+            <>
+              <h1 className="font-display text-2xl font-bold tracking-tight">Bon retour 👋</h1>
+              <p className="mt-2 text-sm text-white/60">Connectez-vous à votre espace GestioPro.</p>
 
-          <button
-            type="button"
-            onClick={handleGoogle}
-            disabled={loading}
-            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:opacity-50"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .55 4.1 1.6l3-3C17.2 1.7 14.8.7 12 .7 7.4.7 3.5 3.4 1.6 7.3l3.5 2.7C6.1 7 8.8 5 12 5z"/><path fill="#4285F4" d="M23.3 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.4c-.3 1.5-1.1 2.7-2.4 3.5l3.7 2.9c2.2-2 3.6-5 3.6-8.5z"/><path fill="#FBBC05" d="M5.1 14.3c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2L1.6 7.3C.6 9 0 11 0 12.3s.6 3.3 1.6 5l3.5-3z"/><path fill="#34A853" d="M12 24c3.2 0 6-1 8-2.9l-3.7-2.9c-1 .7-2.4 1.1-4.3 1.1-3.2 0-5.9-2-6.9-4.9l-3.5 2.7C3.5 20.6 7.4 24 12 24z"/></svg>
-            Continuer avec Google
-          </button>
+              <button
+                type="button"
+                onClick={handleGoogle}
+                disabled={loading}
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:opacity-50"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .55 4.1 1.6l3-3C17.2 1.7 14.8.7 12 .7 7.4.7 3.5 3.4 1.6 7.3l3.5 2.7C6.1 7 8.8 5 12 5z"/><path fill="#4285F4" d="M23.3 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.4c-.3 1.5-1.1 2.7-2.4 3.5l3.7 2.9c2.2-2 3.6-5 3.6-8.5z"/><path fill="#FBBC05" d="M5.1 14.3c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2L1.6 7.3C.6 9 0 11 0 12.3s.6 3.3 1.6 5l3.5-3z"/><path fill="#34A853" d="M12 24c3.2 0 6-1 8-2.9l-3.7-2.9c-1 .7-2.4 1.1-4.3 1.1-3.2 0-5.9-2-6.9-4.9l-3.5 2.7C3.5 20.6 7.4 24 12 24z"/></svg>
+                Continuer avec Google
+              </button>
 
-          <div className="my-5 flex items-center gap-3 text-[10px] uppercase tracking-wider text-white/40">
-            <div className="h-px flex-1 bg-white/10" /> ou <div className="h-px flex-1 bg-white/10" />
-          </div>
+              <div className="my-5 flex items-center gap-3 text-[10px] uppercase tracking-wider text-white/40">
+                <div className="h-px flex-1 bg-white/10" /> ou <div className="h-px flex-1 bg-white/10" />
+              </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/60">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="vous@entreprise.com"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-indigo-400 focus:bg-white/10"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/60">Mot de passe</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-indigo-400 focus:bg-white/10"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-6 py-3.5 text-sm font-semibold text-white shadow-xl shadow-indigo-500/30 transition hover:bg-indigo-400 disabled:opacity-60"
-            >
-              {loading ? "Connexion..." : <>Se connecter <ArrowRight size={16} /></>}
-            </button>
-          </form>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="login-email" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/60">Email</label>
+                  <input
+                    id="login-email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="vous@entreprise.com"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-indigo-400 focus:bg-white/10"
+                  />
+                </div>
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <label htmlFor="login-password" className="block text-xs font-semibold uppercase tracking-wider text-white/60">Mot de passe</label>
+                    <button type="button" onClick={() => { setMode("forgot"); setResetEmail(email); setResetSent(false); }}
+                      className="text-xs text-indigo-300 hover:text-indigo-200">
+                      Mot de passe oublié ?
+                    </button>
+                  </div>
+                  <input
+                    id="login-password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-indigo-400 focus:bg-white/10"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-6 py-3.5 text-sm font-semibold text-white shadow-xl shadow-indigo-500/30 transition hover:bg-indigo-400 disabled:opacity-60"
+                >
+                  {loading ? "Connexion..." : <>Se connecter <ArrowRight size={16} /></>}
+                </button>
+              </form>
 
-          <p className="mt-6 text-center text-xs text-white/50">
-            Pas encore de compte ?{" "}
-            <Link to="/inscription" className="font-medium text-indigo-300 hover:text-indigo-200">
-              Créer un compte
-            </Link>
-          </p>
+              <p className="mt-6 text-center text-xs text-white/50">
+                Pas encore de compte ?{" "}
+                <Link to="/inscription" className="font-medium text-indigo-300 hover:text-indigo-200">
+                  Créer un compte
+                </Link>
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="font-display text-2xl font-bold tracking-tight">Mot de passe oublié</h1>
+              <p className="mt-2 text-sm text-white/60">
+                {resetSent
+                  ? "Si un compte existe avec cet email, un lien de réinitialisation vient d'être envoyé."
+                  : "Indiquez votre email, on vous envoie un lien pour définir un nouveau mot de passe."}
+              </p>
+
+              {!resetSent && (
+                <form onSubmit={handleForgotPassword} className="mt-6 space-y-4">
+                  <div>
+                    <label htmlFor="reset-email" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/60">Email</label>
+                    <input
+                      id="reset-email"
+                      type="email"
+                      autoComplete="email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="vous@entreprise.com"
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-indigo-400 focus:bg-white/10"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={resetLoading}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-6 py-3.5 text-sm font-semibold text-white shadow-xl shadow-indigo-500/30 transition hover:bg-indigo-400 disabled:opacity-60"
+                  >
+                    {resetLoading ? "Envoi..." : "Envoyer le lien"}
+                  </button>
+                </form>
+              )}
+
+              <button type="button" onClick={() => setMode("login")}
+                className="mt-6 text-xs text-indigo-300 hover:text-indigo-200">
+                ← Retour à la connexion
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
