@@ -6,10 +6,13 @@
  * Toast + bip uniquement pour les évènements survenus après l'hydratation,
  * afin de ne jamais spammer au chargement de la page.
  */
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { useCollection, isRentalOverdue } from "./demo-store";
 import { formatFCFA } from "./format";
+
+/** Échéance rapprochant une alerte "warning" (au-delà de N jours restants, pas d'alerte). */
+const EXPIRY_WARNING_DAYS = 30;
 
 const SOUND_KEY = "gestiopro.sound";
 export function isSoundEnabled(): boolean {
@@ -41,7 +44,7 @@ function beep(freq = 880, ms = 120) {
 /* Store                                                               */
 /* ------------------------------------------------------------------ */
 
-export type NotifKind = "sale" | "credit" | "rental" | "stock" | "maintenance" | "expense" | "info";
+export type NotifKind = "sale" | "credit" | "rental" | "expiry" | "maintenance" | "expense" | "info";
 
 export interface AppNotification {
   key: string;            // clé de déduplication
@@ -111,12 +114,23 @@ export function NotificationCenter() {
   const vehicleSales = useCollection("vehicleSales");
   const maintenances = useCollection("vehicleMaintenances");
   const expenses = useCollection("expenses");
+  const documents = useCollection("documents");
 
   const hydrated = useRef(false);
 
   useEffect(() => {
     const t = setTimeout(() => { hydrated.current = true; }, 1800);
     return () => clearTimeout(t);
+  }, []);
+
+  // Les échéances (assurance, contrôle technique, documents) ne dépendent que
+  // du temps qui passe, pas d'une action utilisateur qui changerait une
+  // collection — sans ce tick, une échéance resterait "bientôt expirée"
+  // indéfiniment tant que rien d'autre ne bouge dans l'app.
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 60 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -293,6 +307,57 @@ export function NotificationCenter() {
       });
     });
 
+    /* --- Échéances véhicule : assurance / contrôle technique / rappel client --- */
+    const expiryCheck = (opts: { key: string; date?: string; label: string; who: string; href: string; toastEmoji: string }) => {
+      if (!opts.date) return;
+      const due = +new Date(opts.date);
+      if (Number.isNaN(due)) return;
+      const daysLeft = Math.ceil((due - now) / 86400000);
+      if (daysLeft < 0) {
+        list.push({
+          key: `${opts.key}-expired`,
+          kind: "expiry",
+          href: opts.href,
+          severity: "danger",
+          at: opts.date,
+          title: `${opts.label} expiré — ${opts.who}`,
+          description: `Échéance dépassée depuis le ${d(opts.date)}`,
+          toast: { text: `${opts.toastEmoji} ${opts.label} expiré — ${opts.who}`, freq: 480 },
+        });
+      } else if (daysLeft <= EXPIRY_WARNING_DAYS) {
+        list.push({
+          key: `${opts.key}-soon-${opts.date}`,
+          kind: "expiry",
+          href: opts.href,
+          severity: "warning",
+          at: new Date().toISOString(),
+          title: `${opts.label} bientôt expiré — ${opts.who}`,
+          description: `Échéance le ${d(opts.date)} (${daysLeft} j)`,
+        });
+      }
+    };
+
+    vehicleSales.forEach((s) => {
+      if (!s.reminders) return;
+      const who = s.customer || vName(s.vehicleId);
+      expiryCheck({ key: `reminder-insurance-${s.id}`, date: s.reminders.insuranceExpiry, label: "Assurance", who, href: "/app/auto/clients", toastEmoji: "🛡️" });
+      expiryCheck({ key: `reminder-tech-${s.id}`, date: s.reminders.techControlExpiry, label: "Contrôle technique", who, href: "/app/auto/clients", toastEmoji: "🔍" });
+      expiryCheck({ key: `reminder-due-${s.id}`, date: s.reminders.nextDueDate, label: "Rappel client", who, href: "/app/auto/clients", toastEmoji: "📅" });
+    });
+
+    /* --- Documents arrivant à expiration --- */
+    documents.forEach((doc: any) => {
+      if (!doc.expiresAt) return;
+      expiryCheck({
+        key: `doc-expiry-${doc.id}`,
+        date: doc.expiresAt,
+        label: doc.title || "Document",
+        who: doc.entityLabel || doc.relatedTo || "",
+        href: "/app/documents",
+        toastEmoji: "📄",
+      });
+    });
+
     // Publication : les plus anciens d'abord pour un ordre cohérent.
     list.sort((a, b) => +new Date(a.at) - +new Date(b.at));
     let toasted = 0;
@@ -308,7 +373,7 @@ export function NotificationCenter() {
         beep(c.toast.freq, 120);
       }
     });
-  }, [cash, credits, payments, rentals, vehicles, vehicleSales, maintenances, expenses]);
+  }, [cash, credits, payments, rentals, vehicles, vehicleSales, maintenances, expenses, documents, tick]);
 
   return null;
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Bell, CheckCheck, Trash2, ShoppingCart, CreditCard, Car, Package, Wrench, Receipt, Info } from "lucide-react";
+import { Bell, CheckCheck, Trash2, ShoppingCart, CreditCard, Car, CalendarClock, Wrench, Receipt, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { useNotifications, markAllRead, clearNotifications, type AppNotification } from "@/lib/notifications";
@@ -9,7 +9,7 @@ const ICONS: Record<AppNotification["kind"], React.ReactNode> = {
   sale: <ShoppingCart size={14} />,
   credit: <CreditCard size={14} />,
   rental: <Car size={14} />,
-  stock: <Package size={14} />,
+  expiry: <CalendarClock size={14} />,
   maintenance: <Wrench size={14} />,
   expense: <Receipt size={14} />,
   info: <Info size={14} />,
@@ -28,6 +28,7 @@ const FILTERS = [
   { id: "rental", label: "Location" },
   { id: "credit", label: "Crédit" },
   { id: "sale", label: "Ventes" },
+  { id: "expiry", label: "Échéances" },
 ] as const;
 
 function ago(iso: string) {
@@ -112,7 +113,7 @@ export function NotificationsBell() {
           {shown.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground px-6">
               Aucune notification ici.<br />
-              <span className="text-xs">Ventes, locations, crédits, maintenance et stock s'afficheront ici.</span>
+              <span className="text-xs">Ventes, locations, crédits, maintenance et échéances s'afficheront ici.</span>
             </div>
           ) : (
             <ul className="divide-y">

@@ -283,7 +283,7 @@ function RolesAndAlertsCard() {
             <Volume2 size={20} className="text-primary mt-0.5"/>
             <div>
               <p className="font-semibold text-sm">Alertes sonores</p>
-              <p className="text-xs text-muted-foreground">Bip court à chaque nouvelle vente, retard de crédit ou stock bas.</p>
+              <p className="text-xs text-muted-foreground">Bip court à chaque nouvelle vente, retard de crédit ou échéance (assurance, contrôle technique, document).</p>
             </div>
           </div>
           <Switch checked={sound} onCheckedChange={(v) => { setSound(v); setSoundEnabled(v); }} />
