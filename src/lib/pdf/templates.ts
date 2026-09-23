@@ -475,6 +475,7 @@ export function pdfReport(opts: { title: string; period: string; sections: Repor
   d.signatures([{ label: "Établi par", name: p.name, dataUrl: p.signatureDataUrl || undefined }]);
   d.stamp();
   d.save(`rapport-${slug(opts.title)}-${today()}`);
+  return d;
 }
 
 /* ---------- WhatsApp helper (conservé) ---------- */
