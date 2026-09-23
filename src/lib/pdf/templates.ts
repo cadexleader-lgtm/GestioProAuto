@@ -443,66 +443,6 @@ export function pdfPayslip(opts: {
   return d;
 }
 
-/* =========================== BON DE COMMANDE ============================== */
-export function pdfPurchaseOrder(opts: {
-  reference: string;
-  date?: string;
-  supplier: { name: string; phone?: string; address?: string };
-  lines: InvoiceLine[];
-  deliveryDate?: string;
-  note?: string;
-}) {
-  const p = getCompanyProfile();
-  const d = new PdfDoc(p);
-  d.header({ title: "Bon de commande", reference: opts.reference, date: fdate(opts.date || today()) });
-  d.parties([
-    { heading: "Donneur d'ordre", lines: vendorParty().lines },
-    { heading: "Fournisseur", lines: [opts.supplier.name, opts.supplier.phone || "", opts.supplier.address || ""] },
-  ]);
-  d.sectionTitle("Articles commandés");
-  const total = opts.lines.reduce((s, l) => s + (l.qty ?? 1) * l.unitPrice, 0);
-  d.table(
-    [
-      { header: "Désignation", width: 95 },
-      { header: "Qté", width: 20, align: "center" },
-      { header: "P.U.", width: 35, align: "right" },
-      { header: "Total", width: 35, align: "right" },
-    ],
-    opts.lines.map((l) => [l.designation, String(l.qty ?? 1), formatFCFA(l.unitPrice), formatFCFA((l.qty ?? 1) * l.unitPrice)]),
-  );
-  d.totals([{ label: "Total commande", value: formatFCFA(total) }]);
-  d.keyValues([{ label: "Livraison souhaitée", value: fdate(opts.deliveryDate) }]);
-  if (opts.note) d.paragraph(opts.note, { muted: true });
-  d.notice("Conditions", p.terms || "");
-  d.signatures([{ label: "Pour l'entreprise", name: p.name, dataUrl: p.signatureDataUrl || undefined }, { label: "Le fournisseur", name: opts.supplier.name }]);
-  d.stamp();
-  d.save(`bon-commande-${slug(opts.reference)}`);
-  return d;
-}
-
-/* ============================== ATTESTATION =============================== */
-export function pdfAttestation(opts: {
-  reference: string;
-  date?: string;
-  recipient: string;
-  subject: string;
-  body: string;
-  vehicle?: Vehicle;
-}) {
-  const p = getCompanyProfile();
-  const d = new PdfDoc(p);
-  d.header({ title: "Attestation", reference: opts.reference, date: fdate(opts.date || today()), subtitle: opts.subject });
-  d.parties([vendorParty(), { heading: "Destinataire", lines: [opts.recipient] }]);
-  d.sectionTitle(opts.subject);
-  d.paragraph(opts.body);
-  if (opts.vehicle) { d.sectionTitle("Véhicule concerné"); d.keyValues(vehicleLines(opts.vehicle)); }
-  d.paragraph("En foi de quoi la présente attestation est délivrée pour servir et valoir ce que de droit.");
-  d.signatures([{ label: "Pour l'entreprise", name: p.name, dataUrl: p.signatureDataUrl || undefined }]);
-  d.stamp();
-  d.save(`attestation-${slug(opts.reference)}`);
-  return d;
-}
-
 /* ================================ RAPPORT ================================= */
 export interface ReportSection {
   title: string;

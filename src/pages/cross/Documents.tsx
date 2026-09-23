@@ -7,13 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { MoneyInput } from "@/components/ui/money-input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import {
   FileText, Download, Send, Search, Plus, Trash2, FileSpreadsheet, Receipt,
-  ScrollText, FileSignature, ClipboardList, BadgeCheck, RefreshCw, CalendarClock,
-  ShieldAlert,
+  ScrollText, FileSignature, RefreshCw, CalendarClock, ShieldAlert, FolderOpen,
+  Wallet, Sparkles,
 } from "lucide-react";
 import { useCollection, db, getPrivateDocumentUrl, uploadPrivateDocument } from "@/lib/demo-store";
 import { useRole } from "@/lib/roles";
@@ -21,24 +22,31 @@ import { useTenant } from "@/lib/tenant";
 import { formatFCFA } from "@/lib/format";
 import { useCompanyProfile } from "@/lib/company-profile";
 import {
-  pdfInvoice, pdfReceipt, pdfPurchaseOrder, pdfAttestation, sendWhatsApp,
+  pdfInvoice, pdfReceipt, sendWhatsApp,
   type InvoiceLine,
 } from "@/lib/pdf/templates";
 import { SignaturePad } from "@/components/ui/signature-pad";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
 import { toast } from "sonner";
 
-type DocKind = "facture" | "proforma" | "recu" | "bon" | "attestation";
+/**
+ * Types générables depuis cette page. Limité à ce qui sert réellement un
+ * parc automobile (vente/location/crédit véhicule + RH) : bon de commande
+ * (achat fournisseur générique) et attestation libre ont été retirés — sans
+ * valeur ajoutée pour ce métier et redondants avec les contrats auto déjà
+ * générés automatiquement (voir AUTO_TYPES).
+ */
+type DocKind = "facture" | "proforma" | "recu";
 
-const TYPES: { id: DocKind; label: string; icon: any; prefix: string; tint: string }[] = [
-  { id: "facture",     label: "Facture",         icon: FileSpreadsheet, prefix: "FAC", tint: "bg-blue-50 text-blue-700" },
-  { id: "proforma",    label: "Proforma / Devis", icon: FileText,       prefix: "PRO", tint: "bg-indigo-50 text-indigo-700" },
-  { id: "recu",        label: "Reçu",            icon: Receipt,         prefix: "REC", tint: "bg-emerald-50 text-emerald-700" },
-  { id: "bon",         label: "Bon de commande", icon: ClipboardList,   prefix: "BC",  tint: "bg-amber-50 text-amber-700" },
-  { id: "attestation", label: "Attestation",     icon: BadgeCheck,      prefix: "ATT", tint: "bg-purple-50 text-purple-700" },
+const PAYMENT_METHODS = ["Cash", "Wave", "Orange Money", "Virement", "Chèque"] as const;
+
+const TYPES: { id: DocKind; label: string; description: string; icon: any; prefix: string; tint: string }[] = [
+  { id: "facture",  label: "Facture",          description: "Prestation ou service facturé à un client", icon: FileSpreadsheet, prefix: "FAC", tint: "bg-blue-50 text-blue-700" },
+  { id: "proforma", label: "Proforma / Devis",  description: "Estimation avant vente ou intervention",     icon: FileText,        prefix: "PRO", tint: "bg-indigo-50 text-indigo-700" },
+  { id: "recu",     label: "Reçu",              description: "Justificatif d'un encaissement",             icon: Receipt,         prefix: "REC", tint: "bg-emerald-50 text-emerald-700" },
 ];
 
-/** Types archivés automatiquement (non générables depuis cette page). */
+/** Types archivés automatiquement par les modules métier (non générables depuis cette page). */
 const AUTO_TYPES = [
   { id: "contrat-vente",    label: "Contrat de vente",    icon: FileSignature, prefix: "VTE", tint: "bg-rose-50 text-rose-700" },
   { id: "contrat-location", label: "Contrat de location", icon: ScrollText,    prefix: "LOC", tint: "bg-cyan-50 text-cyan-700" },
@@ -50,6 +58,18 @@ const AUTO_TYPES = [
 const ALL_TYPES: { id: string; label: string; icon: any; prefix: string; tint: string }[] = [
   ...TYPES, ...AUTO_TYPES.map((t) => ({ ...t })),
 ];
+
+const PARTY_LABEL: Record<DocKind, string> = {
+  facture: "Client",
+  proforma: "Client",
+  recu: "Reçu de",
+};
+
+const PARTY_REQUIRED_MESSAGE: Record<DocKind, string> = {
+  facture: "Nom du client requis",
+  proforma: "Nom du client requis",
+  recu: "Nom du payeur requis",
+};
 
 const emptyLine = (): InvoiceLine => ({ designation: "", detail: "", qty: 1, unitPrice: 0 });
 const today = () => new Date().toISOString().slice(0, 10);
@@ -73,14 +93,14 @@ export function Documents() {
 
   const [form, setForm] = useState({
     party: "", phone: "", address: "", note: "", date: today(),
-    lines: [emptyLine()], paid: 0, amount: 0, reason: "", method: "Espèces",
-    subject: "", body: "", signature: "" as string,
+    lines: [emptyLine()], paid: 0, amount: 0, reason: "", method: "Cash",
+    signature: "" as string,
   });
 
   const reset = () => setForm({
     party: "", phone: "", address: "", note: "", date: today(),
-    lines: [emptyLine()], paid: 0, amount: 0, reason: "", method: "Espèces",
-    subject: "", body: "", signature: "",
+    lines: [emptyLine()], paid: 0, amount: 0, reason: "", method: "Cash",
+    signature: "",
   });
 
   const open = (k: DocKind) => { reset(); setKind(k); };
@@ -106,29 +126,16 @@ export function Documents() {
         paid: k === "facture" ? data.paid : 0,
         note: data.note, signatures,
       });
-    } else if (k === "recu") {
-      return pdfReceipt({
-        reference, date: data.date, payerName: data.party, amount: data.amount,
-        reason: data.reason || "Règlement", method: data.method, signatures,
-      });
-    } else if (k === "bon") {
-      return pdfPurchaseOrder({
-        reference, date: data.date,
-        supplier: { name: data.party, phone: data.phone, address: data.address },
-        lines: data.lines.filter((l) => l.designation),
-        note: data.note,
-      });
-    } else {
-      return pdfAttestation({
-        reference, date: data.date, recipient: data.party,
-        subject: data.subject || "Attestation", body: data.body,
-      });
     }
+    return pdfReceipt({
+      reference, date: data.date, payerName: data.party, amount: data.amount,
+      reason: data.reason || "Règlement", method: data.method, signatures,
+    });
   };
 
   const generate = async () => {
     if (!kind || generating) return;
-    if (!form.party.trim()) return toast.error(kind === "bon" ? "Fournisseur requis" : "Nom du destinataire requis");
+    if (!form.party.trim()) return toast.error(PARTY_REQUIRED_MESSAGE[kind]);
     if (!company?.id) return toast.error("Aucune entreprise active n'est disponible.");
     const reference = nextRef(kind);
     const amount = kind === "recu" ? form.amount : total;
@@ -179,7 +186,7 @@ export function Documents() {
       .filter(Boolean)
       .join("-")
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[̀-ͯ]/g, "")
       .replace(/[^a-zA-Z0-9_-]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .slice(0, 120);
@@ -392,9 +399,8 @@ export function Documents() {
     .filter((d) => !q || `${d.reference} ${d.title} ${d.relatedTo ?? ""}`.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
 
-  const monthTotal = allDocs
-    .filter((d) => (d.createdAt || "").slice(0, 7) === today().slice(0, 7))
-    .reduce((s, d) => s + (d.amount || 0), 0);
+  const monthDocs = allDocs.filter((d) => (d.createdAt || "").slice(0, 7) === today().slice(0, 7));
+  const monthTotal = monthDocs.reduce((s, d) => s + (d.amount || 0), 0);
 
   // Documents sensibles (bulletins de paie) séparés des documents généraux :
   // même s'ils partagent les mêmes filtres, ils s'affichent dans une archive
@@ -403,7 +409,7 @@ export function Documents() {
   const filteredGeneral = filtered.filter((d) => !isPayrollDocument(d));
   const filteredPayroll = filtered.filter((d) => isPayrollDocument(d));
 
-  const isLineDoc = kind === "facture" || kind === "proforma" || kind === "bon";
+  const isLineDoc = kind === "facture" || kind === "proforma";
 
   const renderDocRow = (d: any) => {
     const t = ALL_TYPES.find((x) => x.id === d.type);
@@ -412,7 +418,7 @@ export function Documents() {
     const isAuto = !TYPES.some((x) => x.id === d.type);
     const isPayroll = isPayrollDocument(d);
     return (
-      <div key={d.id} className="flex items-center gap-3 px-4 sm:px-6 py-4 hover:bg-muted/30">
+      <div key={d.id} className="flex items-center gap-3 px-4 sm:px-6 py-4 hover:bg-muted/30 transition-colors">
         <div className={`w-10 h-10 rounded-xl ${t?.tint ?? "bg-slate-100 text-slate-600"} flex items-center justify-center shrink-0`}>
           <Icon size={17} />
         </div>
@@ -469,7 +475,7 @@ export function Documents() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Documents</h1>
@@ -484,76 +490,107 @@ export function Documents() {
         )}
       </div>
 
-      {/* Générateurs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {TYPES.map((t) => {
-          const Icon = t.icon;
-          const count = docs.filter((d) => d.type === t.id).length;
-          return (
-            <button key={t.id} onClick={() => open(t.id)}
-              className="group text-left rounded-2xl border bg-card p-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
-              <div className={`w-11 h-11 rounded-xl ${t.tint} flex items-center justify-center mb-3`}>
-                <Icon size={19} />
-              </div>
-              <p className="font-semibold text-sm leading-tight">{t.label}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{count} document{count > 1 ? "s" : ""}</p>
-            </button>
-          );
-        })}
+      {/* Indicateurs — vue d'ensemble en un coup d'œil */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard icon={FolderOpen} label="Documents" value={String(allDocs.length)} tone="blue" />
+        <StatCard icon={Sparkles} label="Générés ce mois-ci" value={String(monthDocs.length)} tone="indigo" />
+        <StatCard icon={Wallet} label="Montant ce mois-ci" value={formatFCFA(monthTotal)} tone="emerald" />
+        <StatCard icon={CalendarClock} label="Expirent sous 30 j" value={String(expiringCount)} tone={expiringCount > 0 ? "amber" : "slate"} />
       </div>
+
+      {/* Générateurs */}
+      <section className="space-y-3">
+        <div>
+          <h2 className="font-display font-semibold text-lg">Générer un document</h2>
+          <p className="text-sm text-muted-foreground">Un modèle, votre identité d'entreprise appliquée automatiquement.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {TYPES.map((t) => {
+            const Icon = t.icon;
+            const count = docs.filter((d) => d.type === t.id).length;
+            return (
+              <button key={t.id} onClick={() => open(t.id)}
+                className="group text-left rounded-2xl border bg-card p-5 hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5 transition-all">
+                <div className="flex items-start justify-between">
+                  <div className={`w-11 h-11 rounded-xl ${t.tint} flex items-center justify-center`}>
+                    <Icon size={19} />
+                  </div>
+                  <Plus size={16} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <p className="font-semibold text-sm mt-3 leading-tight">{t.label}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
+                <p className="text-xs text-muted-foreground mt-2 font-medium">
+                  {count} document{count > 1 ? "s" : ""} généré{count > 1 ? "s" : ""}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Archives */}
       <Card className="shadow-sm">
         <CardContent className="p-0">
-          <div className="p-5 flex flex-col lg:flex-row lg:items-center gap-3 border-b">
-            <div>
-              <h3 className="font-display font-semibold">Archives</h3>
-              <p className="text-xs text-muted-foreground">
-                {docs.filter((d) => !isPayrollDocument(d)).length} document(s) · {formatFCFA(monthTotal)} ce mois-ci
-              </p>
+          <div className="p-5 space-y-3 border-b">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="font-display font-semibold">Archives</h3>
+                <p className="text-xs text-muted-foreground">{filteredGeneral.length} document(s) affiché(s)</p>
+              </div>
+              <div className="relative w-full sm:w-72">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher une référence, un client…" className="pl-9 rounded-xl" />
+              </div>
             </div>
-            <div className="flex-1" />
-            <div className="relative w-full lg:w-64">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher…" className="pl-9 rounded-xl" />
-            </div>
-            <select value={entity} onChange={(e) => setEntity(e.target.value)}
-              className="h-10 rounded-xl border bg-background px-3 text-sm w-full lg:w-56">
-              <option value="all">Toutes les entités</option>
-              {entityOptions.map((o) => (
-                <option key={o.key} value={o.key}>{o.label}</option>
-              ))}
-            </select>
-            <Button variant={expiringOnly ? "default" : "outline"} className="rounded-xl gap-1.5 shrink-0"
-              onClick={() => setExpiringOnly((v) => !v)}>
-              <CalendarClock size={15} /> Expire &lt; 30 j{expiringCount ? ` (${expiringCount})` : ""}
-            </Button>
-            {legacyBase64Count > 0 && (
-              <Button
-                variant="outline"
-                className="rounded-xl gap-1.5 shrink-0 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
-                disabled={migratingLegacy}
-                onClick={() => void migrateLegacyBase64Documents()}
-              >
-                <RefreshCw size={15} />
-                {migratingLegacy ? "Migration..." : `Migrer Base64 (${legacyBase64Count})`}
-              </Button>
-            )}
-            <Tabs value={filter} onValueChange={setFilter}>
-              <TabsList className="rounded-xl overflow-x-auto max-w-full">
-                <TabsTrigger value="all" className="rounded-lg text-xs">Tous</TabsTrigger>
-                {ALL_TYPES.map((t) => (
-                  <TabsTrigger key={t.id} value={t.id} className="rounded-lg text-xs">{t.prefix}</TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
 
+            <div className="flex flex-wrap items-center gap-2">
+              <select value={entity} onChange={(e) => setEntity(e.target.value)}
+                className="h-9 rounded-xl border bg-background px-3 text-sm">
+                <option value="all">Toutes les entités</option>
+                {entityOptions.map((o) => (
+                  <option key={o.key} value={o.key}>{o.label}</option>
+                ))}
+              </select>
+              <Button variant={expiringOnly ? "default" : "outline"} size="sm" className="rounded-xl gap-1.5"
+                onClick={() => setExpiringOnly((v) => !v)}>
+                <CalendarClock size={14} /> Expire &lt; 30 j{expiringCount ? ` (${expiringCount})` : ""}
+              </Button>
+              {legacyBase64Count > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                  disabled={migratingLegacy}
+                  onClick={() => void migrateLegacyBase64Documents()}
+                >
+                  <RefreshCw size={14} />
+                  {migratingLegacy ? "Migration..." : `Migrer Base64 (${legacyBase64Count})`}
+                </Button>
+              )}
+              <div className="flex-1" />
+              <Tabs value={filter} onValueChange={setFilter}>
+                <TabsList className="rounded-xl overflow-x-auto max-w-full">
+                  <TabsTrigger value="all" className="rounded-lg text-xs">Tous</TabsTrigger>
+                  {ALL_TYPES.map((t) => (
+                    <TabsTrigger key={t.id} value={t.id} className="rounded-lg text-xs">{t.prefix}</TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
 
           <div className="divide-y max-h-[520px] overflow-y-auto">
             {filteredGeneral.length === 0 && (
-              <div className="p-12 text-center text-sm text-muted-foreground">
-                Aucun document. Choisissez un modèle ci-dessus pour commencer.
+              <div className="p-12 flex flex-col items-center text-center gap-2">
+                <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
+                  <FolderOpen size={20} />
+                </div>
+                <p className="text-sm font-medium">Aucun document</p>
+                <p className="text-xs text-muted-foreground max-w-xs">
+                  {q || entity !== "all" || filter !== "all" || expiringOnly
+                    ? "Aucun résultat pour ces filtres — essayez de les réinitialiser."
+                    : "Choisissez un modèle ci-dessus pour générer votre premier document."}
+                </p>
               </div>
             )}
             {filteredGeneral.map((d: any) => renderDocRow(d))}
@@ -595,25 +632,21 @@ export function Documents() {
           <div className="space-y-4 mt-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>{kind === "bon" ? "Fournisseur *" : "Destinataire *"}</Label>
+                <Label>{kind ? PARTY_LABEL[kind] : "Destinataire"} *</Label>
                 <Input value={form.party} onChange={(e) => setForm({ ...form, party: e.target.value })} placeholder="Nom complet" className="rounded-xl" />
               </div>
               <div className="space-y-1.5">
                 <Label>Date</Label>
                 <Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="rounded-xl" />
               </div>
-              {kind !== "attestation" && (
-                <>
-                  <div className="space-y-1.5">
-                    <Label>Téléphone</Label>
-                    <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="rounded-xl" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Adresse</Label>
-                    <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="rounded-xl" />
-                  </div>
-                </>
-              )}
+              <div className="space-y-1.5">
+                <Label>Téléphone</Label>
+                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Adresse</Label>
+                <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="rounded-xl" />
+              </div>
             </div>
 
             {isLineDoc && (
@@ -683,7 +716,12 @@ export function Documents() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Mode de paiement</Label>
-                  <Input value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })} className="rounded-xl" />
+                  <Select value={form.method} onValueChange={(v) => setForm({ ...form, method: v })}>
+                    <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label>Motif</Label>
@@ -693,40 +731,15 @@ export function Documents() {
               </div>
             )}
 
-            {kind === "attestation" && (
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label>Objet</Label>
-                  <Input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                    placeholder="Attestation de vente" className="rounded-xl" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Contenu</Label>
-                  <Textarea rows={5} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })}
-                    className="rounded-xl" placeholder="Je soussigné(e)…" />
-                </div>
-              </div>
-            )}
-
-            {kind !== "attestation" && kind !== "bon" && (
-              <>
-                <div className="space-y-1.5">
-                  <Label>Note / mention</Label>
-                  <Textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className="rounded-xl" />
-                </div>
-                <SignaturePad
-                  label="Signature du client (facultative)"
-                  value={form.signature || undefined}
-                  onChange={(v) => setForm({ ...form, signature: v || "" })}
-                />
-              </>
-            )}
-            {kind === "bon" && (
-              <div className="space-y-1.5">
-                <Label>Note</Label>
-                <Textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className="rounded-xl" />
-              </div>
-            )}
+            <div className="space-y-1.5">
+              <Label>Note / mention</Label>
+              <Textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className="rounded-xl" />
+            </div>
+            <SignaturePad
+              label="Signature du client (facultative)"
+              value={form.signature || undefined}
+              onChange={(v) => setForm({ ...form, signature: v || "" })}
+            />
           </div>
 
           <DialogFooter className="mt-5 gap-2">
@@ -738,6 +751,31 @@ export function Documents() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, tone }: {
+  icon: any; label: string; value: string; tone: "blue" | "indigo" | "emerald" | "amber" | "slate";
+}) {
+  const tones: Record<typeof tone, string> = {
+    blue: "from-white to-blue-50 border-blue-200/70 text-blue-700",
+    indigo: "from-white to-indigo-50 border-indigo-200/70 text-indigo-700",
+    emerald: "from-white to-emerald-50 border-emerald-200/70 text-emerald-700",
+    amber: "from-white to-amber-50 border-amber-200/70 text-amber-700",
+    slate: "from-white to-slate-50 border-slate-200/70 text-slate-600",
+  };
+  return (
+    <Card className={`bg-gradient-to-br ${tones[tone]}`}>
+      <CardContent className="p-4 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-white/70 flex items-center justify-center shrink-0">
+          <Icon size={16} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground font-medium truncate">{label}</p>
+          <p className="font-display font-bold text-base leading-tight truncate">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
