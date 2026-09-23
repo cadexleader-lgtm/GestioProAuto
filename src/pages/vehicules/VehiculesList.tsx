@@ -21,6 +21,7 @@ import {
 import { SaleWorkflowDialog } from "@/components/vehicles/SaleWorkflowDialog";
 import { VehicleDetailSheet } from "@/components/vehicles/VehicleDetailSheet";
 import type { Vehicle } from "@/lib/demo-data";
+import { useRole, can } from "@/lib/roles";
 
 const STATUS: Record<Vehicle["status"], { label: string; cls: string; dot: string }> = {
   available:   { label: "Disponible",  cls: "bg-emerald-100 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
@@ -32,6 +33,9 @@ const STATUS: Record<Vehicle["status"], { label: string; cls: string; dot: strin
 type Filter = "all" | Vehicle["status"];
 
 export function VehiculesList() {
+  const role = useRole();
+  const canSell = can(role, "create.sale");
+  const canRent = can(role, "manage.rental");
   const vehicles = useCollection("vehicles");
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
@@ -135,8 +139,8 @@ export function VehiculesList() {
                       <DropdownMenuSeparator />
                       {v.status === "available" && (
                         <>
-                          <DropdownMenuItem onClick={() => setRentFor(v)}><KeyRound size={14} className="mr-2" /> Louer</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setSaleVehicle(v)}><ShoppingCart size={14} className="mr-2" /> Vendre</DropdownMenuItem>
+                          {canRent && <DropdownMenuItem onClick={() => setRentFor(v)}><KeyRound size={14} className="mr-2" /> Louer</DropdownMenuItem>}
+                          {canSell && <DropdownMenuItem onClick={() => setSaleVehicle(v)}><ShoppingCart size={14} className="mr-2" /> Vendre</DropdownMenuItem>}
                         </>
                       )}
                       <DropdownMenuItem onClick={() => setMaintFor(v)} disabled={v.status === "sold"}><Wrench size={14} className="mr-2" /> Maintenance</DropdownMenuItem>

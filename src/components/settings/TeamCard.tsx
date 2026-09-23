@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/lib/tenant";
 import { useRole, can, ROLES, type Role } from "@/lib/roles";
 import { createTeamMember } from "@/lib/api/team.functions";
+import { createEmployee } from "@/lib/demo-store";
 
 interface Member {
   userId: string;
@@ -31,7 +32,9 @@ export function TeamCard() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<{ fullName: string; email: string; role: "manager" | "terrain" }>({ fullName: "", email: "", role: "terrain" });
+  const [form, setForm] = useState<{ fullName: string; email: string; role: "manager" | "terrain"; position: string; department: string; phone: string; salary: number }>({
+    fullName: "", email: "", role: "terrain", position: "", department: "Ventes", phone: "", salary: 0,
+  });
   const [submitting, setSubmitting] = useState(false);
   const [lastCreated, setLastCreated] = useState<{ email: string; tempPassword: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -68,7 +71,7 @@ export function TeamCard() {
   useEffect(() => { void loadMembers(); }, [company?.id]);
 
   const openAdd = () => {
-    setForm({ fullName: "", email: "", role: "terrain" });
+    setForm({ fullName: "", email: "", role: "terrain", position: "", department: "Ventes", phone: "", salary: 0 });
     setLastCreated(null);
     setCopied(false);
     setOpen(true);
@@ -86,6 +89,31 @@ export function TeamCard() {
       const result = await createTeamMember({
         data: { companyId: company.id, email: form.email.trim(), fullName: form.fullName.trim(), role: form.role },
       });
+
+      // Cree aussi la fiche employe (poste, salaire, bulletins) et la relie au
+      // compte de connexion qu'on vient de creer, pour que la personne puisse
+      // retrouver sa propre fiche (vue restreinte "terrain" sur Personnel.tsx).
+      const [firstName, ...rest] = form.fullName.trim().split(/\s+/);
+      try {
+        await createEmployee({
+          employeeId: crypto.randomUUID(),
+          firstName: firstName || form.fullName.trim(),
+          lastName: rest.join(" ") || "-",
+          position: form.position || (form.role === "manager" ? "Manager" : "Agent de terrain"),
+          department: form.department,
+          phone: form.phone,
+          email: form.email.trim(),
+          hiredAt: new Date().toISOString().slice(0, 10),
+          salary: form.salary,
+          status: "present",
+          userId: result.userId,
+        });
+      } catch (empError) {
+        toast.error("Compte créé, mais la fiche employé n'a pas pu être créée — ajoutez-la manuellement dans Personnel.", {
+          description: empError instanceof Error ? empError.message : undefined,
+        });
+      }
+
       setLastCreated({ email: form.email.trim(), tempPassword: result.tempPassword });
       toast.success("Membre ajouté");
       await loadMembers();
@@ -130,9 +158,11 @@ export function TeamCard() {
             </div>
           ))}
         </div>
-        <Button type="button" variant="outline" className="rounded-xl gap-1.5" disabled={!canManageTeam} onClick={openAdd}>
-          <Plus size={16} /> Ajouter un membre
-        </Button>
+        {canManageTeam && (
+          <Button type="button" variant="outline" className="rounded-xl gap-1.5" onClick={openAdd}>
+            <Plus size={16} /> Ajouter un membre
+          </Button>
+        )}
       </CardContent>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -166,6 +196,23 @@ export function TeamCard() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Poste</Label>
+                  <Input value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} placeholder="Ex. Mécanicien" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Téléphone</Label>
+                  <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Salaire mensuel (FCFA)</Label>
+                <Input type="number" value={form.salary || 0} onChange={(e) => setForm({ ...form, salary: +e.target.value })} />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Une fiche employé est créée en même temps, avec ces informations — modifiable ensuite dans Personnel.
+              </p>
             </div>
           ) : (
             <div className="mt-2 space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">

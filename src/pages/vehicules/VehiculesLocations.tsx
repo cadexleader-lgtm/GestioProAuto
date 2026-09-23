@@ -13,6 +13,7 @@ import { RentVehicleDialog, RentalPaymentDialog, ReturnRentalDialog } from "@/co
 import { VehicleDetailSheet } from "@/components/vehicles/VehicleDetailSheet";
 import { generateRentalContract, sendWhatsApp } from "@/lib/vehicle-pdf";
 import type { Rental } from "@/lib/demo-data";
+import { useRole, can } from "@/lib/roles";
 
 const STATUS: Record<Rental["status"], { label: string; cls: string }> = {
   reserved:  { label: "Réservé",   cls: "bg-blue-50 text-blue-700 border-blue-200" },
@@ -23,6 +24,8 @@ const STATUS: Record<Rental["status"], { label: string; cls: string }> = {
 };
 
 export function VehiculesLocations() {
+  const role = useRole();
+  const canManageRental = can(role, "manage.rental");
   const rentals = useCollection("rentals");
   const vehicles = useCollection("vehicles");
   const [openPicker, setOpenPicker] = useState(false);
@@ -83,7 +86,9 @@ export function VehiculesLocations() {
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Locations</h1>
           <p className="text-muted-foreground mt-1 text-sm">Contrats, retours, dépôts et alertes de retard.</p>
         </div>
-        <Button onClick={openNewContract} className="shadow-lg shadow-primary/20"><Plus size={16} /> Nouveau contrat</Button>
+        {canManageRental && (
+          <Button onClick={openNewContract} className="shadow-lg shadow-primary/20"><Plus size={16} /> Nouveau contrat</Button>
+        )}
       </div>
 
       {/* KPI */}
@@ -142,10 +147,10 @@ export function VehiculesLocations() {
                       <MessageCircle size={14} /> WA
                     </Button>
                   )}
-                  {(r.displayStatus === "active" || r.displayStatus === "overdue") && (
+                  {canManageRental && (r.displayStatus === "active" || r.displayStatus === "overdue") && (
                     <Button size="sm" variant="outline" onClick={() => handleReturn(r.id)}><RotateCcw size={14} /> Retourner</Button>
                   )}
-                  {(r.displayStatus === "active" || r.displayStatus === "overdue") && (r.remaining ?? 0) > 0 && (
+                  {canManageRental && (r.displayStatus === "active" || r.displayStatus === "overdue") && (r.remaining ?? 0) > 0 && (
                      <Button size="sm" variant="outline" onClick={() => setPaymentId(r.id)}>Paiement</Button>
                   )}
                 </div>

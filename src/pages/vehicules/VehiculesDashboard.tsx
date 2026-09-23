@@ -5,6 +5,7 @@ import { Link } from "@tanstack/react-router";
 import { Car, KeyRound, AlertTriangle, ArrowRight, Wrench, Wallet, DollarSign, Users, ArrowDownLeft, ArrowUpRight, Scale, TrendingUp, TrendingDown } from "lucide-react";
 import { useCollection, vehicleProfitability } from "@/lib/demo-store";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useRole } from "@/lib/roles";
 
 function businessDateKey(value: string | Date) {
   // Date-only values are business dates: preserve them rather than parsing in UTC.
@@ -14,6 +15,7 @@ function businessDateKey(value: string | Date) {
 }
 
 export function VehiculesDashboard() {
+  const role = useRole();
   const vehicles = useCollection("vehicles");
   const rentals = useCollection("rentals");
   const sales = useCollection("vehicleSales");
@@ -116,6 +118,56 @@ export function VehiculesDashboard() {
     sales.forEach((s) => map.set(s.customer, (map.get(s.customer) || 0) + s.amount));
     return Array.from(map.entries()).map(([name, total]) => ({ name, total })).sort((a, b) => b.total - a.total).slice(0, 5);
   }, [rentals, sales]);
+
+  if (role === "terrain") {
+    const available = vehicles.filter((v) => v.status === "available").length;
+    const rented = vehicles.filter((v) => v.status === "rented").length;
+    const inMaintenance = vehicles.filter((v) => v.status === "maintenance").length;
+    const activeRentals = rentals.filter((r) => r.status === "active").length;
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Tableau de bord</h1>
+          <p className="text-muted-foreground mt-1">État du parc automobile.</p>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Kpi icon={<Car className="text-emerald-600" />} label="Disponibles" value={String(available)} tone="emerald" />
+          <Kpi icon={<KeyRound className="text-indigo-600" />} label="En location" value={String(rented)} tone="indigo" />
+          <Kpi icon={<Wrench className="text-amber-600" />} label="En maintenance" value={String(inMaintenance)} tone="amber" />
+          <Kpi icon={<AlertTriangle className="text-cyan-600" />} label="Locations actives" value={String(activeRentals)} tone="cyan" />
+        </div>
+        <Card className="shadow-sm">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between p-6 pb-4">
+              <h3 className="font-display font-semibold">Alertes maintenance</h3>
+              <Link to="/app/auto/maintenance" className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1">
+                Voir tout <ArrowRight size={14} />
+              </Link>
+            </div>
+            <div className="divide-y border-t">
+              {vehicles.filter((v) => v.status === "maintenance" || v.mileageKm > 60_000).slice(0, 4).map((v) => (
+                <div key={v.id} className="flex items-center gap-4 p-4 hover:bg-muted/40">
+                  <div className="w-12 h-12 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center text-2xl shrink-0">
+                    {v.image ? <img src={v.image} className="w-full h-full rounded object-cover" /> : v.photo}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm">{v.brand} {v.model}</p>
+                    <p className="text-xs text-muted-foreground">{v.plate} · {v.mileageKm.toLocaleString("fr-FR")} km</p>
+                  </div>
+                  <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md inline-flex items-center gap-1">
+                    <Wrench size={12} /> {v.status === "maintenance" ? "En atelier" : "Révision conseillée"}
+                  </span>
+                </div>
+              ))}
+              {vehicles.filter((v) => v.status === "maintenance" || v.mileageKm > 60_000).length === 0 && (
+                <p className="p-6 text-sm text-muted-foreground text-center">Aucune alerte</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

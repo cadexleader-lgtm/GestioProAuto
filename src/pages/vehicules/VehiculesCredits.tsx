@@ -13,10 +13,12 @@ import { generateCreditSchedule, sendWhatsApp } from "@/lib/vehicle-pdf";
 import { toast } from "sonner";
 import type { VehicleCredit } from "@/lib/demo-data";
 import { useRole, can } from "@/lib/roles";
+import { RestrictedAccess } from "@/components/RestrictedAccess";
 
 export function VehiculesCredits() {
   const role = useRole();
   const canManageCredit = can(role, "manage.credit");
+  const canViewPage = can(role, "view.finance");
   const credits = useCollection("vehicleCredits");
   const vehicles = useCollection("vehicles");
   const payments = useCollection("vehiclePayments");
@@ -42,6 +44,10 @@ export function VehiculesCredits() {
     return { active: open.length, totalDue, late, settled: credits.length - open.length };
   }, [credits, payments]);
 
+  if (!canViewPage) {
+    return <RestrictedAccess title="Ventes à crédit" message="Accès aux crédits restreint à votre rôle." />;
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -49,10 +55,11 @@ export function VehiculesCredits() {
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Ventes à crédit</h1>
           <p className="text-muted-foreground mt-1 text-sm">Suivi des échéances, paiements et alertes.</p>
         </div>
-        <Button onClick={() => setOpenNew(true)} className="shadow-lg shadow-primary/20" disabled={!canManageCredit}
-          title={canManageCredit ? undefined : "Réservé aux rôles Manager et Patron"}>
-          <Plus size={16} /> Nouvelle vente à crédit
-        </Button>
+        {canManageCredit && (
+          <Button onClick={() => setOpenNew(true)} className="shadow-lg shadow-primary/20">
+            <Plus size={16} /> Nouvelle vente à crédit
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-3">
@@ -181,7 +188,9 @@ export function VehiculesCredits() {
 
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-display font-semibold">Historique des paiements</h4>
-                  <Button size="sm" disabled={remaining === 0 || !canManageCredit} onClick={() => { setOpenPay(openDetail); }}><Plus size={14} /> Ajouter</Button>
+                  {canManageCredit && (
+                    <Button size="sm" disabled={remaining === 0} onClick={() => { setOpenPay(openDetail); }}><Plus size={14} /> Ajouter</Button>
+                  )}
                 </div>
 
                 <div className="space-y-2">

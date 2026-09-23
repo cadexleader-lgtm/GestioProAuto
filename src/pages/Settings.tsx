@@ -16,6 +16,7 @@ import { SUB_SECTORS_ARRAY } from "@/lib/sectors";
 import { db } from "@/lib/demo-store";
 import { Database, Trash2, Shield, Volume2 } from "lucide-react";
 import { ROLES, useRole, can } from "@/lib/roles";
+import { RestrictedAccess } from "@/components/RestrictedAccess";
 import { isSoundEnabled, setSoundEnabled } from "@/lib/notifications";
 import { Switch } from "@/components/ui/switch";
 import { CompanyBrandingCard } from "@/components/settings/CompanyBrandingCard";
@@ -83,6 +84,10 @@ export function Settings() {
 
   if (isLoading) {
     return <div className="space-y-6"><Skeleton className="h-10 w-48" /><Skeleton className="h-[500px] rounded-2xl" /></div>;
+  }
+
+  if (role === "terrain") {
+    return <RestrictedAccess title="Paramètres" message="Accès aux paramètres restreint à votre rôle." />;
   }
 
   return (

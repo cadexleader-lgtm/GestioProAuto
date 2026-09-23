@@ -36,6 +36,9 @@ export interface Employee {
   hiredAt: string;
   salary: number;
   status: "present" | "absent" | "leave";
+  /** auth.users.id du compte de connexion lié (rôle terrain/manager) — permet
+   * à un employé de retrouver sa propre fiche. Absent si aucun compte lié. */
+  userId?: string;
 }
 
 export const employees: Employee[] = [

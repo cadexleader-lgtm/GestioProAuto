@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { Plus, Phone, Mail, Clock, Wallet } from "lucide-react";
+import { Plus, Phone, Mail, Clock, Wallet, User } from "lucide-react";
 import { EmployeeDialog, AttendanceDialog, PayrollDialog } from "@/components/forms/HrDialogs";
 import { useRole, can } from "@/lib/roles";
+import { useTenant } from "@/lib/tenant";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   present: { label: "Présent",  cls: "bg-emerald-50 text-emerald-700" },
@@ -17,12 +19,71 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 export function Personnel() {
   const role = useRole();
   const canPay = can(role, "manage.payroll");
+  const { userId } = useTenant();
   const employees = useCollection("employees");
   const attendance = useCollection("attendance");
   const payslips = useCollection("payslips");
   const [openEmp, setOpenEmp] = useState(false);
   const [openAtt, setOpenAtt] = useState(false);
   const [openPay, setOpenPay] = useState(false);
+
+  if (role === "terrain") {
+    const me = employees.find((e) => e.userId === userId);
+    const myPayslips = me ? payslips.filter((p) => p.employeeId === me.id).sort((a, b) => b.month.localeCompare(a.month)) : [];
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Ma fiche</h1>
+          <p className="text-muted-foreground mt-1">Vos informations et vos bulletins de paie.</p>
+        </div>
+
+        {!me ? (
+          <Card className="border-amber-200 bg-amber-50/60 shadow-sm">
+            <CardContent className="p-6 text-sm text-amber-900">
+              Aucune fiche employé associée à votre compte. Contactez votre responsable.
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <Card className="shadow-sm">
+              <CardContent className="p-6 flex items-start gap-4">
+                <div className="w-12 h-12 rounded-full bg-primary/15 text-primary font-bold flex items-center justify-center shrink-0">
+                  {me.firstName[0]}{me.lastName[0]}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-display font-bold text-lg">{me.firstName} {me.lastName}</p>
+                  <p className="text-sm text-muted-foreground">{me.position} · {me.department}</p>
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                    <div className="flex items-center gap-1.5 text-muted-foreground"><Phone size={13} /> {me.phone || "—"}</div>
+                    <div className="flex items-center gap-1.5 text-muted-foreground"><Mail size={13} /> {me.email || "—"}</div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">Embauché·e le {new Date(me.hiredAt).toLocaleDateString("fr-FR")}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm">
+              <CardContent className="p-6">
+                <h3 className="font-display font-semibold mb-3">Mes bulletins de paie</h3>
+                {myPayslips.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Aucun bulletin pour l'instant.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {myPayslips.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between rounded-xl border p-3 text-sm">
+                        <span>{p.month}</span>
+                        <span className="font-bold">{formatFCFA(p.net)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
+    );
+  }
 
   const total = employees.length;
   const present = employees.filter(e => e.status === "present").length;

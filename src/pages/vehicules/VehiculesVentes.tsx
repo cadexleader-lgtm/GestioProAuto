@@ -10,10 +10,12 @@ import { generateSaleInvoice, sendWhatsApp } from "@/lib/vehicle-pdf";
 import { toast } from "sonner";
 import { SaleWorkflowDialog } from "@/components/vehicles/SaleWorkflowDialog";
 import { useRole, can } from "@/lib/roles";
+import { RestrictedAccess } from "@/components/RestrictedAccess";
 
 export function VehiculesVentes() {
   const role = useRole();
   const canSell = can(role, "create.sale");
+  const canViewPage = can(role, "view.finance");
   const sales = useCollection("vehicleSales");
   const vehicles = useCollection("vehicles");
   const [q, setQ] = useState("");
@@ -57,6 +59,10 @@ export function VehiculesVentes() {
     );
   };
 
+  if (!canViewPage) {
+    return <RestrictedAccess title="Ventes de véhicules" message="Accès aux ventes restreint à votre rôle." />;
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-start justify-between flex-wrap gap-4">
@@ -64,10 +70,11 @@ export function VehiculesVentes() {
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Ventes de véhicules</h1>
           <p className="text-muted-foreground mt-1 text-sm">Historique complet des ventes cash et à crédit.</p>
         </div>
-        <Button onClick={() => setWorkflowOpen(true)} size="lg" className="shadow-lg" disabled={!canSell}
-          title={canSell ? undefined : "Réservé aux rôles Manager et Patron"}>
-          <Plus size={18} /> Nouveau dossier de vente
-        </Button>
+        {canSell && (
+          <Button onClick={() => setWorkflowOpen(true)} size="lg" className="shadow-lg">
+            <Plus size={18} /> Nouveau dossier de vente
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

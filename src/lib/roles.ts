@@ -33,6 +33,7 @@ export function can(role: Role, action:
   | "manage.credit"
   | "manage.payroll"
   | "manage.team"
+  | "manage.rental"
   | "create.sale"
 ): boolean {
   if (role === "patron") return true;
