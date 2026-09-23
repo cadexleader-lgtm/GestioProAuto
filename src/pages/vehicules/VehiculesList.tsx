@@ -24,13 +24,7 @@ import { SaleWorkflowDialog } from "@/components/vehicles/SaleWorkflowDialog";
 import { VehicleDetailSheet } from "@/components/vehicles/VehicleDetailSheet";
 import type { Vehicle } from "@/lib/demo-data";
 import { useRole, can } from "@/lib/roles";
-
-const STATUS: Record<Vehicle["status"], { label: string; cls: string; dot: string }> = {
-  available:   { label: "Disponible",  cls: "bg-emerald-100 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
-  sold:        { label: "Vendu",       cls: "bg-slate-200 text-slate-700 border-slate-300",        dot: "bg-slate-500" },
-  rented:      { label: "Loué",        cls: "bg-indigo-100 text-indigo-700 border-indigo-200",    dot: "bg-indigo-500" },
-  maintenance: { label: "Maintenance", cls: "bg-amber-100 text-amber-700 border-amber-200",       dot: "bg-amber-500" },
-};
+import { VEHICLE_STATUS } from "@/lib/vehicle-status";
 
 type Filter = "all" | Vehicle["status"];
 
@@ -158,40 +152,39 @@ export function VehiculesList() {
       {/* Cards grid — mobile: 2 cols */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
         {filtered.map((v) => {
-          const st = STATUS[v.status];
+          const st = VEHICLE_STATUS[v.status];
+          const canRentThis = v.status === "available" && canRent;
+          const canSellThis = v.status === "available" && canSell;
+          const canMaintainThis = v.status !== "sold" && v.status !== "maintenance";
           return (
             <Card
               key={v.id}
-              className="group overflow-hidden rounded-2xl border bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+              className="group overflow-hidden rounded-2xl border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
               onClick={() => setViewFor(v)}
             >
-              <div className="relative h-28 sm:h-36 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center overflow-hidden">
+              <div className="relative h-28 sm:h-36 bg-muted flex items-center justify-center overflow-hidden">
                 {v.image ? (
                   <img src={v.image} alt={`${v.brand} ${v.model}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 ) : (
                   <span className="text-5xl sm:text-7xl">{v.photo}</span>
                 )}
-                <span className={`absolute top-2 left-2 inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-full ${st.cls} border backdrop-blur`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
+                <span className={`absolute top-2 left-2 inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-full border ${st.badgeCls}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${st.dotCls}`} />
                   {st.label}
                 </span>
                 <div className="absolute top-2 right-2" onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="secondary" size="icon" className="h-7 w-7 rounded-full bg-white/80 hover:bg-white backdrop-blur shadow">
+                      <Button variant="secondary" size="icon" className="h-7 w-7 rounded-full bg-white/90 hover:bg-white shadow">
                         <MoreVertical size={14} />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
                       <DropdownMenuItem onClick={() => setViewFor(v)}><Eye size={14} className="mr-2" /> Voir fiche</DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      {v.status === "available" && (
-                        <>
-                          {canRent && <DropdownMenuItem onClick={() => setRentFor(v)}><KeyRound size={14} className="mr-2" /> Louer</DropdownMenuItem>}
-                          {canSell && <DropdownMenuItem onClick={() => setSaleVehicle(v)}><ShoppingCart size={14} className="mr-2" /> Vendre</DropdownMenuItem>}
-                        </>
-                      )}
-                      <DropdownMenuItem onClick={() => setMaintFor(v)} disabled={v.status === "sold"}><Wrench size={14} className="mr-2" /> Maintenance</DropdownMenuItem>
+                      {canRentThis && <DropdownMenuItem onClick={() => setRentFor(v)}><KeyRound size={14} className="mr-2" /> Louer</DropdownMenuItem>}
+                      {canSellThis && <DropdownMenuItem onClick={() => setSaleVehicle(v)}><ShoppingCart size={14} className="mr-2" /> Vendre</DropdownMenuItem>}
+                      {canMaintainThis && <DropdownMenuItem onClick={() => setMaintFor(v)}><Wrench size={14} className="mr-2" /> Envoyer en maintenance</DropdownMenuItem>}
                       <DropdownMenuItem onClick={() => setEditFor(v)}><Pencil size={14} className="mr-2" /> Modifier</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -245,7 +238,15 @@ export function VehiculesList() {
         onOpenChange={(o) => !o && setSaleVehicle(null)}
       />
       <MaintenanceVehicleDialog vehicle={maintFor} open={!!maintFor} onOpenChange={(o) => !o && setMaintFor(null)} />
-      <VehicleDetailSheet vehicle={viewFor} open={!!viewFor} onOpenChange={(o) => !o && setViewFor(null)} />
+      <VehicleDetailSheet
+        vehicle={viewFor}
+        open={!!viewFor}
+        onOpenChange={(o) => !o && setViewFor(null)}
+        onRent={setRentFor}
+        onSell={setSaleVehicle}
+        onMaintenance={setMaintFor}
+        onEdit={setEditFor}
+      />
     </div>
   );
 }
@@ -258,17 +259,17 @@ function Kpi({
   active?: boolean; onClick?: () => void;
   tone?: "violet";
 }) {
-  const base = "rounded-2xl border p-3 sm:p-4 text-left transition-all duration-200 backdrop-blur";
+  const base = "rounded-2xl border p-3 sm:p-4 text-left transition-all duration-200 shadow-sm";
   const palette = tone === "violet"
-    ? "bg-gradient-to-br from-violet-50 to-violet-100/60 border-violet-200/60"
+    ? "bg-violet-50/60 border-violet-200/60"
     : active
-      ? "bg-primary/10 border-primary/40 shadow-lg shadow-primary/10"
-      : "bg-white/70 dark:bg-slate-900/60 border-slate-200/60 hover:bg-white";
+      ? "bg-primary/10 border-primary/40"
+      : "bg-card border-border hover:bg-muted/40";
   const Comp = onClick ? "button" : "div";
   return (
-    <Comp onClick={onClick} className={`${base} ${palette} hover:-translate-y-0.5 w-full`}>
+    <Comp onClick={onClick} className={`${base} ${palette} w-full`}>
       <div className="flex items-center gap-2 mb-1.5">
-        <div className="w-7 h-7 rounded-lg bg-white/80 flex items-center justify-center shadow-sm shrink-0">{icon}</div>
+        <div className="w-7 h-7 rounded-lg bg-background flex items-center justify-center shadow-sm shrink-0">{icon}</div>
         <p className="min-w-0 text-[10px] sm:text-xs uppercase tracking-wider font-bold text-muted-foreground truncate">{label}</p>
       </div>
       <p className="font-display font-bold text-lg sm:text-xl tabular-nums truncate">

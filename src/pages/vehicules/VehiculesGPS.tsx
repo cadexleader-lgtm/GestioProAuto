@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCollection, isRentalOverdue } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { MapPin, Gauge, Navigation, Satellite, KeyRound, Wrench, CheckCircle2, AlertTriangle } from "lucide-react";
+import { MapPin, Gauge, Navigation, Satellite, Wrench, CheckCircle2, AlertTriangle } from "lucide-react";
 import type { Vehicle } from "@/lib/demo-data";
+import { VEHICLE_STATUS } from "@/lib/vehicle-status";
 
 /** Bounding box approx. Dakar */
 const BOX = { latMin: 14.68, latMax: 14.75, lngMin: -17.50, lngMax: -17.41 };
@@ -36,13 +37,6 @@ function simulate(v: Vehicle, tick: number, moving: boolean) {
   const speed = moving ? 25 + ((h >> 3) % 45) + Math.round(Math.sin(tick / 3 + phase) * 10) : 0;
   return { lat, lng, trip, speed: Math.max(0, speed) };
 }
-
-const STATE: Record<Vehicle["status"], { label: string; cls: string; dot: string; icon: React.ReactNode }> = {
-  available:   { label: "Au parc",     cls: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500", icon: <CheckCircle2 size={13} /> },
-  rented:      { label: "En location", cls: "bg-indigo-50 text-indigo-700 border-indigo-200",   dot: "bg-indigo-500",  icon: <KeyRound size={13} /> },
-  maintenance: { label: "Atelier",     cls: "bg-amber-50 text-amber-700 border-amber-200",      dot: "bg-amber-500",   icon: <Wrench size={13} /> },
-  sold:        { label: "Vendu",       cls: "bg-slate-100 text-slate-600 border-slate-200",     dot: "bg-slate-400",   icon: <CheckCircle2 size={13} /> },
-};
 
 export function VehiculesGPS() {
   const vehicles = useCollection("vehicles");
@@ -97,8 +91,8 @@ export function VehiculesGPS() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Kpi label="En circulation" value={onRoad} icon={<Navigation className="text-indigo-600" size={18} />} />
-        <Kpi label="Au parc" value={parked} icon={<CheckCircle2 className="text-emerald-600" size={18} />} />
-        <Kpi label="Atelier" value={garage} icon={<Wrench className="text-amber-600" size={18} />} />
+        <Kpi label={VEHICLE_STATUS.available.label} value={parked} icon={<CheckCircle2 className="text-emerald-600" size={18} />} />
+        <Kpi label={VEHICLE_STATUS.maintenance.label} value={garage} icon={<Wrench className="text-amber-600" size={18} />} />
         <Kpi label="Alertes retard" value={alerts} icon={<AlertTriangle className="text-rose-600" size={18} />} tone={alerts > 0 ? "rose" : undefined} />
       </div>
 
@@ -169,7 +163,7 @@ export function VehiculesGPS() {
             </div>
           )}
           {tracked.map((t) => {
-            const st = STATE[t.v.status];
+            const st = VEHICLE_STATUS[t.v.status];
             const active = selected === t.v.id;
             return (
               <Card
@@ -186,8 +180,8 @@ export function VehiculesGPS() {
                       <h3 className="font-display font-bold text-sm truncate">{t.v.brand} {t.v.model}</h3>
                       <p className="text-[11px] text-muted-foreground">{t.v.plate}</p>
                     </div>
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md border shrink-0 ${st.cls}`}>
-                      {st.icon} {st.label}
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md border shrink-0 ${st.badgeCls}`}>
+                      <st.icon size={13} /> {st.label}
                     </span>
                   </div>
 

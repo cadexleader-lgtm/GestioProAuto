@@ -1,31 +1,48 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatFCFA } from "@/lib/format";
-import { db, vehicleProfitability } from "@/lib/demo-store";
+import { db, vehicleProfitability, isRentalOverdue } from "@/lib/demo-store";
 import type { Vehicle } from "@/lib/demo-data";
-import { Car, Fuel, Gauge, KeyRound, Wrench, TrendingUp, TrendingDown, ArrowLeft } from "lucide-react";
+import { Car, Fuel, Gauge, KeyRound, Wrench, ShoppingCart, Pencil, TrendingUp, TrendingDown, ArrowLeft } from "lucide-react";
+import { VEHICLE_STATUS, RENTAL_STATUS, MAINTENANCE_STATUS, creditStatusLabel } from "@/lib/vehicle-status";
+import { useRole, can } from "@/lib/roles";
 
-const STATUS_LABEL: Record<Vehicle["status"], { label: string; cls: string }> = {
-  available: { label: "Disponible", cls: "bg-emerald-100 text-emerald-700" },
-  sold: { label: "Vendu", cls: "bg-slate-200 text-slate-700" },
-  rented: { label: "Loué", cls: "bg-indigo-100 text-indigo-700" },
-  maintenance: { label: "Maintenance", cls: "bg-amber-100 text-amber-700" },
-};
+interface VehicleDetailSheetProps {
+  vehicle: Vehicle | null;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onRent?: (v: Vehicle) => void;
+  onSell?: (v: Vehicle) => void;
+  onMaintenance?: (v: Vehicle) => void;
+  onEdit?: (v: Vehicle) => void;
+}
 
-export function VehicleDetailSheet({ vehicle, open, onOpenChange }: { vehicle: Vehicle | null; open: boolean; onOpenChange: (v: boolean) => void }) {
+export function VehicleDetailSheet({ vehicle, open, onOpenChange, onRent, onSell, onMaintenance, onEdit }: VehicleDetailSheetProps) {
+  const role = useRole();
+  const canRent = can(role, "manage.rental");
+  const canSell = can(role, "create.sale");
+
   if (!vehicle) return null;
   const rentals = db.list("rentals").filter((r) => r.vehicleId === vehicle.id);
   const sales = db.list("vehicleSales").filter((s) => s.vehicleId === vehicle.id);
   const maint = db.list("vehicleMaintenances").filter((m) => m.vehicleId === vehicle.id);
   const credits = db.list("vehicleCredits").filter((c) => c.vehicleId === vehicle.id);
+  const payments = db.list("vehiclePayments");
   const prof = vehicleProfitability(vehicle.id);
-  const st = STATUS_LABEL[vehicle.status];
+  const st = VEHICLE_STATUS[vehicle.status];
+
+  const canRentThis = vehicle.status === "available" && canRent && !!onRent;
+  const canSellThis = vehicle.status === "available" && canSell && !!onSell;
+  const canMaintainThis = vehicle.status !== "sold" && vehicle.status !== "maintenance" && !!onMaintenance;
+
+  const act = (fn?: (v: Vehicle) => void) => () => { onOpenChange(false); fn?.(vehicle); };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0 rounded-l-2xl">
-        <div className="relative h-44 sm:h-56 bg-gradient-to-br from-slate-100 to-slate-300 flex items-center justify-center overflow-hidden">
+        <div className="relative h-44 sm:h-56 bg-muted flex items-center justify-center overflow-hidden">
           {vehicle.image ? (
             <img src={vehicle.image} alt={`${vehicle.brand} ${vehicle.model}`} className="w-full h-full object-cover" />
           ) : (
@@ -37,12 +54,24 @@ export function VehicleDetailSheet({ vehicle, open, onOpenChange }: { vehicle: V
           >
             <ArrowLeft size={14} /> Retour
           </button>
-          <span className={`absolute top-3 right-12 sm:right-14 text-[11px] font-bold px-3 py-1.5 rounded-full ${st.cls} backdrop-blur`}>{st.label}</span>
+          <span className={`absolute top-3 right-3 inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full border ${st.badgeCls}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${st.dotCls}`} /> {st.label}
+          </span>
         </div>
         <SheetHeader className="px-4 sm:px-6 pt-5">
           <SheetTitle className="text-xl sm:text-2xl font-display">{vehicle.brand} {vehicle.model}</SheetTitle>
           <SheetDescription>{vehicle.year} · {vehicle.color} · {vehicle.plate}</SheetDescription>
         </SheetHeader>
+
+        {/* Actions rapides — évite d'avoir à refermer la fiche pour agir */}
+        {(canRentThis || canSellThis || canMaintainThis || onEdit) && (
+          <div className="px-4 sm:px-6 pt-4 flex flex-wrap gap-2">
+            {canRentThis && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={act(onRent)}><KeyRound size={14} /> Louer</Button>}
+            {canSellThis && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={act(onSell)}><ShoppingCart size={14} /> Vendre</Button>}
+            {canMaintainThis && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={act(onMaintenance)}><Wrench size={14} /> Maintenance</Button>}
+            {onEdit && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={act(onEdit)}><Pencil size={14} /> Modifier</Button>}
+          </div>
+        )}
 
         <div className="px-4 sm:px-6 pt-4">
           <Tabs defaultValue="info">
@@ -74,9 +103,14 @@ export function VehicleDetailSheet({ vehicle, open, onOpenChange }: { vehicle: V
 
             <TabsContent value="history" className="space-y-4 mt-4">
               <Section title={`Locations (${rentals.length})`}>
-                {rentals.length === 0 ? <Empty>Aucune location</Empty> : rentals.map((r) => (
-                  <Row key={r.id} icon={<KeyRound size={14} />} title={r.customer} subtitle={`Du ${r.startDate} au ${r.endDate}`} right={<Badge variant="secondary">{r.status}</Badge>} />
-                ))}
+                {rentals.length === 0 ? <Empty>Aucune location</Empty> : rentals.map((r) => {
+                  const displayStatus = r.status === "active" && isRentalOverdue(r) ? "overdue" as const : r.status;
+                  const rst = RENTAL_STATUS[displayStatus];
+                  return (
+                    <Row key={r.id} icon={<KeyRound size={14} />} title={r.customer} subtitle={`Du ${r.startDate} au ${r.endDate}`}
+                      right={<Badge variant="outline" className={rst.cls}>{rst.label}</Badge>} />
+                  );
+                })}
               </Section>
               <Section title={`Ventes (${sales.length})`}>
                 {sales.length === 0 ? <Empty>Aucune vente</Empty> : sales.map((s) => (
@@ -85,24 +119,32 @@ export function VehicleDetailSheet({ vehicle, open, onOpenChange }: { vehicle: V
               </Section>
               {credits.length > 0 && (
                 <Section title={`Crédits (${credits.length})`}>
-                  {credits.map((c) => (
-                    <Row key={c.id} icon={<TrendingDown size={14} />} title={c.customer} subtitle={`${c.paidMonths}/${c.totalMonths} mensualités`} right={<Badge variant={c.status === "late" ? "destructive" : "secondary"}>{c.status === "late" ? "En retard" : "OK"}</Badge>} />
-                  ))}
+                  {credits.map((c) => {
+                    const paid = c.downPayment + payments.filter((p) => p.creditId === c.id).reduce((s, p) => s + p.amount, 0);
+                    const cst = creditStatusLabel(c, paid);
+                    return (
+                      <Row key={c.id} icon={<TrendingDown size={14} />} title={c.customer} subtitle={`${c.paidMonths}/${c.totalMonths} mensualités`}
+                        right={<Badge variant="outline" className={cst.cls}>{cst.label}</Badge>} />
+                    );
+                  })}
                 </Section>
               )}
             </TabsContent>
 
             <TabsContent value="maint" className="space-y-3 mt-4">
-              {maint.length === 0 ? <Empty>Aucune maintenance enregistrée</Empty> : maint.map((m) => (
-                <div key={m.id} className="p-3 rounded-lg border bg-card">
-                  <div className="flex items-center justify-between">
-                    <strong>{m.motif}</strong>
-                    <Badge variant="outline">{m.status}</Badge>
+              {maint.length === 0 ? <Empty>Aucune maintenance enregistrée</Empty> : maint.map((m) => {
+                const mst = MAINTENANCE_STATUS[m.status];
+                return (
+                  <div key={m.id} className="p-3 rounded-lg border bg-card">
+                    <div className="flex items-center justify-between">
+                      <strong>{m.motif}</strong>
+                      <Badge variant="outline" className={mst.cls}>{mst.label}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{m.type} · {m.garage || "—"} · {m.dateIn}</p>
+                    <p className="text-sm mt-2"><Wrench size={12} className="inline mr-1" /> Coût: <strong>{formatFCFA((m.partsCost || 0) + (m.laborCost || 0) + (m.otherCost || 0))}</strong></p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">{m.type} · {m.garage || "—"} · {m.dateIn}</p>
-                  <p className="text-sm mt-2"><Wrench size={12} className="inline mr-1" /> Coût: <strong>{formatFCFA((m.partsCost || 0) + (m.laborCost || 0) + (m.otherCost || 0))}</strong></p>
-                </div>
-              ))}
+                );
+              })}
             </TabsContent>
 
             <TabsContent value="prof" className="space-y-3 mt-4">

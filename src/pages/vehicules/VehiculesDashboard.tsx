@@ -9,6 +9,7 @@ import {
 } from "@/lib/demo-store";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useRole } from "@/lib/roles";
+import { VEHICLE_STATUS } from "@/lib/vehicle-status";
 
 function businessDateKey(value: string | Date) {
   // Date-only values are business dates: preserve them rather than parsing in UTC.
@@ -132,7 +133,7 @@ export function VehiculesDashboard() {
                     <p className="text-xs text-muted-foreground">{v.plate} · {v.mileageKm.toLocaleString("fr-FR")} km</p>
                   </div>
                   <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md inline-flex items-center gap-1">
-                    <Wrench size={12} /> {v.status === "maintenance" ? "En atelier" : "Révision conseillée"}
+                    <Wrench size={12} /> {v.status === "maintenance" ? VEHICLE_STATUS.maintenance.label : "Révision conseillée"}
                   </span>
                 </div>
               ))}
@@ -269,7 +270,7 @@ export function VehiculesDashboard() {
                   <p className="text-xs text-muted-foreground">{v.plate} · {v.mileageKm.toLocaleString("fr-FR")} km</p>
                 </div>
                 <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md inline-flex items-center gap-1">
-                  <Wrench size={12} /> {v.status === "maintenance" ? "En atelier" : "Révision conseillée"}
+                  <Wrench size={12} /> {v.status === "maintenance" ? VEHICLE_STATUS.maintenance.label : "Révision conseillée"}
                 </span>
               </div>
             ))}

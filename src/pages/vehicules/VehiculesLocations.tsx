@@ -14,14 +14,7 @@ import { VehicleDetailSheet } from "@/components/vehicles/VehicleDetailSheet";
 import { generateRentalContract, sendWhatsApp } from "@/lib/vehicle-pdf";
 import type { Rental } from "@/lib/demo-data";
 import { useRole, can } from "@/lib/roles";
-
-const STATUS: Record<Rental["status"], { label: string; cls: string }> = {
-  reserved:  { label: "Réservé",   cls: "bg-blue-50 text-blue-700 border-blue-200" },
-  active:    { label: "En cours",  cls: "bg-indigo-50 text-indigo-700 border-indigo-200" },
-  returned:  { label: "Retourné",  cls: "bg-slate-100 text-slate-600 border-slate-200" },
-  overdue:   { label: "En retard", cls: "bg-rose-50 text-rose-700 border-rose-200" },
-  cancelled: { label: "Annulé",    cls: "bg-slate-100 text-slate-600 border-slate-200" },
-};
+import { RENTAL_STATUS as STATUS } from "@/lib/vehicle-status";
 
 export function VehiculesLocations() {
   const role = useRole();

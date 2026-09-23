@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MoneyInput } from "@/components/ui/money-input";
 import {
   createPendingPrivateDocument,
   db,
@@ -16,6 +17,8 @@ import {
 import { toast } from "sonner";
 import { Check, ChevronLeft, ChevronRight, Upload, FileText, Download, Trash2 } from "lucide-react";
 import type { Vehicle } from "@/lib/demo-data";
+import { VEHICLE_STATUS } from "@/lib/vehicle-status";
+import { formatFCFA } from "@/lib/format";
 
 /* ================== VEHICLE WIZARD (Add + Edit + Documents) ================== */
 const STEPS = [
@@ -101,7 +104,7 @@ export function VehicleDialog({
       a.download = d.name;
       a.click();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "TÃ©lÃ©chargement indisponible.");
+      toast.error(error instanceof Error ? error.message : "Téléchargement indisponible.");
     }
   };
 
@@ -113,21 +116,6 @@ export function VehicleDialog({
   const next = () => {
     if (!canNext()) return toast.error("Marque et modèle requis");
     setStep((s) => Math.min(STEPS.length - 1, s + 1));
-  };
-
-  const submit = () => {
-    if (!form.brand || !form.model) {
-      setStep(0);
-      return toast.error("Marque et modèle requis");
-    }
-    if (isEdit && vehicle) {
-      db.update("vehicles", vehicle.id, form);
-      toast.success("Véhicule mis à jour");
-    } else {
-      db.add("vehicles", form);
-      toast.success("Véhicule ajouté");
-    }
-    onOpenChange(false);
   };
 
   const submitVehicle = async () => {
@@ -192,17 +180,16 @@ export function VehicleDialog({
           })));
           setPendingDocs([]);
         } catch (error) {
-          toast.error(error instanceof Error ? `VÃ©hicule enregistrÃ©, document non archivÃ© : ${error.message}` : "VÃ©hicule enregistrÃ©, document non archivÃ©.");
+          toast.error(error instanceof Error ? `Véhicule enregistré, document non archivé : ${error.message}` : "Véhicule enregistré, document non archivé.");
         }
       }
 
-      toast.success(isEdit ? "VÃ©hicule mis Ã  jour" : "VÃ©hicule ajoutÃ©");
+      toast.success(isEdit ? "Véhicule mis à jour" : "Véhicule ajouté");
       onOpenChange(false);
     } finally {
       setSubmitting(false);
     }
   };
-  void submit;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -260,29 +247,29 @@ export function VehicleDialog({
             </div>
             <div><Label>Marque *</Label><Input value={form.brand || ""} onChange={(e) => setForm({ ...form, brand: e.target.value })} /></div>
             <div><Label>Modèle *</Label><Input value={form.model || ""} onChange={(e) => setForm({ ...form, model: e.target.value })} /></div>
-            <div><Label>Année</Label><Input type="number" value={form.year || ""} onChange={(e) => setForm({ ...form, year: +e.target.value })} /></div>
+            <div><Label>Année</Label><Input type="number" value={form.year || ""} onChange={(e) => setForm({ ...form, year: +e.target.value })} onWheel={(e) => (e.target as HTMLInputElement).blur()} /></div>
             <div><Label>Couleur</Label><Input value={form.color || ""} onChange={(e) => setForm({ ...form, color: e.target.value })} /></div>
             <div><Label>Plaque</Label><Input value={form.plate || ""} onChange={(e) => setForm({ ...form, plate: e.target.value })} /></div>
             <div className="col-span-2 sm:col-span-3"><Label>VIN / N° châssis</Label><Input value={form.vin || ""} onChange={(e) => setForm({ ...form, vin: e.target.value })} /></div>
-            <div><Label>Statut</Label>
-              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="available">Disponible</SelectItem>
-                  <SelectItem value="sold">Vendu</SelectItem>
-                  <SelectItem value="rented">Loué</SelectItem>
-                  <SelectItem value="maintenance">Maintenance</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div><Label>Emoji (fallback)</Label><Input className="text-2xl text-center" value={form.photo || ""} onChange={(e) => setForm({ ...form, photo: e.target.value })} /></div>
+            {isEdit && form.status && (
+              <div>
+                <Label>Statut</Label>
+                <div className="h-10 flex items-center">
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-full border ${VEHICLE_STATUS[form.status as Vehicle["status"]].badgeCls}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${VEHICLE_STATUS[form.status as Vehicle["status"]].dotCls}`} />
+                    {VEHICLE_STATUS[form.status as Vehicle["status"]].label}
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">Change automatiquement via Vendre / Louer / Maintenance.</p>
+              </div>
+            )}
           </div>
         )}
 
         {/* STEP 1 — Technique */}
         {step === 1 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div><Label>Kilométrage</Label><Input type="number" value={form.mileageKm || 0} onChange={(e) => setForm({ ...form, mileageKm: +e.target.value })} /></div>
+            <div><Label>Kilométrage</Label><Input type="number" value={form.mileageKm || 0} onChange={(e) => setForm({ ...form, mileageKm: +e.target.value })} onWheel={(e) => (e.target as HTMLInputElement).blur()} /></div>
             <div><Label>Carburant</Label>
               <Select value={form.fuel} onValueChange={(v) => setForm({ ...form, fuel: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -301,15 +288,15 @@ export function VehicleDialog({
         {/* STEP 2 — Finances */}
         {step === 2 && (
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Prix d'achat</Label><Input type="number" value={form.purchasePrice || 0} onChange={(e) => setForm({ ...form, purchasePrice: +e.target.value })} /></div>
-            <div><Label>Frais import</Label><Input type="number" value={form.importFees || 0} onChange={(e) => setForm({ ...form, importFees: +e.target.value })} /></div>
-            <div><Label>Douane</Label><Input type="number" value={form.customsFees || 0} onChange={(e) => setForm({ ...form, customsFees: +e.target.value })} /></div>
-            <div><Label>Réparations</Label><Input type="number" value={form.repairFees || 0} onChange={(e) => setForm({ ...form, repairFees: +e.target.value })} /></div>
-            <div><Label>Entretien</Label><Input type="number" value={form.maintenanceFees || 0} onChange={(e) => setForm({ ...form, maintenanceFees: +e.target.value })} /></div>
-            <div><Label>Prix affiché (public)</Label><Input type="number" value={form.sellingPrice || 0} onChange={(e) => setForm({ ...form, sellingPrice: +e.target.value })} /></div>
-            <div><Label>Prix marchand (gros)</Label><Input type="number" value={form.wholesalePrice || 0} onChange={(e) => setForm({ ...form, wholesalePrice: +e.target.value })} /></div>
-            <div><Label>Prix plancher (min négociation)</Label><Input type="number" value={form.minPrice || 0} onChange={(e) => setForm({ ...form, minPrice: +e.target.value })} /></div>
-            <div className="col-span-2 p-3 bg-muted rounded-lg flex justify-between"><span>Coût de revient total</span><strong>{total.toLocaleString()} FCFA</strong></div>
+            <div><Label>Prix d'achat</Label><MoneyInput value={form.purchasePrice} onChange={(v) => setForm({ ...form, purchasePrice: v })} /></div>
+            <div><Label>Frais import</Label><MoneyInput value={form.importFees} onChange={(v) => setForm({ ...form, importFees: v })} /></div>
+            <div><Label>Douane</Label><MoneyInput value={form.customsFees} onChange={(v) => setForm({ ...form, customsFees: v })} /></div>
+            <div><Label>Réparations</Label><MoneyInput value={form.repairFees} onChange={(v) => setForm({ ...form, repairFees: v })} /></div>
+            <div><Label>Entretien</Label><MoneyInput value={form.maintenanceFees} onChange={(v) => setForm({ ...form, maintenanceFees: v })} /></div>
+            <div><Label>Prix affiché (public)</Label><MoneyInput value={form.sellingPrice} onChange={(v) => setForm({ ...form, sellingPrice: v })} /></div>
+            <div><Label>Prix marchand (gros)</Label><MoneyInput value={form.wholesalePrice} onChange={(v) => setForm({ ...form, wholesalePrice: v })} /></div>
+            <div><Label>Prix plancher (min négociation)</Label><MoneyInput value={form.minPrice} onChange={(v) => setForm({ ...form, minPrice: v })} /></div>
+            <div className="col-span-2 p-3 bg-muted rounded-lg flex justify-between"><span>Coût de revient total</span><strong>{formatFCFA(total)}</strong></div>
             {([
               ["Marge prix affiché", margin],
               ["Marge prix marchand", marginWholesale],
@@ -318,7 +305,7 @@ export function VehicleDialog({
               <div key={label} className={`col-span-2 p-3 rounded-lg flex justify-between ${m < 0 ? "bg-red-50 dark:bg-red-500/10" : "bg-emerald-50 dark:bg-emerald-500/10"}`}>
                 <span>{label}</span>
                 <strong className={m < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"}>
-                  {m.toLocaleString()} FCFA {m < 0 && "⚠️ Marge négative"}
+                  {formatFCFA(m)} {m < 0 && "⚠️ Marge négative"}
                 </strong>
               </div>
             ))}

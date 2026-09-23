@@ -14,14 +14,7 @@ import { Wrench, Plus, AlertTriangle, Clock, CheckCircle2, TrendingDown, Pencil 
 import { MaintenanceVehicleDialog } from "@/components/vehicles/VehicleActionsDialogs";
 import { toast } from "sonner";
 import type { VehicleMaintenance } from "@/lib/demo-store";
-
-const STATUS: Record<VehicleMaintenance["status"], { label: string; cls: string }> = {
-  pending:    { label: "En attente",       cls: "bg-slate-100 text-slate-700 border-slate-200" },
-  diagnostic: { label: "Diagnostic",       cls: "bg-blue-50 text-blue-700 border-blue-200" },
-  repair:     { label: "Réparation",       cls: "bg-amber-50 text-amber-700 border-amber-200" },
-  parts_wait: { label: "Attente pièces",   cls: "bg-orange-50 text-orange-700 border-orange-200" },
-  done:       { label: "Terminé",          cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-};
+import { MAINTENANCE_STATUS as STATUS } from "@/lib/vehicle-status";
 
 export function VehiculesMaintenance() {
   const items = useCollection("vehicleMaintenances");
