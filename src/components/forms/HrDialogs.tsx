@@ -1,13 +1,20 @@
-import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useEffect, useMemo, useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MoneyInput } from "@/components/ui/money-input";
 import { db, recordPayrollPayment, createEmployee, attachPayslipDocumentFile } from "@/lib/demo-store";
 import { pdfPayslip } from "@/lib/pdf/templates";
 import { toast } from "sonner";
+import { Users, Check, X, Loader2, Wallet } from "lucide-react";
+import { formatFCFA } from "@/lib/format";
+
+const PAYMENT_METHODS = ["Cash", "Wave", "Orange Money", "Virement", "Chèque"] as const;
 
 const DEPTS = ["Direction","Ventes","Caisse","Stock","Finance","Logistique","RH","Cuisine","Service","Technique"];
 
@@ -197,5 +204,207 @@ export function PayrollDialog({ open, onOpenChange }: { open:boolean; onOpenChan
       </div>
       <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>onOpenChange(false)} disabled={submitting}>Annuler</Button><Button onClick={submit} disabled={submitting}>{submitting ? "Enregistrement..." : "Valider la paie"}</Button></DialogFooter>
     </DialogContent></Dialog>
+  );
+}
+
+type RowStatus = "idle" | "processing" | "success" | "error";
+interface BulkRow {
+  employeeId: string;
+  selected: boolean;
+  alreadyPaid: boolean;
+  baseSalary: number;
+  bonuses: number;
+  deductions: number;
+  advances: number;
+  status: RowStatus;
+  error?: string;
+}
+
+/**
+ * Paiement en lot de la paie du mois — traite chaque employé sélectionné
+ * séquentiellement (jamais en parallèle) via la même RPC transactionnelle
+ * que le paiement individuel : deux paiements simultanés sur le même
+ * compte de caisse liraient le même solde disponible avant que l'un des
+ * deux ne soit committé, et pourraient tous les deux passer même si leur
+ * somme dépasse le solde réel. Un échec sur un employé n'annule pas les
+ * autres — chaque paiement est sa propre transaction, comme en réalité.
+ */
+export function BulkPayrollDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const employees = db.list("employees");
+  const payslips = db.list("payslips");
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [method, setMethod] = useState<string>("Cash");
+  const [rows, setRows] = useState<BulkRow[]>([]);
+  const [running, setRunning] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const paidEmployeeIds = useMemo(() => {
+    const ids = new Set<string>();
+    payslips.forEach((p) => { if (p.month === month && (p as any).status !== "reversed") ids.add(p.employeeId); });
+    return ids;
+  }, [payslips, month]);
+
+  useEffect(() => {
+    if (!open) return;
+    setRunning(false);
+    setDone(false);
+    setRows(employees.map((e) => ({
+      employeeId: e.id,
+      selected: !paidEmployeeIds.has(e.id),
+      alreadyPaid: paidEmployeeIds.has(e.id),
+      baseSalary: e.salary || 0,
+      bonuses: 0,
+      deductions: 0,
+      advances: 0,
+      status: "idle",
+    })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, month]);
+
+  const patchRow = (employeeId: string, patch: Partial<BulkRow>) =>
+    setRows((rs) => rs.map((r) => (r.employeeId === employeeId ? { ...r, ...patch } : r)));
+
+  const netOf = (r: BulkRow) => Math.max(0, r.baseSalary + r.bonuses - r.deductions - r.advances);
+  const selectedRows = rows.filter((r) => r.selected && !r.alreadyPaid);
+  const totalNet = selectedRows.reduce((s, r) => s + netOf(r), 0);
+
+  const run = async () => {
+    if (running || selectedRows.length === 0) return;
+    setRunning(true);
+    setDone(false);
+    let ok = 0, failed = 0;
+
+    for (const row of selectedRows) {
+      const emp = employees.find((e) => e.id === row.employeeId);
+      if (!emp) continue;
+      patchRow(row.employeeId, { status: "processing" });
+      const paymentId = crypto.randomUUID();
+      const idempotencyKey = crypto.randomUUID();
+      const paidAt = new Date().toISOString();
+      const net = netOf(row);
+      try {
+        const result = await recordPayrollPayment({
+          paymentId,
+          employeeId: row.employeeId,
+          month,
+          baseSalary: row.baseSalary,
+          bonuses: row.bonuses,
+          deductions: row.deductions,
+          advances: row.advances,
+          currency: "XOF",
+          method,
+          paidAt,
+          idempotencyKey,
+        });
+        patchRow(row.employeeId, { status: "success" });
+        ok++;
+
+        if (result?.document_id) {
+          try {
+            const doc = pdfPayslip({
+              reference: result.document_id,
+              month,
+              paidAt,
+              employee: { firstName: emp.firstName, lastName: emp.lastName, position: emp.position, department: emp.department, phone: emp.phone, email: emp.email },
+              baseSalary: row.baseSalary,
+              bonuses: row.bonuses,
+              deductions: row.deductions,
+              advances: row.advances,
+              net,
+              currency: "XOF",
+              paymentMethod: method,
+            });
+            await attachPayslipDocumentFile({ documentId: result.document_id, file: doc.toFile(`bulletin-${paymentId}.pdf`) });
+          } catch {
+            // Paiement bien enregistré ; seul le PDF n'a pas pu être archivé — pas bloquant pour la suite du lot.
+          }
+        }
+      } catch (error) {
+        failed++;
+        patchRow(row.employeeId, { status: "error", error: error instanceof Error ? error.message : "Échec du paiement." });
+      }
+    }
+
+    setRunning(false);
+    setDone(true);
+    if (failed === 0) toast.success(`${ok} salaire(s) payé(s) avec succès.`);
+    else toast.error(`${ok} payé(s), ${failed} échec(s) — voir le détail ci-dessous.`);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !running && onOpenChange(v)}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Users size={18} /> Paie du mois — paiement en lot</DialogTitle>
+          <DialogDescription>Chaque salaire est payé individuellement et de façon sécurisée (solde vérifié, aucun doublon possible).</DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-wrap gap-3 mt-2">
+          <div className="w-40">
+            <Label>Mois</Label>
+            <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} disabled={running} />
+          </div>
+          <div className="w-44">
+            <Label>Mode de paiement</Label>
+            <Select value={method} onValueChange={setMethod} disabled={running}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-xl border divide-y max-h-[420px] overflow-y-auto">
+          {rows.length === 0 && <p className="p-6 text-sm text-muted-foreground text-center">Aucun employé.</p>}
+          {rows.map((r) => {
+            const emp = employees.find((e) => e.id === r.employeeId);
+            if (!emp) return null;
+            return (
+              <div key={r.employeeId} className={`flex flex-wrap items-center gap-3 p-3 ${r.alreadyPaid ? "opacity-50" : ""}`}>
+                <Checkbox
+                  checked={r.selected}
+                  disabled={r.alreadyPaid || running}
+                  onCheckedChange={(v) => patchRow(r.employeeId, { selected: !!v })}
+                />
+                <div className="min-w-[140px]">
+                  <p className="text-sm font-semibold">{emp.firstName} {emp.lastName}</p>
+                  <p className="text-[11px] text-muted-foreground">{emp.position}</p>
+                </div>
+                {r.alreadyPaid ? (
+                  <Badge variant="secondary" className="ml-auto">Déjà payé ce mois</Badge>
+                ) : (
+                  <>
+                    <div className="w-28"><Label className="text-[10px]">Salaire base</Label><MoneyInput value={r.baseSalary} onChange={(v) => patchRow(r.employeeId, { baseSalary: v })} className="h-8 text-xs" /></div>
+                    <div className="w-24"><Label className="text-[10px]">Primes</Label><MoneyInput value={r.bonuses} onChange={(v) => patchRow(r.employeeId, { bonuses: v })} className="h-8 text-xs" /></div>
+                    <div className="w-24"><Label className="text-[10px]">Retenues</Label><MoneyInput value={r.deductions} onChange={(v) => patchRow(r.employeeId, { deductions: v })} className="h-8 text-xs" /></div>
+                    <div className="w-24"><Label className="text-[10px]">Avances</Label><MoneyInput value={r.advances} onChange={(v) => patchRow(r.employeeId, { advances: v })} className="h-8 text-xs" /></div>
+                    <div className="ml-auto text-right min-w-[90px]">
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold">Net</p>
+                      <p className="font-bold text-sm">{formatFCFA(netOf(r))}</p>
+                    </div>
+                    <div className="w-6 flex justify-center">
+                      {r.status === "processing" && <Loader2 size={16} className="animate-spin text-primary" />}
+                      {r.status === "success" && <Check size={16} className="text-emerald-600" />}
+                      {r.status === "error" && <span title={r.error}><X size={16} className="text-rose-600" /></span>}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-3 p-3 bg-primary/10 rounded-lg flex items-center justify-between">
+          <span className="text-sm inline-flex items-center gap-1.5"><Wallet size={15} /> {selectedRows.length} employé(s) sélectionné(s)</span>
+          <strong className="text-primary text-lg">{formatFCFA(totalNet)}</strong>
+        </div>
+
+        <DialogFooter className="mt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={running}>{done ? "Fermer" : "Annuler"}</Button>
+          <Button onClick={() => void run()} disabled={running || selectedRows.length === 0}>
+            {running ? "Paiement en cours..." : `Payer ${selectedRows.length} salaire(s)`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

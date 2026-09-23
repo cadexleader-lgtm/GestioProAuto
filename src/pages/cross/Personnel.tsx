@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { Plus, Phone, Mail, Clock, Wallet, User } from "lucide-react";
-import { EmployeeDialog, AttendanceDialog, PayrollDialog } from "@/components/forms/HrDialogs";
+import { Plus, Phone, Mail, Clock, Wallet, User, Users } from "lucide-react";
+import { EmployeeDialog, AttendanceDialog, PayrollDialog, BulkPayrollDialog } from "@/components/forms/HrDialogs";
 import { useRole, can } from "@/lib/roles";
 import { useTenant } from "@/lib/tenant";
 
@@ -26,6 +26,7 @@ export function Personnel() {
   const [openEmp, setOpenEmp] = useState(false);
   const [openAtt, setOpenAtt] = useState(false);
   const [openPay, setOpenPay] = useState(false);
+  const [openBulkPay, setOpenBulkPay] = useState(false);
 
   if (role === "terrain") {
     const me = employees.find((e) => e.userId === userId);
@@ -100,8 +101,12 @@ export function Personnel() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => setOpenAtt(true)}><Clock size={16}/> Pointer</Button>
-          <Button variant="outline" onClick={() => setOpenPay(true)} disabled={!canPay}
-            title={canPay ? undefined : "Réservé aux rôles Manager et Patron"}><Wallet size={16}/> Payer salaire</Button>
+          {canPay && (
+            <>
+              <Button variant="outline" onClick={() => setOpenPay(true)}><Wallet size={16}/> Payer salaire</Button>
+              <Button variant="outline" onClick={() => setOpenBulkPay(true)}><Users size={16}/> Paie du mois</Button>
+            </>
+          )}
           <Button onClick={() => setOpenEmp(true)}><Plus size={16} /> Ajouter employé</Button>
         </div>
       </div>
@@ -172,6 +177,7 @@ export function Personnel() {
       <EmployeeDialog open={openEmp} onOpenChange={setOpenEmp} />
       <AttendanceDialog open={openAtt} onOpenChange={setOpenAtt} />
       <PayrollDialog open={openPay} onOpenChange={setOpenPay} />
+      <BulkPayrollDialog open={openBulkPay} onOpenChange={setOpenBulkPay} />
     </div>
   );
 }
