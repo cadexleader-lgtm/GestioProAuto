@@ -15,18 +15,13 @@ import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as InscriptionRouteImport } from './routes/inscription'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as AppIndexRouteImport } from './routes/app.index'
-import { Route as AppCategoriesRouteImport } from './routes/app.categories'
-import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppDepensesRouteImport } from './routes/app.depenses'
 import { Route as AppDocumentsRouteImport } from './routes/app.documents'
 import { Route as AppFournisseursRouteImport } from './routes/app.fournisseurs'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
 import { Route as AppParametresRouteImport } from './routes/app.parametres'
 import { Route as AppPersonnelRouteImport } from './routes/app.personnel'
-import { Route as AppRapportsRouteImport } from './routes/app.rapports'
-import { Route as AppStockRouteImport } from './routes/app.stock'
 import { Route as AppTresorerieRouteImport } from './routes/app.tresorerie'
-import { Route as AppVentesRouteImport } from './routes/app.ventes'
 import { Route as AppAutoClientsRouteImport } from './routes/app.auto.clients'
 import { Route as AppAutoCreditsRouteImport } from './routes/app.auto.credits'
 import { Route as AppAutoGpsRouteImport } from './routes/app.auto.gps'
@@ -35,14 +30,6 @@ import { Route as AppAutoMaintenanceRouteImport } from './routes/app.auto.mainte
 import { Route as AppAutoRapportsRouteImport } from './routes/app.auto.rapports'
 import { Route as AppAutoVehiculesRouteImport } from './routes/app.auto.vehicules'
 import { Route as AppAutoVentesRouteImport } from './routes/app.auto.ventes'
-import { Route as AppElecCreditsRouteImport } from './routes/app.elec.credits'
-import { Route as AppElecFacturationRouteImport } from './routes/app.elec.facturation'
-import { Route as AppElecGarantiesRouteImport } from './routes/app.elec.garanties'
-import { Route as AppRestoCommandesRouteImport } from './routes/app.resto.commandes'
-import { Route as AppRestoCuisineRouteImport } from './routes/app.resto.cuisine'
-import { Route as AppRestoMenuRouteImport } from './routes/app.resto.menu'
-import { Route as AppRestoReservationsRouteImport } from './routes/app.resto.reservations'
-import { Route as AppRestoTablesRouteImport } from './routes/app.resto.tables'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -72,16 +59,6 @@ const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCategoriesRoute = AppCategoriesRouteImport.update({
-  id: '/categories',
-  path: '/categories',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppClientsRoute = AppClientsRouteImport.update({
-  id: '/clients',
-  path: '/clients',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDepensesRoute = AppDepensesRouteImport.update({
@@ -114,24 +91,9 @@ const AppPersonnelRoute = AppPersonnelRouteImport.update({
   path: '/personnel',
   getParentRoute: () => AppRoute,
 } as any)
-const AppRapportsRoute = AppRapportsRouteImport.update({
-  id: '/rapports',
-  path: '/rapports',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppStockRoute = AppStockRouteImport.update({
-  id: '/stock',
-  path: '/stock',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppTresorerieRoute = AppTresorerieRouteImport.update({
   id: '/tresorerie',
   path: '/tresorerie',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppVentesRoute = AppVentesRouteImport.update({
-  id: '/ventes',
-  path: '/ventes',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAutoClientsRoute = AppAutoClientsRouteImport.update({
@@ -174,46 +136,6 @@ const AppAutoVentesRoute = AppAutoVentesRouteImport.update({
   path: '/auto/ventes',
   getParentRoute: () => AppRoute,
 } as any)
-const AppElecCreditsRoute = AppElecCreditsRouteImport.update({
-  id: '/elec/credits',
-  path: '/elec/credits',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppElecFacturationRoute = AppElecFacturationRouteImport.update({
-  id: '/elec/facturation',
-  path: '/elec/facturation',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppElecGarantiesRoute = AppElecGarantiesRouteImport.update({
-  id: '/elec/garanties',
-  path: '/elec/garanties',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppRestoCommandesRoute = AppRestoCommandesRouteImport.update({
-  id: '/resto/commandes',
-  path: '/resto/commandes',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppRestoCuisineRoute = AppRestoCuisineRouteImport.update({
-  id: '/resto/cuisine',
-  path: '/resto/cuisine',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppRestoMenuRoute = AppRestoMenuRouteImport.update({
-  id: '/resto/menu',
-  path: '/resto/menu',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppRestoReservationsRoute = AppRestoReservationsRouteImport.update({
-  id: '/resto/reservations',
-  path: '/resto/reservations',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppRestoTablesRoute = AppRestoTablesRouteImport.update({
-  id: '/resto/tables',
-  path: '/resto/tables',
-  getParentRoute: () => AppRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -221,18 +143,13 @@ export interface FileRoutesByFullPath {
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
-  '/app/categories': typeof AppCategoriesRoute
-  '/app/clients': typeof AppClientsRoute
   '/app/depenses': typeof AppDepensesRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/fournisseurs': typeof AppFournisseursRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/parametres': typeof AppParametresRoute
   '/app/personnel': typeof AppPersonnelRoute
-  '/app/rapports': typeof AppRapportsRoute
-  '/app/stock': typeof AppStockRoute
   '/app/tresorerie': typeof AppTresorerieRoute
-  '/app/ventes': typeof AppVentesRoute
   '/app/': typeof AppIndexRoute
   '/app/auto/clients': typeof AppAutoClientsRoute
   '/app/auto/credits': typeof AppAutoCreditsRoute
@@ -242,32 +159,19 @@ export interface FileRoutesByFullPath {
   '/app/auto/rapports': typeof AppAutoRapportsRoute
   '/app/auto/vehicules': typeof AppAutoVehiculesRoute
   '/app/auto/ventes': typeof AppAutoVentesRoute
-  '/app/elec/credits': typeof AppElecCreditsRoute
-  '/app/elec/facturation': typeof AppElecFacturationRoute
-  '/app/elec/garanties': typeof AppElecGarantiesRoute
-  '/app/resto/commandes': typeof AppRestoCommandesRoute
-  '/app/resto/cuisine': typeof AppRestoCuisineRoute
-  '/app/resto/menu': typeof AppRestoMenuRoute
-  '/app/resto/reservations': typeof AppRestoReservationsRoute
-  '/app/resto/tables': typeof AppRestoTablesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
-  '/app/categories': typeof AppCategoriesRoute
-  '/app/clients': typeof AppClientsRoute
   '/app/depenses': typeof AppDepensesRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/fournisseurs': typeof AppFournisseursRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/parametres': typeof AppParametresRoute
   '/app/personnel': typeof AppPersonnelRoute
-  '/app/rapports': typeof AppRapportsRoute
-  '/app/stock': typeof AppStockRoute
   '/app/tresorerie': typeof AppTresorerieRoute
-  '/app/ventes': typeof AppVentesRoute
   '/app': typeof AppIndexRoute
   '/app/auto/clients': typeof AppAutoClientsRoute
   '/app/auto/credits': typeof AppAutoCreditsRoute
@@ -277,14 +181,6 @@ export interface FileRoutesByTo {
   '/app/auto/rapports': typeof AppAutoRapportsRoute
   '/app/auto/vehicules': typeof AppAutoVehiculesRoute
   '/app/auto/ventes': typeof AppAutoVentesRoute
-  '/app/elec/credits': typeof AppElecCreditsRoute
-  '/app/elec/facturation': typeof AppElecFacturationRoute
-  '/app/elec/garanties': typeof AppElecGarantiesRoute
-  '/app/resto/commandes': typeof AppRestoCommandesRoute
-  '/app/resto/cuisine': typeof AppRestoCuisineRoute
-  '/app/resto/menu': typeof AppRestoMenuRoute
-  '/app/resto/reservations': typeof AppRestoReservationsRoute
-  '/app/resto/tables': typeof AppRestoTablesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -293,18 +189,13 @@ export interface FileRoutesById {
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
-  '/app/categories': typeof AppCategoriesRoute
-  '/app/clients': typeof AppClientsRoute
   '/app/depenses': typeof AppDepensesRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/fournisseurs': typeof AppFournisseursRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/parametres': typeof AppParametresRoute
   '/app/personnel': typeof AppPersonnelRoute
-  '/app/rapports': typeof AppRapportsRoute
-  '/app/stock': typeof AppStockRoute
   '/app/tresorerie': typeof AppTresorerieRoute
-  '/app/ventes': typeof AppVentesRoute
   '/app/': typeof AppIndexRoute
   '/app/auto/clients': typeof AppAutoClientsRoute
   '/app/auto/credits': typeof AppAutoCreditsRoute
@@ -314,14 +205,6 @@ export interface FileRoutesById {
   '/app/auto/rapports': typeof AppAutoRapportsRoute
   '/app/auto/vehicules': typeof AppAutoVehiculesRoute
   '/app/auto/ventes': typeof AppAutoVentesRoute
-  '/app/elec/credits': typeof AppElecCreditsRoute
-  '/app/elec/facturation': typeof AppElecFacturationRoute
-  '/app/elec/garanties': typeof AppElecGarantiesRoute
-  '/app/resto/commandes': typeof AppRestoCommandesRoute
-  '/app/resto/cuisine': typeof AppRestoCuisineRoute
-  '/app/resto/menu': typeof AppRestoMenuRoute
-  '/app/resto/reservations': typeof AppRestoReservationsRoute
-  '/app/resto/tables': typeof AppRestoTablesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -331,18 +214,13 @@ export interface FileRouteTypes {
     | '/connexion'
     | '/inscription'
     | '/reinitialiser-mot-de-passe'
-    | '/app/categories'
-    | '/app/clients'
     | '/app/depenses'
     | '/app/documents'
     | '/app/fournisseurs'
     | '/app/onboarding'
     | '/app/parametres'
     | '/app/personnel'
-    | '/app/rapports'
-    | '/app/stock'
     | '/app/tresorerie'
-    | '/app/ventes'
     | '/app/'
     | '/app/auto/clients'
     | '/app/auto/credits'
@@ -352,32 +230,19 @@ export interface FileRouteTypes {
     | '/app/auto/rapports'
     | '/app/auto/vehicules'
     | '/app/auto/ventes'
-    | '/app/elec/credits'
-    | '/app/elec/facturation'
-    | '/app/elec/garanties'
-    | '/app/resto/commandes'
-    | '/app/resto/cuisine'
-    | '/app/resto/menu'
-    | '/app/resto/reservations'
-    | '/app/resto/tables'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/connexion'
     | '/inscription'
     | '/reinitialiser-mot-de-passe'
-    | '/app/categories'
-    | '/app/clients'
     | '/app/depenses'
     | '/app/documents'
     | '/app/fournisseurs'
     | '/app/onboarding'
     | '/app/parametres'
     | '/app/personnel'
-    | '/app/rapports'
-    | '/app/stock'
     | '/app/tresorerie'
-    | '/app/ventes'
     | '/app'
     | '/app/auto/clients'
     | '/app/auto/credits'
@@ -387,14 +252,6 @@ export interface FileRouteTypes {
     | '/app/auto/rapports'
     | '/app/auto/vehicules'
     | '/app/auto/ventes'
-    | '/app/elec/credits'
-    | '/app/elec/facturation'
-    | '/app/elec/garanties'
-    | '/app/resto/commandes'
-    | '/app/resto/cuisine'
-    | '/app/resto/menu'
-    | '/app/resto/reservations'
-    | '/app/resto/tables'
   id:
     | '__root__'
     | '/'
@@ -402,18 +259,13 @@ export interface FileRouteTypes {
     | '/connexion'
     | '/inscription'
     | '/reinitialiser-mot-de-passe'
-    | '/app/categories'
-    | '/app/clients'
     | '/app/depenses'
     | '/app/documents'
     | '/app/fournisseurs'
     | '/app/onboarding'
     | '/app/parametres'
     | '/app/personnel'
-    | '/app/rapports'
-    | '/app/stock'
     | '/app/tresorerie'
-    | '/app/ventes'
     | '/app/'
     | '/app/auto/clients'
     | '/app/auto/credits'
@@ -423,14 +275,6 @@ export interface FileRouteTypes {
     | '/app/auto/rapports'
     | '/app/auto/vehicules'
     | '/app/auto/ventes'
-    | '/app/elec/credits'
-    | '/app/elec/facturation'
-    | '/app/elec/garanties'
-    | '/app/resto/commandes'
-    | '/app/resto/cuisine'
-    | '/app/resto/menu'
-    | '/app/resto/reservations'
-    | '/app/resto/tables'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -485,20 +329,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/categories': {
-      id: '/app/categories'
-      path: '/categories'
-      fullPath: '/app/categories'
-      preLoaderRoute: typeof AppCategoriesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/clients': {
-      id: '/app/clients'
-      path: '/clients'
-      fullPath: '/app/clients'
-      preLoaderRoute: typeof AppClientsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/depenses': {
       id: '/app/depenses'
       path: '/depenses'
@@ -541,32 +371,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPersonnelRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/rapports': {
-      id: '/app/rapports'
-      path: '/rapports'
-      fullPath: '/app/rapports'
-      preLoaderRoute: typeof AppRapportsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/stock': {
-      id: '/app/stock'
-      path: '/stock'
-      fullPath: '/app/stock'
-      preLoaderRoute: typeof AppStockRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/tresorerie': {
       id: '/app/tresorerie'
       path: '/tresorerie'
       fullPath: '/app/tresorerie'
       preLoaderRoute: typeof AppTresorerieRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/ventes': {
-      id: '/app/ventes'
-      path: '/ventes'
-      fullPath: '/app/ventes'
-      preLoaderRoute: typeof AppVentesRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/auto/clients': {
@@ -625,78 +434,17 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAutoVentesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/elec/credits': {
-      id: '/app/elec/credits'
-      path: '/elec/credits'
-      fullPath: '/app/elec/credits'
-      preLoaderRoute: typeof AppElecCreditsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/elec/facturation': {
-      id: '/app/elec/facturation'
-      path: '/elec/facturation'
-      fullPath: '/app/elec/facturation'
-      preLoaderRoute: typeof AppElecFacturationRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/elec/garanties': {
-      id: '/app/elec/garanties'
-      path: '/elec/garanties'
-      fullPath: '/app/elec/garanties'
-      preLoaderRoute: typeof AppElecGarantiesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/resto/commandes': {
-      id: '/app/resto/commandes'
-      path: '/resto/commandes'
-      fullPath: '/app/resto/commandes'
-      preLoaderRoute: typeof AppRestoCommandesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/resto/cuisine': {
-      id: '/app/resto/cuisine'
-      path: '/resto/cuisine'
-      fullPath: '/app/resto/cuisine'
-      preLoaderRoute: typeof AppRestoCuisineRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/resto/menu': {
-      id: '/app/resto/menu'
-      path: '/resto/menu'
-      fullPath: '/app/resto/menu'
-      preLoaderRoute: typeof AppRestoMenuRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/resto/reservations': {
-      id: '/app/resto/reservations'
-      path: '/resto/reservations'
-      fullPath: '/app/resto/reservations'
-      preLoaderRoute: typeof AppRestoReservationsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/resto/tables': {
-      id: '/app/resto/tables'
-      path: '/resto/tables'
-      fullPath: '/app/resto/tables'
-      preLoaderRoute: typeof AppRestoTablesRouteImport
-      parentRoute: typeof AppRoute
-    }
   }
 }
 
 interface AppRouteChildren {
-  AppCategoriesRoute: typeof AppCategoriesRoute
-  AppClientsRoute: typeof AppClientsRoute
   AppDepensesRoute: typeof AppDepensesRoute
   AppDocumentsRoute: typeof AppDocumentsRoute
   AppFournisseursRoute: typeof AppFournisseursRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppParametresRoute: typeof AppParametresRoute
   AppPersonnelRoute: typeof AppPersonnelRoute
-  AppRapportsRoute: typeof AppRapportsRoute
-  AppStockRoute: typeof AppStockRoute
   AppTresorerieRoute: typeof AppTresorerieRoute
-  AppVentesRoute: typeof AppVentesRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAutoClientsRoute: typeof AppAutoClientsRoute
   AppAutoCreditsRoute: typeof AppAutoCreditsRoute
@@ -706,29 +454,16 @@ interface AppRouteChildren {
   AppAutoRapportsRoute: typeof AppAutoRapportsRoute
   AppAutoVehiculesRoute: typeof AppAutoVehiculesRoute
   AppAutoVentesRoute: typeof AppAutoVentesRoute
-  AppElecCreditsRoute: typeof AppElecCreditsRoute
-  AppElecFacturationRoute: typeof AppElecFacturationRoute
-  AppElecGarantiesRoute: typeof AppElecGarantiesRoute
-  AppRestoCommandesRoute: typeof AppRestoCommandesRoute
-  AppRestoCuisineRoute: typeof AppRestoCuisineRoute
-  AppRestoMenuRoute: typeof AppRestoMenuRoute
-  AppRestoReservationsRoute: typeof AppRestoReservationsRoute
-  AppRestoTablesRoute: typeof AppRestoTablesRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppCategoriesRoute: AppCategoriesRoute,
-  AppClientsRoute: AppClientsRoute,
   AppDepensesRoute: AppDepensesRoute,
   AppDocumentsRoute: AppDocumentsRoute,
   AppFournisseursRoute: AppFournisseursRoute,
   AppOnboardingRoute: AppOnboardingRoute,
   AppParametresRoute: AppParametresRoute,
   AppPersonnelRoute: AppPersonnelRoute,
-  AppRapportsRoute: AppRapportsRoute,
-  AppStockRoute: AppStockRoute,
   AppTresorerieRoute: AppTresorerieRoute,
-  AppVentesRoute: AppVentesRoute,
   AppIndexRoute: AppIndexRoute,
   AppAutoClientsRoute: AppAutoClientsRoute,
   AppAutoCreditsRoute: AppAutoCreditsRoute,
@@ -738,14 +473,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppAutoRapportsRoute: AppAutoRapportsRoute,
   AppAutoVehiculesRoute: AppAutoVehiculesRoute,
   AppAutoVentesRoute: AppAutoVentesRoute,
-  AppElecCreditsRoute: AppElecCreditsRoute,
-  AppElecFacturationRoute: AppElecFacturationRoute,
-  AppElecGarantiesRoute: AppElecGarantiesRoute,
-  AppRestoCommandesRoute: AppRestoCommandesRoute,
-  AppRestoCuisineRoute: AppRestoCuisineRoute,
-  AppRestoMenuRoute: AppRestoMenuRoute,
-  AppRestoReservationsRoute: AppRestoReservationsRoute,
-  AppRestoTablesRoute: AppRestoTablesRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

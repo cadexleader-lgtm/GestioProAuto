@@ -9,7 +9,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { useGetCompany, useGetDashboard } from "@workspace/api-client-react";
+import { useGetCompany } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import { getSubSectorConfig, getCrossModules } from "@/lib/sectors";
 import logoIcon from "@/assets/gestiopro-icon.png";
@@ -30,18 +30,15 @@ const ICON_MAP: Record<string, LucideIcon> = {
 export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const location = useLocation({ select: (s) => s.pathname });
   const { data: company } = useGetCompany();
-  const { data: dashboard } = useGetDashboard();
   const sub = getSubSectorConfig(company?.subSectorId);
   const [hovered, setHovered] = useState(false);
 
-  const alertsCount = dashboard?.lowStock?.length || 0;
   // Mobile: expanded when isOpen. Desktop: expanded on hover.
   const expanded = isOpen || hovered;
 
-  const renderItem = (item: { href: string; iconName: string; label: string; badge?: string }) => {
+  const renderItem = (item: { href: string; iconName: string; label: string }) => {
     const Icon = ICON_MAP[item.iconName] ?? LayoutDashboard;
     const active = location === item.href;
-    const showBadge = item.badge === "alerts" && alertsCount > 0;
     return (
       <Link
         key={item.href}
@@ -79,14 +76,6 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         >
           {item.label}
         </span>
-        {showBadge && expanded && (
-          <span className="shrink-0 rounded-md bg-destructive/15 px-1.5 py-0.5 text-[10px] font-bold text-destructive">
-            {alertsCount}
-          </span>
-        )}
-        {showBadge && !expanded && (
-          <span className="hidden md:block absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-sidebar" />
-        )}
       </Link>
     );
   };

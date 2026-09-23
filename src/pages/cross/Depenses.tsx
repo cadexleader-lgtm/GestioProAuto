@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { Receipt, Plus, Image as ImageIcon, Search, Wrench, Users, Car, Store, TrendingDown, Wallet } from "lucide-react";
+import { Receipt, Plus, Image as ImageIcon, Search, Wrench, Users, Car, TrendingDown, Wallet } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { ExpenseDialog } from "@/components/forms/FinanceDialogs";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
@@ -19,15 +19,13 @@ type Period = "day" | "month" | "year" | "all";
 const SOURCE_META: Record<string, { label: string; icon: React.ReactNode; cls: string }> = {
   Automobile: { label: "Automobile", icon: <Car size={12} />, cls: "bg-indigo-50 text-indigo-700" },
   RH:         { label: "Personnel",  icon: <Users size={12} />, cls: "bg-violet-50 text-violet-700" },
-  Boutique:   { label: "Boutique",   icon: <Store size={12} />, cls: "bg-emerald-50 text-emerald-700" },
   Manuel:     { label: "Saisie",     icon: <Receipt size={12} />, cls: "bg-slate-100 text-slate-600" },
 };
 
 function sourceOf(e: any): string {
   if (e.source && SOURCE_META[e.source]) return e.source;
   if (e.category === "Salaires") return "RH";
-  if (e.category === "Maintenance" || e.category === "Achat véhicule") return "Automobile";
-  if (e.category === "Achat stock") return "Boutique";
+  if (e.category === "Maintenance" || e.category === "Achat véhicule" || e.category === "Achat stock") return "Automobile";
   return "Manuel";
 }
 

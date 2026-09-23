@@ -251,7 +251,7 @@ export function VehiculesDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-display font-semibold inline-flex items-center gap-2"><Users size={16} className="text-indigo-600" /> Top clients</h3>
-              <Link to="/app/clients" className="text-xs text-primary hover:underline inline-flex items-center gap-1">Voir tout <ArrowRight size={12} /></Link>
+              <Link to="/app/auto/clients" className="text-xs text-primary hover:underline inline-flex items-center gap-1">Voir tout <ArrowRight size={12} /></Link>
             </div>
             <div className="space-y-3">
               {topCustomers.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Aucun client</p>}

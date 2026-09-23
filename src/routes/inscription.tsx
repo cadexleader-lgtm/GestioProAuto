@@ -1,13 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, Check, ShoppingBag, Tv, Car, UtensilsCrossed, type LucideIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import logoIcon from "@/assets/gestiopro-icon.png";
 import { createCompany } from "@/lib/tenant";
-import { SUB_SECTORS_ARRAY, type SubSectorId } from "@/lib/sectors";
-import { useUpdateCompany } from "@workspace/api-client-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 
@@ -15,26 +13,16 @@ export const Route = createFileRoute("/inscription")({
   head: () => ({
     meta: [
       { title: "Créer un compte — GestioPro" },
-      { name: "description", content: "Créez votre compte GestioPro en 2 étapes : activité, infos entreprise." },
+      { name: "description", content: "Créez votre compte GestioPro Auto : les infos de votre entreprise." },
     ],
   }),
   component: SignupPage,
 });
 
-const SUB_ICONS: Record<SubSectorId, LucideIcon> = {
-  boutique: ShoppingBag,
-  electromenager: Tv,
-  vehicules: Car,
-  restaurant: UtensilsCrossed,
-};
-
 function SignupPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const updateCompany = useUpdateCompany();
 
-  const [step, setStep] = useState<1 | 2>(1);
-  const [subSectorId, setSubSectorId] = useState<SubSectorId | null>(null);
   const [form, setForm] = useState({
     company: "",
     fullName: "",
@@ -59,7 +47,6 @@ function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subSectorId) { toast.error("Veuillez choisir votre activité"); return; }
     if (!form.company || !form.email || !form.password) { toast.error("Champs requis manquants"); return; }
     if (form.password.length < 8) { toast.error("Mot de passe : 8 caractères minimum"); return; }
 
@@ -81,16 +68,10 @@ function SignupPage() {
       return;
     }
 
-    const sector = subSectorId.startsWith("auto")
-      ? "auto"
-      : subSectorId.startsWith("resto")
-        ? "resto"
-        : "commerce";
-
     const pending = {
       name: form.company,
-      sector,
-      subSector: subSectorId,
+      sector: "auto",
+      subSector: "vehicules",
       phone: form.phone,
       address: [form.address, form.city].filter(Boolean).join(", "),
       fullName: form.fullName || form.company,
@@ -126,81 +107,16 @@ function SignupPage() {
           <span className="font-display text-lg font-bold">GestioPro</span>
         </Link>
 
-        {/* Stepper */}
-        <div className="mx-auto mt-10 flex w-full max-w-sm items-center gap-3">
-          {[1, 2].map((s) => (
-            <div key={s} className="flex flex-1 items-center gap-3">
-              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition ${
-                step >= s ? "bg-primary text-white shadow-md shadow-primary/30" : "bg-slate-200 text-slate-400"
-              }`}>
-                {step > s ? <Check size={14} /> : s}
-              </div>
-              {s < 2 && (<div className={`h-0.5 flex-1 rounded-full ${step > s ? "bg-primary" : "bg-slate-200"}`} />)}
-            </div>
-          ))}
-        </div>
-
         <motion.div
-          key={step}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="mx-auto mt-8 w-full"
+          className="mx-auto mt-10 w-full"
         >
-          {step === 1 && (
-            <div>
-              <div className="text-center">
-                <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Quelle est votre activité ?</h1>
-                <p className="mt-3 text-sm text-slate-500">GestioPro activera les modules métiers adaptés.</p>
-              </div>
-
-              <div className="mt-10 grid gap-3 sm:grid-cols-2">
-                {SUB_SECTORS_ARRAY.map((s) => {
-                  const Icon = SUB_ICONS[s.id];
-                  const active = subSectorId === s.id;
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => setSubSectorId(s.id)}
-                      className={`group flex items-start gap-4 rounded-xl border-2 p-5 text-left transition ${
-                        active
-                          ? "border-primary bg-primary/5 shadow-md shadow-primary/10"
-                          : "border-slate-200 bg-white hover:border-primary/40 hover:bg-slate-50"
-                      }`}
-                    >
-                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition ${
-                        active ? "bg-primary text-white" : "bg-slate-100 text-primary"
-                      }`}>
-                        <Icon size={22} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-display text-base font-semibold">{s.label}</p>
-                        <p className="mt-1 text-xs text-slate-500">{s.description}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                onClick={() => subSectorId && setStep(2)}
-                disabled={!subSectorId}
-                className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
-              >
-                Continuer <ArrowRight size={16} />
-              </button>
-            </div>
-          )}
-
-          {step === 2 && (
             <form onSubmit={handleSubmit}>
-              <button type="button" onClick={() => setStep(1)} className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-900">
-                <ArrowLeft size={14} /> Retour
-              </button>
-              <div className="mt-4 text-center">
+              <div className="text-center">
                 <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Votre entreprise</h1>
-                <p className="mt-3 text-sm text-slate-500">Quelques infos pour configurer votre espace.</p>
+                <p className="mt-3 text-sm text-slate-500">Quelques infos pour configurer votre espace GestioPro Auto.</p>
               </div>
 
               <div className="mt-8 space-y-4">
@@ -256,7 +172,6 @@ function SignupPage() {
                 Déjà un compte ? <Link to="/connexion" className="font-medium text-primary hover:underline">Se connecter</Link>
               </p>
             </form>
-          )}
         </motion.div>
       </div>
     </div>

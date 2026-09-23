@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import {
-  ArrowRight, Check, ShoppingBag, Tv, Car, UtensilsCrossed,
+  ArrowRight, Check, Car, KeyRound, CreditCard, Wrench,
   BarChart3, Wallet, Boxes, Users, Truck, Receipt, Sparkles, ShieldCheck,
 } from "lucide-react";
 import logoIcon from "@/assets/gestiopro-icon.png";
@@ -9,10 +9,10 @@ import logoIcon from "@/assets/gestiopro-icon.png";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "GestioPro — L'ERP des PME africaines (Commerce, Restaurant, Véhicules, Électroménager)" },
-      { name: "description", content: "GestioPro : la plateforme tout-en-un pour gérer ventes, stock, clients, fournisseurs, personnel et finances. Pensée pour le commerce africain." },
-      { property: "og:title", content: "GestioPro — L'ERP des PME africaines (Commerce, Restaurant, Véhicules, Électroménager)" },
-      { property: "og:description", content: "GestioPro : la plateforme tout-en-un pour gérer ventes, stock, clients, fournisseurs, personnel et finances. Pensée pour le commerce africain." },
+      { title: "GestioPro Auto — L'ERP des concessionnaires et loueurs de véhicules africains" },
+      { name: "description", content: "GestioPro Auto : la plateforme tout-en-un pour gérer ventes, crédits, locations, maintenance, clients, fournisseurs, personnel et finances de votre parc automobile." },
+      { property: "og:title", content: "GestioPro Auto — L'ERP des concessionnaires et loueurs de véhicules africains" },
+      { property: "og:description", content: "GestioPro Auto : la plateforme tout-en-un pour gérer ventes, crédits, locations, maintenance, clients, fournisseurs, personnel et finances de votre parc automobile." },
       { property: "og:type", content: "website" },
     ],
     links: [{ rel: "canonical", href: "/" }],
@@ -20,11 +20,11 @@ export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
-const subSectors = [
-  { icon: ShoppingBag,     label: "Boutique & Magasin",     desc: "POS, caisse, stock, fidélité." },
-  { icon: Tv,              label: "Vente d'Électroménager", desc: "Garanties, SAV, facturation pro." },
-  { icon: Car,             label: "Vente de Véhicules",     desc: "Parc, finance, GPS, location." },
-  { icon: UtensilsCrossed, label: "Restaurant & Bar Lounge", desc: "Tables, cuisine, serveurs." },
+const autoModules = [
+  { icon: Car,       label: "Parc véhicules",   desc: "Fiche complète, coût de revient, statuts." },
+  { icon: CreditCard, label: "Vente & crédit",  desc: "Vente cash ou échelonnée, échéancier auto." },
+  { icon: KeyRound,  label: "Location",         desc: "Contrats, cautions, retours, relances." },
+  { icon: Wrench,    label: "Maintenance",      desc: "Suivi garage, coûts pièces & main-d'œuvre." },
 ];
 
 const cross = [
@@ -79,14 +79,14 @@ function LandingPage() {
       <section className="mx-auto max-w-7xl px-4 pt-16 pb-20 sm:px-6 sm:pt-24">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mx-auto max-w-3xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold text-primary">
-            <Sparkles size={14} /> ERP moderne · Pensé pour le commerce africain
+            <Sparkles size={14} /> ERP moderne · Pensé pour l'automobile africaine
           </div>
           <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-6xl lg:text-7xl">
-            Gérez toute votre PME{" "}
+            Gérez tout votre parc auto{" "}
             <span className="bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">depuis un seul logiciel</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base text-slate-600 sm:text-lg">
-            Ventes, stock, clients, fournisseurs, personnel, dépenses, trésorerie — GestioPro est l'ERP moderne pour boutiques, restaurants, vendeurs d'électroménager et de véhicules.
+            Vente, crédit, location, maintenance, clients, fournisseurs, personnel, dépenses, trésorerie — GestioPro Auto est l'ERP moderne pour les concessionnaires et loueurs de véhicules.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link to="/inscription" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-white shadow-xl shadow-primary/30 transition hover:bg-primary/90 sm:w-auto">
@@ -167,15 +167,15 @@ function LandingPage() {
       
 
 
-      {/* SOUS-SECTEURS */}
+      {/* MODULES AUTO */}
       <section id="activites" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary">4 activités prises en charge</p>
-          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">Une plateforme, adaptée à votre métier</h2>
-          <p className="mt-4 text-base text-slate-600">L'interface s'adapte automatiquement à votre activité dès l'inscription.</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary">Conçu pour l'automobile</p>
+          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">Tout votre parc, une seule plateforme</h2>
+          <p className="mt-4 text-base text-slate-600">De l'achat du véhicule à sa vente ou sa location, chaque étape est suivie et chiffrée.</p>
         </div>
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {subSectors.map((s, i) => (
+          {autoModules.map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.3, delay: i * 0.06 }}
               className="group rounded-2xl border border-slate-200 bg-white p-6 transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
               <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition">

@@ -1,7 +1,7 @@
 import { unbindCompany } from "@/lib/demo-store";
 import { resetTenant } from "@/lib/tenant";
 import { useState, useEffect } from "react";
-import { Menu, Search, Plus, User, Settings, LogOut, HelpCircle, Maximize2, Moon, FileText, ChevronDown } from "lucide-react";
+import { Menu, Search, User, Settings, LogOut, HelpCircle, Maximize2, Moon, FileText, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,11 +21,9 @@ import {
 
 interface TopbarProps {
   onMenuClick: () => void;
-  onNewSale: () => void;
-  showQuickSale?: boolean;
 }
 
-export function Topbar({ onMenuClick, onNewSale, showQuickSale = true }: TopbarProps) {
+export function Topbar({ onMenuClick }: TopbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const { data: company } = useGetCompany();
   const navigate = useNavigate();
@@ -84,15 +82,6 @@ export function Topbar({ onMenuClick, onNewSale, showQuickSale = true }: TopbarP
           <span className="text-xs font-medium text-muted-foreground">En ligne</span>
         </div>
 
-        {showQuickSale && (
-          <button
-            onClick={onNewSale}
-            className="hidden md:inline-flex items-center gap-2 h-9 px-3 rounded-lg bg-primary text-primary-foreground text-sm font-semibold shadow-sm hover:opacity-90 transition"
-          >
-            <Plus size={16} /> Nouvelle vente
-          </button>
-        )}
-
         <Link
           to="/app/documents"
           className="hidden md:inline-flex items-center justify-center h-9 w-9 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/50 transition"
@@ -104,15 +93,6 @@ export function Topbar({ onMenuClick, onNewSale, showQuickSale = true }: TopbarP
         <InstallAppButton className="hidden md:inline-flex h-9" />
 
         <NotificationsBell />
-
-        {showQuickSale && (
-          <button
-            onClick={onNewSale}
-            className="md:hidden w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md shadow-primary/20"
-          >
-            <Plus size={18} />
-          </button>
-        )}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

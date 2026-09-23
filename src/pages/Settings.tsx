@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect } from "react";
-import { SUB_SECTORS_ARRAY } from "@/lib/sectors";
 import { db } from "@/lib/demo-store";
 import { Database, Trash2, Shield, Volume2 } from "lucide-react";
 import { ROLES, useRole, can } from "@/lib/roles";
@@ -37,7 +36,6 @@ const schema = z.object({
   country: z.string().min(1, "Requis"),
   city: z.string().min(1, "Requis"),
   currency: z.string().min(1, "Requis"),
-  subSectorId: z.string().min(1, "Requis"),
 });
 
 export function Settings() {
@@ -53,7 +51,7 @@ export function Settings() {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: "", ownerName: "", email: "", phone: "", country: "Sénégal", city: "Dakar", currency: "FCFA", subSectorId: "boutique",
+      name: "", ownerName: "", email: "", phone: "", country: "Sénégal", city: "Dakar", currency: "FCFA",
     },
   });
 
@@ -67,14 +65,13 @@ export function Settings() {
         country: company.country,
         city: company.city,
         currency: company.currency,
-        subSectorId: company.subSectorId || "boutique",
       });
     }
   }, [company, form]);
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
     try {
-      await updateCompany.mutateAsync({ data: { ...data, sectorId: "commerce" } });
+      await updateCompany.mutateAsync({ data: { ...data, sectorId: "auto", subSectorId: "vehicules" } });
       toast.success("Paramètres mis à jour");
       queryClient.invalidateQueries({ queryKey: getGetCompanyQueryKey() });
     } catch {
@@ -141,16 +138,6 @@ export function Settings() {
                         <SelectItem value="FCFA">FCFA</SelectItem>
                         <SelectItem value="USD">USD</SelectItem>
                         <SelectItem value="EUR">EUR</SelectItem>
-                      </SelectContent>
-                    </Select><FormMessage/>
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="subSectorId" render={({ field }) => (
-                  <FormItem><FormLabel>Activité</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        {SUB_SECTORS_ARRAY.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
                       </SelectContent>
                     </Select><FormMessage/>
                   </FormItem>

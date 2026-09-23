@@ -109,8 +109,6 @@ export function NotificationCenter() {
   const rentals = useCollection("rentals");
   const vehicles = useCollection("vehicles");
   const vehicleSales = useCollection("vehicleSales");
-  const products = useCollection("products");
-  const appliances = useCollection("appliances");
   const maintenances = useCollection("vehicleMaintenances");
   const expenses = useCollection("expenses");
 
@@ -295,22 +293,6 @@ export function NotificationCenter() {
       });
     });
 
-    /* --- Stock bas --- */
-    [...products, ...appliances].forEach((p: any) => {
-      const min = typeof p.minStock === "number" ? p.minStock : 3;
-      if (typeof p.stock !== "number" || p.stock > min) return;
-      list.push({
-        key: `stock-${p.id}-${p.stock}`,
-        kind: "stock",
-        href: "/app/stock",
-        severity: p.stock === 0 ? "danger" : "warning",
-        at: new Date().toISOString(),
-        title: `${p.stock === 0 ? "Rupture" : "Stock bas"} — ${p.name}`,
-        description: `Reste ${p.stock} unité(s)`,
-        toast: { text: `📦 ${p.stock === 0 ? "Rupture" : "Stock bas"} — ${p.name}`, freq: 660 },
-      });
-    });
-
     // Publication : les plus anciens d'abord pour un ordre cohérent.
     list.sort((a, b) => +new Date(a.at) - +new Date(b.at));
     let toasted = 0;
@@ -326,7 +308,7 @@ export function NotificationCenter() {
         beep(c.toast.freq, 120);
       }
     });
-  }, [cash, credits, payments, rentals, vehicles, vehicleSales, products, appliances, maintenances, expenses]);
+  }, [cash, credits, payments, rentals, vehicles, vehicleSales, maintenances, expenses]);
 
   return null;
 }

@@ -8,19 +8,34 @@ import {
   suppliers as seedSuppliers, employees as seedEmployees,
   expenses as seedExpenses, cashMovements as seedCash,
   vehicles as seedVehicles, vehicleCredits as seedVCredits, rentals as seedRentals,
-  appliances as seedAppliances, warranties as seedWarranties, proInvoices as seedProInvoices, applianceCredits as seedACredits,
   type Supplier, type Employee, type Expense, type CashMovement,
   type Vehicle, type VehicleCredit, type Rental, type RentalPayment,
-  type ApplianceProduct, type Warranty, type ProInvoice, type ApplianceCredit,
 } from "./demo-data";
-import { seedCategories, type Category } from "./categories-data";
-import {
-  seedProducts, seedCustomers, seedSales, seedDishes, seedTables, seedOrders,
-  type Product, type Customer, type Sale, type Dish, type RestaurantTable,
-  type RestaurantOrder, type ArchivedDocument,
-} from "./commerce-data";
-export type { Product, Customer, Sale, SaleItem, Dish, RestaurantTable, RestaurantOrder, OrderItem, OrderStatus, ArchivedDocument } from "./commerce-data";
-export type { Category, ProductAttribute, AttributeType } from "./categories-data";
+
+export interface ArchivedDocument {
+  id: string;
+  type: string;
+  reference: string;
+  title: string;
+  relatedTo?: string;
+  amount?: number;
+  createdAt: string;
+  dataUrl?: string;
+  storageBucket?: string;
+  storagePath?: string;
+  mimeType?: string;
+  size?: number;
+  originalName?: string;
+  /** Entité rattachée : véhicule, client, employé… */
+  entityType?: "vehicle" | "customer" | "employee" | "supplier" | "sale" | "credit" | "rental" | "maintenance" | "payment" | "company" | "other";
+  entityId?: string;
+  entityLabel?: string;
+  /** Date d'expiration (assurance, visite technique, contrat…) */
+  expiresAt?: string;
+  /** Origine du document : "Généré" ou "Importé" */
+  origin?: string;
+  payload?: any;
+}
 
 
 // ===== Extended entities =====
@@ -46,27 +61,6 @@ export interface Payslip {
   paidAt?: string;
 }
 
-export interface Reservation {
-  id: string;
-  customerName: string;
-  phone: string;
-  tableNumber: number;
-  date: string;          // YYYY-MM-DD
-  time: string;          // HH:mm
-  guests: number;
-  note?: string;
-  status: "pending" | "confirmed" | "seated" | "cancelled" | "noshow";
-}
-
-export interface SerialNumber {
-  id: string;
-  productId: string;
-  serial: string;
-  status: "stock" | "sold" | "rma";
-  soldTo?: string;
-  soldAt?: string;
-}
-
 export interface MaintenanceRecord {
   id: string;
   vehicleId: string;
@@ -75,25 +69,6 @@ export interface MaintenanceRecord {
   description: string;
   cost: number;
   nextDueKm?: number;
-}
-
-export interface Promotion {
-  id: string;
-  name: string;
-  type: "percent" | "amount" | "bogo";
-  value: number;
-  productIds?: string[];
-  startDate: string;
-  endDate: string;
-  active: boolean;
-}
-
-export interface InventoryCount {
-  id: string;
-  date: string;
-  branch: string;
-  status: "draft" | "validated";
-  lines: { productId: string; productName: string; expected: number; counted: number }[];
 }
 
 export interface VehicleMaintenance {
@@ -166,27 +141,12 @@ type CollectionMap = {
   vehicleCredits: VehicleCredit;
   rentals: Rental;
   rentalPayments: RentalPayment;
-  appliances: ApplianceProduct;
-  warranties: Warranty;
-  proInvoices: ProInvoice;
-  applianceCredits: ApplianceCredit;
   attendance: Attendance;
   payslips: Payslip;
-  reservations: Reservation;
-  serials: SerialNumber;
   maintenance: MaintenanceRecord;
-  promotions: Promotion;
-  inventories: InventoryCount;
-  categories: Category;
   vehicleMaintenances: VehicleMaintenance;
   vehiclePayments: VehiclePayment;
   vehicleSales: VehicleSale;
-  products: Product;
-  customers: Customer;
-  sales: Sale;
-  dishes: Dish;
-  restoTables: RestaurantTable;
-  orders: RestaurantOrder;
   documents: ArchivedDocument;
   settings: CompanySetting;
 };
@@ -207,35 +167,15 @@ const seeds: { [K in keyof CollectionMap]: CollectionMap[K][] } = {
   vehicleCredits: seedVCredits,
   rentals: seedRentals,
   rentalPayments: [],
-  appliances: seedAppliances,
-  warranties: seedWarranties,
-  proInvoices: seedProInvoices,
-  applianceCredits: seedACredits,
   attendance: [],
   payslips: [],
-  reservations: [
-    { id: "rv1", customerName: "Famille Diop", phone: "+221 77 555 12 34", tableNumber: 4, date: new Date().toISOString().slice(0,10), time: "19:30", guests: 6, status: "confirmed", note: "Anniversaire" },
-    { id: "rv2", customerName: "Mr. Sarr", phone: "+221 78 111 22 33", tableNumber: 2, date: new Date().toISOString().slice(0,10), time: "20:00", guests: 2, status: "pending" },
-  ],
-  serials: [],
   maintenance: [
     { id: "mt1", vehicleId: "v1", date: "2026-05-10", type: "Vidange", description: "Vidange 10W40 + filtre", cost: 35000, nextDueKm: 55000 },
     { id: "mt2", vehicleId: "v6", date: "2026-06-01", type: "Réparation", description: "Réparation climatisation", cost: 95000 },
   ],
-  promotions: [
-    { id: "pr1", name: "Soldes d'été -20%", type: "percent", value: 20, startDate: "2026-06-01", endDate: "2026-06-30", active: true },
-  ],
-  inventories: [],
-  categories: seedCategories,
   vehicleMaintenances: [],
   vehiclePayments: [],
   vehicleSales: [],
-  products: seedProducts,
-  customers: seedCustomers,
-  sales: seedSales,
-  dishes: seedDishes,
-  restoTables: seedTables,
-  orders: seedOrders,
   documents: [],
   settings: [],
 };
@@ -251,27 +191,12 @@ const TABLES: Record<keyof CollectionMap, string> = {
   vehicleCredits: "vehicle_credits",
   rentals: "rentals",
   rentalPayments: "rental_payments",
-  appliances: "appliances",
-  warranties: "warranties",
-  proInvoices: "pro_invoices",
-  applianceCredits: "appliance_credits",
   attendance: "attendance",
   payslips: "payslips",
-  reservations: "reservations",
-  serials: "serials",
   maintenance: "maintenance",
-  promotions: "promotions",
-  inventories: "inventories",
-  categories: "categories",
   vehicleMaintenances: "vehicle_maintenances",
   vehiclePayments: "vehicle_payments",
   vehicleSales: "vehicle_sales",
-  products: "products",
-  customers: "customers",
-  sales: "sales",
-  dishes: "dishes",
-  restoTables: "resto_tables",
-  orders: "orders",
   documents: "documents",
   settings: "company_settings",
 };

@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Building2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,12 +20,6 @@ export const Route = createFileRoute("/app")({
   },
   component: TenantGate,
 });
-
-const SECTORS = [
-  { id: "commerce", label: "Commerce (boutique, magasin, électroménager)" },
-  { id: "auto", label: "Automobile (vente, location, crédit)" },
-  { id: "resto", label: "Restaurant & Bar Lounge" },
-];
 
 function TenantGate() {
   const tenant = useTenant();
@@ -72,7 +65,6 @@ function CreateCompanyScreen() {
   const pending = readPending();
   const [name, setName] = useState(pending?.name ?? "");
   const [fullName, setFullName] = useState(pending?.fullName ?? "");
-  const [sector, setSector] = useState(pending?.sector ?? "commerce");
   const [phone, setPhone] = useState(pending?.phone ?? "");
   const [address, setAddress] = useState(pending?.address ?? "");
   const [saving, setSaving] = useState(false);
@@ -82,7 +74,7 @@ function CreateCompanyScreen() {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await createCompany({ name: name.trim(), sector, subSector: pending?.subSector, phone, address, fullName });
+      await createCompany({ name: name.trim(), sector: "auto", subSector: pending?.subSector ?? "vehicules", phone, address, fullName });
       window.localStorage.removeItem("gestiopro.pendingCompany");
       toast.success("Entreprise créée", { description: "Votre espace sécurisé est prêt." });
     } catch (err: any) {
@@ -113,15 +105,6 @@ function CreateCompanyScreen() {
             <div className="space-y-2">
               <Label htmlFor="owner">Votre nom complet</Label>
               <Input id="owner" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Ex : Moussa Diallo" />
-            </div>
-            <div className="space-y-2">
-              <Label>Secteur d'activité</Label>
-              <Select value={sector} onValueChange={setSector}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {SECTORS.map((s) => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
