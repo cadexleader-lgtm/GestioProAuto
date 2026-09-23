@@ -381,7 +381,10 @@ export class PdfDoc {
   }
 
   /** Pied de page légal + pagination sur toutes les pages. */
+  private footersFinalized = false;
   private finalizeFooters() {
+    if (this.footersFinalized) return;
+    this.footersFinalized = true;
     const d = this.doc;
     const p = this.profile;
     const total = d.getNumberOfPages();
@@ -417,6 +420,14 @@ export class PdfDoc {
   blobUrl(): string {
     this.finalizeFooters();
     return this.doc.output("dataurlstring");
+  }
+
+  /** Fichier réel (Blob nommé), pour persistance côté serveur — ex. `uploadPrivateDocument()`. */
+  toFile(filename: string): File {
+    this.finalizeFooters();
+    const name = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
+    const blob = this.doc.output("blob") as Blob;
+    return new File([blob], name, { type: "application/pdf" });
   }
 
   open() {

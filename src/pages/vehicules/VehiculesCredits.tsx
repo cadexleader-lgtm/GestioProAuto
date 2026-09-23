@@ -225,7 +225,12 @@ export function VehiculesCredits() {
                 </div>
 
                 <div className="mt-4 flex gap-2 flex-wrap">
-                  <Button variant="outline" size="sm" onClick={() => { if (v) { generateCreditSchedule(openDetail, v, credPays); toast.success("Échéancier PDF généré"); } }}>
+                  <Button variant="outline" size="sm" onClick={() => {
+                    if (!v) return;
+                    generateCreditSchedule(openDetail, v, credPays)
+                      .then(() => toast.success("Échéancier PDF généré et archivé"))
+                      .catch((error) => toast.error(error instanceof Error ? error.message : "L'échéancier n'a pas pu être archivé."));
+                  }}>
                     <FileText size={14} /> Échéancier PDF
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => {

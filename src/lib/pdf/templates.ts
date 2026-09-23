@@ -120,6 +120,7 @@ export function pdfSaleContract(sale: VehicleSale, vehicle: Vehicle) {
   d.signatures(sigSlots(sale.customer, sale.signatures));
   d.stamp();
   d.save(`contrat-vente-${slug(sale.customer)}-${sale.date}`);
+  return d;
 }
 
 /* ========================= CONTRAT DE LOCATION ============================ */
@@ -180,6 +181,7 @@ export function pdfRentalContract(rental: Rental, vehicle: Vehicle) {
   d.signatures(sigSlots(rental.customer, rental.signatures));
   d.stamp();
   d.save(`contrat-location-${slug(rental.customer)}-${rental.startDate}`);
+  return d;
 }
 
 /* ====================== CONTRAT / ÉCHÉANCIER CRÉDIT ======================= */
@@ -245,6 +247,7 @@ export function pdfCreditContract(credit: VehicleCredit, vehicle: Vehicle, payme
   d.signatures(sigSlots(credit.customer, credit.signatures));
   d.stamp();
   d.save(`contrat-credit-${slug(credit.customer)}-${credit.id}`);
+  return d;
 }
 
 /* ================================ FACTURE ================================= */
@@ -319,6 +322,7 @@ export function pdfInvoice(opts: {
   d.signatures(sigSlots(opts.customer.name, opts.signatures));
   d.stamp();
   d.save(`facture-${slug(opts.reference)}`);
+  return d;
 }
 
 /* ================================= REÇU =================================== */
@@ -358,6 +362,85 @@ export function pdfReceipt(opts: {
   d.signatures(sigSlots(opts.payerName, opts.signatures));
   d.stamp();
   d.save(`recu-${slug(opts.reference)}`);
+  return d;
+}
+
+/* =========================== BULLETIN DE PAIE ============================== */
+export function pdfPayslip(opts: {
+  reference: string;
+  month: string;
+  paidAt?: string;
+  employee: { firstName: string; lastName: string; position?: string; department?: string; phone?: string; email?: string; hiredAt?: string };
+  baseSalary: number;
+  bonuses: number;
+  deductions: number;
+  advances: number;
+  net: number;
+  currency?: string;
+  paymentMethod?: string;
+}) {
+  const p = getCompanyProfile();
+  const d = new PdfDoc(p);
+  const employeeName = `${opts.employee.firstName} ${opts.employee.lastName}`;
+  const monthLabel = (() => {
+    try { return new Date(`${opts.month}-01`).toLocaleDateString("fr-FR", { month: "long", year: "numeric" }); }
+    catch { return opts.month; }
+  })();
+
+  d.header({
+    title: "Bulletin de paie",
+    reference: opts.reference,
+    date: fdate(opts.paidAt || today()),
+    subtitle: monthLabel,
+  });
+
+  d.parties([
+    vendorParty(),
+    {
+      heading: "Salarié",
+      lines: [
+        employeeName,
+        [opts.employee.position, opts.employee.department].filter(Boolean).join(" · "),
+        opts.employee.phone || "",
+        opts.employee.email || "",
+      ],
+    },
+  ]);
+
+  d.sectionTitle(`Rémunération — ${monthLabel}`);
+  d.table(
+    [
+      { header: "Désignation", width: 120 },
+      { header: "Montant", width: 70, align: "right" },
+    ],
+    [
+      ["Salaire de base", formatFCFA(opts.baseSalary)],
+      ["Primes / bonus", formatFCFA(opts.bonuses)],
+      ["Retenues", `-${formatFCFA(opts.deductions)}`],
+      ["Avances déduites", `-${formatFCFA(opts.advances)}`],
+    ],
+  );
+
+  d.totals([
+    { label: "Net à payer", value: formatFCFA(opts.net) },
+  ]);
+
+  d.keyValues([
+    { label: "Mode de paiement", value: opts.paymentMethod || "—" },
+    { label: "Date de paiement", value: fdate(opts.paidAt || today()) },
+  ]);
+
+  d.notice(
+    "Mention légale",
+    "Ce bulletin est établi pour information et sert de justificatif de versement. Conservez-le sans limitation de durée.",
+  );
+  d.signatures([
+    { label: "L'employeur", name: p.name, dataUrl: p.signatureDataUrl || undefined },
+    { label: "Le salarié", name: employeeName },
+  ]);
+  d.stamp();
+  d.save(`bulletin-${slug(employeeName)}-${opts.month}`);
+  return d;
 }
 
 /* =========================== BON DE COMMANDE ============================== */
@@ -394,6 +477,7 @@ export function pdfPurchaseOrder(opts: {
   d.signatures([{ label: "Pour l'entreprise", name: p.name, dataUrl: p.signatureDataUrl || undefined }, { label: "Le fournisseur", name: opts.supplier.name }]);
   d.stamp();
   d.save(`bon-commande-${slug(opts.reference)}`);
+  return d;
 }
 
 /* ============================== ATTESTATION =============================== */
@@ -416,6 +500,7 @@ export function pdfAttestation(opts: {
   d.signatures([{ label: "Pour l'entreprise", name: p.name, dataUrl: p.signatureDataUrl || undefined }]);
   d.stamp();
   d.save(`attestation-${slug(opts.reference)}`);
+  return d;
 }
 
 /* ================================ RAPPORT ================================= */

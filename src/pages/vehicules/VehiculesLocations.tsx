@@ -139,7 +139,11 @@ export function VehiculesLocations() {
                   <Button size="sm" variant="outline" onClick={() => setDetailId(v.id)}>
                     <Car size={14} /> Fiche
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => { generateRentalContract(r, v); toast.success("Contrat PDF généré"); }}>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    generateRentalContract(r, v)
+                      .then(() => toast.success("Contrat PDF généré et archivé"))
+                      .catch((error) => toast.error(error instanceof Error ? error.message : "Le contrat n'a pas pu être archivé."));
+                  }}>
                     <FileText size={14} /> PDF
                   </Button>
                   {r.phone && (

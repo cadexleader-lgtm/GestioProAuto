@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { db, recordPayrollPayment, createEmployee } from "@/lib/demo-store";
+import { db, recordPayrollPayment, createEmployee, attachPayslipDocumentFile } from "@/lib/demo-store";
+import { pdfPayslip } from "@/lib/pdf/templates";
 import { toast } from "sonner";
 
 const DEPTS = ["Direction","Ventes","Caisse","Stock","Finance","Logistique","RH","Cuisine","Service","Technique"];
@@ -134,7 +135,7 @@ export function PayrollDialog({ open, onOpenChange }: { open:boolean; onOpenChan
     }
     const paidAt = new Date().toISOString();
     try {
-      await recordPayrollPayment({
+      const result = await recordPayrollPayment({
         paymentId,
         employeeId: form.employeeId,
         month: form.month,
@@ -149,6 +150,27 @@ export function PayrollDialog({ open, onOpenChange }: { open:boolean; onOpenChan
       });
       toast.success("Bulletin généré · dépense et sortie de caisse enregistrées");
       onOpenChange(false);
+
+      if (result?.document_id) {
+        try {
+          const doc = pdfPayslip({
+            reference: result.document_id,
+            month: form.month,
+            paidAt,
+            employee: { firstName: emp.firstName, lastName: emp.lastName, position: emp.position, department: emp.department, phone: emp.phone, email: emp.email },
+            baseSalary: Number(form.baseSalary) || 0,
+            bonuses: Number(form.bonuses) || 0,
+            deductions: Number(form.deductions) || 0,
+            advances: Number(form.advances) || 0,
+            net,
+            currency: "XOF",
+            paymentMethod: "Cash",
+          });
+          await attachPayslipDocumentFile({ documentId: result.document_id, file: doc.toFile(`bulletin-${paymentId}.pdf`) });
+        } catch (docError) {
+          toast.error(docError instanceof Error ? docError.message : "Le PDF du bulletin n'a pas pu être archivé (paiement bien enregistré).");
+        }
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Le paiement du salaire n'a pas pu être enregistré.");
     } finally {

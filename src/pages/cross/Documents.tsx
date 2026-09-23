@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useCollection, db, getPrivateDocumentUrl, uploadPrivateDocument } from "@/lib/demo-store";
 import { useRole } from "@/lib/roles";
+import { useTenant } from "@/lib/tenant";
 import { formatFCFA } from "@/lib/format";
 import { useCompanyProfile } from "@/lib/company-profile";
 import {
@@ -59,6 +60,7 @@ export function Documents() {
   const vehicleSales = useCollection("vehicleSales");
   const profile = useCompanyProfile();
   const role = useRole();
+  const { company } = useTenant();
   const canAccessDocuments = role === "patron" || role === "manager";
   const [kind, setKind] = useState<DocKind | null>(null);
   const [filter, setFilter] = useState<string>("all");
@@ -67,6 +69,7 @@ export function Documents() {
   const [q, setQ] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [migratingLegacy, setMigratingLegacy] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const [form, setForm] = useState({
     party: "", phone: "", address: "", note: "", date: today(),
@@ -96,7 +99,7 @@ export function Documents() {
   const buildPdf = (k: DocKind, reference: string, data: typeof form) => {
     const signatures = data.signature ? { client: data.signature } : undefined;
     if (k === "facture" || k === "proforma") {
-      pdfInvoice({
+      return pdfInvoice({
         reference, date: data.date, title: k === "proforma" ? "Facture proforma" : "Facture",
         customer: { name: data.party, phone: data.phone, address: data.address },
         lines: data.lines.filter((l) => l.designation),
@@ -104,43 +107,56 @@ export function Documents() {
         note: data.note, signatures,
       });
     } else if (k === "recu") {
-      pdfReceipt({
+      return pdfReceipt({
         reference, date: data.date, payerName: data.party, amount: data.amount,
         reason: data.reason || "Règlement", method: data.method, signatures,
       });
     } else if (k === "bon") {
-      pdfPurchaseOrder({
+      return pdfPurchaseOrder({
         reference, date: data.date,
         supplier: { name: data.party, phone: data.phone, address: data.address },
         lines: data.lines.filter((l) => l.designation),
         note: data.note,
       });
     } else {
-      pdfAttestation({
+      return pdfAttestation({
         reference, date: data.date, recipient: data.party,
         subject: data.subject || "Attestation", body: data.body,
       });
     }
   };
 
-  const generate = () => {
-    if (!kind) return;
+  const generate = async () => {
+    if (!kind || generating) return;
     if (!form.party.trim()) return toast.error(kind === "bon" ? "Fournisseur requis" : "Nom du destinataire requis");
+    if (!company?.id) return toast.error("Aucune entreprise active n'est disponible.");
     const reference = nextRef(kind);
     const amount = kind === "recu" ? form.amount : total;
 
-    buildPdf(kind, reference, form);
-    db.add("documents", {
-      type: kind,
-      reference,
-      title: `${TYPES.find((t) => t.id === kind)!.label} — ${form.party}`,
-      relatedTo: form.party,
-      amount,
-      createdAt: new Date().toISOString(),
-      payload: { ...form } as any,
-    } as any);
-    toast.success(`${reference} généré et archivé`);
-    setKind(null);
+    setGenerating(true);
+    try {
+      const doc = buildPdf(kind, reference, form);
+      await uploadPrivateDocument({
+        file: doc.toFile(`${kind}-${reference}.pdf`),
+        type: kind,
+        reference,
+        title: `${TYPES.find((t) => t.id === kind)!.label} — ${form.party}`,
+        relatedTo: form.party,
+        amount,
+        entityType: "company",
+        entityId: company.id,
+        entityLabel: form.party,
+        relationType: "generated_document",
+        origin: "Généré",
+        metadata: { ...form },
+      });
+      toast.success(`${reference} généré et archivé`);
+      setKind(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Le document n'a pas pu être archivé.");
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const regenerate = (d: any) => {
@@ -714,9 +730,9 @@ export function Documents() {
           </div>
 
           <DialogFooter className="mt-5 gap-2">
-            <Button variant="outline" className="rounded-xl" onClick={() => setKind(null)}>Annuler</Button>
-            <Button className="rounded-xl gap-1.5" onClick={generate}>
-              <Download size={15} /> Générer le PDF
+            <Button variant="outline" className="rounded-xl" onClick={() => setKind(null)} disabled={generating}>Annuler</Button>
+            <Button className="rounded-xl gap-1.5" onClick={generate} disabled={generating}>
+              <Download size={15} /> {generating ? "Génération..." : "Générer le PDF"}
             </Button>
           </DialogFooter>
         </DialogContent>

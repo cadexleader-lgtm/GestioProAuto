@@ -551,6 +551,46 @@ export async function getPrivateDocumentUrl(doc: { dataUrl?: string; storageBuck
   return data.signedUrl;
 }
 
+/**
+ * Attache un fichier PDF déjà généré côté client à un document de type
+ * "bulletin" existant (créé par la RPC record_payroll_payment). La ligne
+ * "documents" est verrouillée en écriture directe pour ce type — seule la
+ * RPC attach_payslip_document_file (SECURITY DEFINER, rôle manager+) peut
+ * y poser le storagePath après upload du fichier dans Storage.
+ */
+export async function attachPayslipDocumentFile(input: { documentId: string; file: File }): Promise<void> {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const bucket = "company-documents";
+  const storagePath = `${companyId}/${input.documentId}/${safeStorageFileName(input.file.name)}`;
+  const mimeType = input.file.type || "application/pdf";
+
+  const { error: uploadError } = await sb.storage
+    .from(bucket)
+    .upload(storagePath, input.file, { contentType: mimeType, upsert: true });
+
+  if (uploadError) {
+    throw new Error(uploadError.message || "Le bulletin n'a pas pu être envoyé dans le stockage privé.");
+  }
+
+  const { data, error } = await sb.rpc("attach_payslip_document_file", {
+    p_company_id: companyId,
+    p_document_id: input.documentId,
+    p_storage_bucket: bucket,
+    p_storage_path: storagePath,
+    p_mime_type: mimeType,
+    p_size: input.file.size,
+    p_original_name: input.file.name,
+  });
+
+  if (error) {
+    await sb.storage.from(bucket).remove([storagePath]);
+    throw new Error(error.message || "Le bulletin n'a pas pu être archivé.");
+  }
+
+  db.upsertLocal("documents", { id: input.documentId, ...(data as Record<string, unknown>) } as any);
+}
+
 export const db = {
   list<K extends keyof CollectionMap>(name: K): CollectionMap[K][] {
     return load(name);
@@ -1464,34 +1504,3 @@ export function vehicleProfitability(vehicleId: string) {
   };
 }
 
-
-/* ==============================================================
- * COFFRE-FORT DOCUMENTAIRE — archivage centralisé.
- * ============================================================== */
-export function archiveDocument(payload: {
-  type: string;
-  reference?: string;
-  title: string;
-  relatedTo?: string;
-  amount?: number;
-  entityType?: ArchivedDocument["entityType"];
-  entityId?: string;
-  entityLabel?: string;
-  expiresAt?: string;
-  origin?: string;
-  dataUrl?: string;
-  payload?: any;
-}): ArchivedDocument {
-  const year = new Date().getFullYear();
-  const count = db.list("documents").filter((d) => d.type === payload.type).length + 1;
-  const reference = payload.reference
-    ?? `${payload.type.slice(0, 3).toUpperCase()}-${year}-${String(count).padStart(4, "0")}`;
-  const existing = db.list("documents").find((d) => d.reference === reference);
-  if (existing) return existing;
-  return db.add("documents", {
-    ...payload,
-    reference,
-    origin: payload.origin ?? "Généré",
-    createdAt: new Date().toISOString(),
-  } as any);
-}

@@ -1,21 +1,27 @@
 /**
- * Adaptateurs de compatibilité — délèguent aux modèles PDF professionnels
- * et archivent automatiquement chaque document dans le coffre-fort.
+ * Adaptateurs de compatibilité — délèguent aux modèles PDF professionnels,
+ * déclenchent le téléchargement local ET persistent le vrai fichier dans le
+ * coffre-fort privé (Supabase Storage), pour qu'il reste téléchargeable
+ * depuis n'importe quel appareil après la génération initiale.
  * @see src/lib/pdf/templates.ts
+ * @see src/lib/demo-store.ts:uploadPrivateDocument
  */
 import { formatFCFA } from "./format";
 import type { Vehicle, VehicleCredit, Rental } from "./demo-data";
 import type { VehicleSale, VehiclePayment } from "./demo-store";
-import { archiveDocument } from "./demo-store";
+import { uploadPrivateDocument } from "./demo-store";
 import {
   pdfRentalContract, pdfSaleContract, pdfCreditContract, pdfReceipt, sendWhatsApp as waSend,
 } from "./pdf/templates";
 
 const label = (v: Vehicle) => `${v.brand} ${v.model} (${v.plate})`;
 
-export function generateRentalContract(rental: Rental, vehicle: Vehicle) {
-  pdfRentalContract(rental, vehicle);
-  archiveDocument({
+export async function generateRentalContract(rental: Rental, vehicle: Vehicle) {
+  const doc = pdfRentalContract(rental, vehicle);
+  const filename = `contrat-location-${rental.id}.pdf`;
+  await uploadPrivateDocument({
+    documentId: `rental-contract:${rental.id}`,
+    file: doc.toFile(filename),
     type: "contrat-location",
     reference: `LOC-${rental.id}`,
     title: `Contrat de location — ${label(vehicle)}`,
@@ -24,14 +30,19 @@ export function generateRentalContract(rental: Rental, vehicle: Vehicle) {
     entityType: "vehicle",
     entityId: vehicle.id,
     entityLabel: label(vehicle),
+    relationType: "rental_contract",
     expiresAt: rental.endDate,
-    payload: { phone: (rental as any).phone },
+    origin: "Généré",
+    metadata: { phone: (rental as any).phone, rentalId: rental.id },
   });
 }
 
-export function generateSaleInvoice(sale: VehicleSale, vehicle: Vehicle) {
-  pdfSaleContract(sale, vehicle);
-  archiveDocument({
+export async function generateSaleInvoice(sale: VehicleSale, vehicle: Vehicle) {
+  const doc = pdfSaleContract(sale, vehicle);
+  const filename = `contrat-vente-${sale.id}.pdf`;
+  await uploadPrivateDocument({
+    documentId: `sale-contract:${sale.id}`,
+    file: doc.toFile(filename),
     type: "contrat-vente",
     reference: `VTE-${sale.id}`,
     title: `Contrat de vente — ${label(vehicle)}`,
@@ -40,13 +51,18 @@ export function generateSaleInvoice(sale: VehicleSale, vehicle: Vehicle) {
     entityType: "vehicle",
     entityId: vehicle.id,
     entityLabel: label(vehicle),
-    payload: { phone: sale.phone },
+    relationType: "sale_contract",
+    origin: "Généré",
+    metadata: { phone: sale.phone, saleId: sale.id },
   });
 }
 
-export function generateCreditSchedule(credit: VehicleCredit, vehicle: Vehicle, payments: VehiclePayment[]) {
-  pdfCreditContract(credit, vehicle, payments);
-  archiveDocument({
+export async function generateCreditSchedule(credit: VehicleCredit, vehicle: Vehicle, payments: VehiclePayment[]) {
+  const doc = pdfCreditContract(credit, vehicle, payments);
+  const filename = `contrat-credit-${credit.id}.pdf`;
+  await uploadPrivateDocument({
+    documentId: `credit-contract:${credit.id}`,
+    file: doc.toFile(filename),
     type: "contrat-credit",
     reference: `CRE-${credit.id}`,
     title: `Échéancier de crédit — ${label(vehicle)}`,
@@ -55,14 +71,16 @@ export function generateCreditSchedule(credit: VehicleCredit, vehicle: Vehicle, 
     entityType: "vehicle",
     entityId: vehicle.id,
     entityLabel: label(vehicle),
+    relationType: "credit_contract",
     expiresAt: credit.nextDueDate,
-    payload: { phone: (credit as any).phone },
+    origin: "Généré",
+    metadata: { phone: (credit as any).phone, creditId: credit.id },
   });
 }
 
-export function generatePaymentReceipt(payment: VehiclePayment, credit: VehicleCredit, vehicle: Vehicle) {
+export async function generatePaymentReceipt(payment: VehiclePayment, credit: VehicleCredit, vehicle: Vehicle) {
   const paidBefore = 0;
-  pdfReceipt({
+  const doc = pdfReceipt({
     reference: payment.id,
     date: payment.date,
     payerName: credit.customer,
@@ -72,7 +90,10 @@ export function generatePaymentReceipt(payment: VehiclePayment, credit: VehicleC
     vehicle,
     balance: Math.max(0, credit.total - credit.downPayment - payment.amount - paidBefore),
   });
-  archiveDocument({
+  const filename = `recu-${payment.id}.pdf`;
+  await uploadPrivateDocument({
+    documentId: `payment-receipt:${payment.id}`,
+    file: doc.toFile(filename),
     type: "recu",
     reference: `REC-${payment.id}`,
     title: `Reçu de paiement — ${credit.customer}`,
@@ -81,7 +102,9 @@ export function generatePaymentReceipt(payment: VehiclePayment, credit: VehicleC
     entityType: "vehicle",
     entityId: vehicle.id,
     entityLabel: label(vehicle),
-    payload: { phone: (credit as any).phone },
+    relationType: "credit_payment_receipt",
+    origin: "Généré",
+    metadata: { phone: (credit as any).phone, creditId: credit.id, paymentId: payment.id },
   });
 }
 

@@ -41,12 +41,16 @@ export function VehiculesVentes() {
     return { count: sales.length, total, cash, credit };
   }, [sales]);
 
-  const handlePdf = (saleId: string) => {
+  const handlePdf = async (saleId: string) => {
     const s = sales.find((x) => x.id === saleId);
     const v = s && vehicles.find((x) => x.id === s.vehicleId);
     if (!s || !v) return;
-    generateSaleInvoice(s, v);
-    toast.success("Facture PDF générée");
+    try {
+      await generateSaleInvoice(s, v);
+      toast.success("Contrat PDF généré et archivé");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Le contrat n'a pas pu être archivé.");
+    }
   };
 
   const handleWa = (saleId: string) => {
