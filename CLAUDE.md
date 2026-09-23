@@ -159,30 +159,30 @@ Modifier une RPC = modifier la migration SQL correspondante (nouvelle migration,
 - Variables serveur requises (non `VITE_`, jamais exposées au client) : `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` — utilisées uniquement par `client.server.ts`/`team.functions.ts`.
 
 ### Phase 2 — Centre documentaire & actifs
-12. Vrai centre documentaire (registre + relations `vehicle/customer/sale/credit/rental/contract/maintenance/payment/employee` + Storage privé + recherche/filtres/pagination/aperçu/versioning).
-13. 🆕 Migrer les **photos véhicules** vers Supabase Storage (actuellement en base64 dans `data` jsonb via `FileReader.readAsDataURL`, `SectorDialogs.tsx`) — même traitement que les documents.
+13. Vrai centre documentaire (registre + relations `vehicle/customer/sale/credit/rental/contract/maintenance/payment/employee` + Storage privé + recherche/filtres/pagination/aperçu/versioning). Base déjà solide grâce à l'item 6 (tout document financier a maintenant un vrai fichier persisté) — reste : recherche/filtres avancés, pagination, aperçu inline, versioning.
+14. 🆕 Migrer les **photos véhicules** vers Supabase Storage (actuellement en base64 dans `data` jsonb via `FileReader.readAsDataURL`, `SectorDialogs.tsx`) — même traitement que les documents.
 
 ### Phase 3 — Recentrage mono-secteur (décision stratégique confirmée)
-14. Décommissionner Restaurant/Boutique/Électroménager : (a) masquer routes/menus, (b) désactiver les écritures, (c) vérifier les dépendances, (d) retirer les appels frontend, (e) garder les tables un temps, (f) supprimer seulement après validation explicite. **Ne rien supprimer sans confirmation.**
-15. Une fois (14) validé en prod : simplifier `src/lib/sectors.ts`/`Dashboard.tsx` (routeur par `subSectorId`) pour retirer l'abstraction multi-secteur devenue inutile — tech-debt, pas urgent.
+15. Décommissionner Restaurant/Boutique/Électroménager : (a) masquer routes/menus, (b) désactiver les écritures, (c) vérifier les dépendances, (d) retirer les appels frontend, (e) garder les tables un temps, (f) supprimer seulement après validation explicite. **Ne rien supprimer sans confirmation.**
+16. Une fois (15) validé en prod : simplifier `src/lib/sectors.ts`/`Dashboard.tsx` (routeur par `subSectorId`) pour retirer l'abstraction multi-secteur devenue inutile — tech-debt, pas urgent.
 
 > **Pourquoi le nettoyage (Phase 3) passe avant le dashboard/rapports (Phase 4) et non l'inverse** : `Reports.tsx` calcule aujourd'hui un CA multi-secteur (boutique + véhicules + locations). Corriger sa logique avant le décommissionnement obligerait à la refaire une seconde fois une fois les secteurs legacy retirés. On décommissionne d'abord, on répare la logique financière une seule fois, en mono-secteur, ensuite.
 
 ### Phase 4 — Source unique de vérité métier (dashboard, rapports, statuts)
-16. Dashboard : distinguer clairement CA / encaissé réel / créances / acomptes / solde dû / dépenses / bénéfice / trésorerie disponible — source unique, pas de recalcul par page. 🆕 Constat technique : au moment de l'audit, `Reports.tsx`, `VehiculesDashboard.tsx`, `VehiculesRapports.tsx` et `RevenueEvolutionChart.tsx` avaient **4 définitions différentes du CA**, aucune ne lisant `ledger_entries`.
-17. Rapports : même source financière partout, pas de double comptage, export PDF/Excel fonctionnel (au moment de l'audit, l'export "Rapports auto" faisait `window.print()` et non un vrai PDF structuré comme `Reports.tsx`).
-18. Statuts métier véhicule cohérents (disponible/vendu/loué/en maintenance/indisponible, crédit en cours/terminé, contrat actif/terminé) entre Parking, Véhicules, Ventes, Locations, Crédits, Trésorerie, Dashboard.
+17. Dashboard : distinguer clairement CA / encaissé réel / créances / acomptes / solde dû / dépenses / bénéfice / trésorerie disponible — source unique, pas de recalcul par page. 🆕 Constat technique : au moment de l'audit, `Reports.tsx`, `VehiculesDashboard.tsx`, `VehiculesRapports.tsx` et `RevenueEvolutionChart.tsx` avaient **4 définitions différentes du CA**, aucune ne lisant `ledger_entries`.
+18. Rapports : même source financière partout, pas de double comptage, export PDF/Excel fonctionnel (au moment de l'audit, l'export "Rapports auto" faisait `window.print()` et non un vrai PDF structuré comme `Reports.tsx`).
+19. Statuts métier véhicule cohérents (disponible/vendu/loué/en maintenance/indisponible, crédit en cours/terminé, contrat actif/terminé) entre Parking, Véhicules, Ventes, Locations, Crédits, Trésorerie, Dashboard.
 
 ### Phase 5 — Scalabilité produit
-19. Paiement global sécurisé des salaires (le bouton legacy est désactivé, il faut le vrai remplaçant transactionnel — traité en priorité, avant le reste de la gestion RH avancée).
-20. Gestion avancée employés : avances, paiements partiels, historique salarial, employés inactifs/licenciés, annulations contrôlées.
-21. Feature Flags par organisation (activer/masquer ventes, crédit, locations, maintenance, paie, documents, rapports) — n'existe pas encore, nécessite une nouvelle table/migration à proposer avant d'implémenter.
-22. 🆕 Tests automatisés — le dépôt n'a **aucun test** (`*.test.*`/`*.spec.*` introuvables, pas de script `test`). Prioriser les RPC financières (idempotency rejouée, rejet si rôle insuffisant) avant le jeu de test manuel bout-en-bout déjà prévu.
-23. Jeu de test bout-en-bout manuel (5+ véhicules, clients, vente cash/crédit, paiements, location/retour, maintenance, paie, documents) suivant `écran → base → ledger → trésorerie → dashboard → rapport → document`.
+20. Paiement global sécurisé des salaires (le bouton legacy est désactivé, il faut le vrai remplaçant transactionnel — traité en priorité, avant le reste de la gestion RH avancée).
+21. Gestion avancée employés : avances, paiements partiels, historique salarial, employés inactifs/licenciés, annulations contrôlées.
+22. Feature Flags par organisation (activer/masquer ventes, crédit, locations, maintenance, paie, documents, rapports) — n'existe pas encore, nécessite une nouvelle table/migration à proposer avant d'implémenter.
+23. 🆕 Tests automatisés — le dépôt n'a **aucun test** (`*.test.*`/`*.spec.*` introuvables, pas de script `test`). Prioriser les RPC financières (idempotency rejouée, rejet si rôle insuffisant) avant le jeu de test manuel bout-en-bout déjà prévu.
+24. Jeu de test bout-en-bout manuel (5+ véhicules, clients, vente cash/crédit, paiements, location/retour, maintenance, paie, documents) suivant `écran → base → ledger → trésorerie → dashboard → rapport → document`.
 
 ### Phase 6 — Design system "Apple-grade" + mise en production
-24. UI/UX professionnelle : design system unique (pas de template générique), hiérarchie visuelle, tableaux/filtres, erreurs compréhensibles, états vides/chargement, responsive mobile, boutons/dialogues uniformes. 🆕 Nettoyer aussi les bugs de polish déjà repérés : encodage cassé (mojibake) dans certains toasts (`SectorDialogs.tsx`, `Documents.tsx`), carte GPS entièrement simulée (`VehiculesGPS.tsx`) à clarifier ou remplacer avant de la présenter comme une vraie fonctionnalité.
-25. Mise en production : commit propre, build réussi, migrations versionnées, vérification des variables d'environnement, confirmation que la prod ne pointe pas vers `gestiopro-dev`, sauvegarde DB, merge contrôlé vers `main`, déploiement, test post-déploiement.
+25. UI/UX professionnelle : design system unique (pas de template générique), hiérarchie visuelle, tableaux/filtres, erreurs compréhensibles, états vides/chargement, responsive mobile, boutons/dialogues uniformes. 🆕 Nettoyer aussi les bugs de polish déjà repérés : encodage cassé (mojibake) dans certains toasts (`SectorDialogs.tsx`, `Documents.tsx`), carte GPS entièrement simulée (`VehiculesGPS.tsx`) à clarifier ou remplacer avant de la présenter comme une vraie fonctionnalité.
+26. Mise en production : commit propre, build réussi, migrations versionnées, vérification des variables d'environnement, confirmation que la prod ne pointe pas vers `gestiopro-dev`, sauvegarde DB, merge contrôlé vers `main`, déploiement, test post-déploiement.
 
 **Ordre exact, fidèle à la séquence validée par l'utilisateur** : Documents → maintenance financière → retest flux → confidentialité RH → centre documentaire → **nettoyage mono-secteur** → **dashboard/rapports** → paiement global sécurisé → Feature Flags → UI/UX → tests complets → mise en production. **Ne pas partir sur le design (Phase 6) avant d'avoir fini les Phases 0-4.** 🆕 = ajouté par l'audit, absent de la liste initiale de l'utilisateur.
 
