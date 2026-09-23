@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { db, recordPayrollPayment } from "@/lib/demo-store";
+import { db, recordPayrollPayment, createEmployee } from "@/lib/demo-store";
 import { toast } from "sonner";
 
 const DEPTS = ["Direction","Ventes","Caisse","Stock","Finance","Logistique","RH","Cuisine","Service","Technique"];
@@ -13,17 +13,25 @@ const DEPTS = ["Direction","Ventes","Caisse","Stock","Finance","Logistique","RH"
 export function EmployeeDialog({ open, onOpenChange }: { open:boolean; onOpenChange:(v:boolean)=>void }) {
   const [form, setForm] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
+  const [employeeId, setEmployeeId] = useState("");
   useEffect(()=>{
     setForm({ firstName:"", lastName:"", position:"", department:"Ventes", phone:"", email:"", hiredAt:new Date().toISOString().slice(0,10), salary:150000, status:"present", contractType:"CDI", idCard:"", bankAccount:"", address:""});
     setSubmitting(false);
+    if (open) setEmployeeId(crypto.randomUUID());
   },[open]);
-  const submit = () => {
+  const submit = async () => {
     if (!form.firstName || !form.lastName) return toast.error("Nom requis");
     if (submitting) return;
     setSubmitting(true);
-    db.add("employees", form);
-    toast.success("Employé ajouté");
-    onOpenChange(false);
+    try {
+      await createEmployee({ ...form, employeeId });
+      toast.success("Employé ajouté");
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "L'employé n'a pas pu être ajouté.");
+    } finally {
+      setSubmitting(false);
+    }
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,7 +65,7 @@ export function EmployeeDialog({ open, onOpenChange }: { open:boolean; onOpenCha
             <div><Label>Compte bancaire / Wave</Label><Input value={form.bankAccount||""} onChange={e=>setForm({...form,bankAccount:e.target.value})}/></div>
           </TabsContent>
         </Tabs>
-        <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>onOpenChange(false)} disabled={submitting}>Annuler</Button><Button onClick={submit} disabled={submitting}>{submitting ? "Enregistrement..." : "Enregistrer"}</Button></DialogFooter>
+        <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>onOpenChange(false)} disabled={submitting}>Annuler</Button><Button onClick={() => void submit()} disabled={submitting}>{submitting ? "Enregistrement..." : "Enregistrer"}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -1003,6 +1003,44 @@ export function useHydrated() {
   return h;
 }
 
+export async function createSupplier(payload: Omit<Supplier, "id"> & { supplierId: string }): Promise<Supplier> {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+  const { supplierId, ...data } = payload;
+
+  const { data: row, error } = await sb.rpc("create_supplier", {
+    p_company_id: companyId,
+    p_supplier_id: supplierId,
+    p_data: data,
+  });
+
+  if (error) {
+    throw new Error(rpcErrorMessage(error, "Le fournisseur n'a pas pu être créé."));
+  }
+
+  const supplier = { id: row.id, ...(row.data ?? {}) } as Supplier;
+  db.upsertLocal("suppliers", supplier);
+  return supplier;
+}
+
+export async function createEmployee(payload: Omit<Employee, "id"> & { employeeId: string }): Promise<Employee> {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+  const { employeeId, ...data } = payload;
+
+  const { data: row, error } = await sb.rpc("create_employee", {
+    p_company_id: companyId,
+    p_employee_id: employeeId,
+    p_data: data,
+  });
+
+  if (error) {
+    throw new Error(rpcErrorMessage(error, "L'employé n'a pas pu être créé."));
+  }
+
+  const employee = { id: row.id, ...(row.data ?? {}) } as Employee;
+  db.upsertLocal("employees", employee);
+  return employee;
+}
+
 /* ==============================================================
  * VEHICLE SYNC HELPERS — single source of truth for status changes.
  * ============================================================== */

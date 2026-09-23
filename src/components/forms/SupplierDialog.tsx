@@ -6,23 +6,31 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { db } from "@/lib/demo-store";
+import { createSupplier } from "@/lib/demo-store";
 import { toast } from "sonner";
 
 export function SupplierDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v:boolean)=>void }) {
   const [form, setForm] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
+  const [supplierId, setSupplierId] = useState("");
   useEffect(()=>{
     setForm({ name:"", company:"", contact:"", phone:"", email:"", city:"Dakar", country:"Sénégal", rc:"", ninea:"", paymentTerms:"30j", deliveryDays:7, totalPurchases:0, outstandingDebt:0, ordersInProgress:0, note:""});
     setSubmitting(false);
+    if (open) setSupplierId(crypto.randomUUID());
   },[open]);
-  const submit = () => {
+  const submit = async () => {
     if (!form.name?.trim()) return toast.error("Nom requis");
     if (submitting) return;
     setSubmitting(true);
-    db.add("suppliers", form);
-    toast.success("Fournisseur ajouté");
-    onOpenChange(false);
+    try {
+      await createSupplier({ ...form, supplierId });
+      toast.success("Fournisseur ajouté");
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Le fournisseur n'a pas pu être ajouté.");
+    } finally {
+      setSubmitting(false);
+    }
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -52,7 +60,7 @@ export function SupplierDialog({ open, onOpenChange }: { open: boolean; onOpenCh
             <div className="col-span-2"><Label>Note</Label><Textarea value={form.note||""} onChange={e=>setForm({...form,note:e.target.value})}/></div>
           </TabsContent>
         </Tabs>
-        <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>onOpenChange(false)} disabled={submitting}>Annuler</Button><Button onClick={submit} disabled={submitting}>{submitting ? "Enregistrement..." : "Enregistrer"}</Button></DialogFooter>
+        <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>onOpenChange(false)} disabled={submitting}>Annuler</Button><Button onClick={() => void submit()} disabled={submitting}>{submitting ? "Enregistrement..." : "Enregistrer"}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );
