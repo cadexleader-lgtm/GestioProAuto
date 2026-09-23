@@ -12,9 +12,15 @@ const DEPTS = ["Direction","Ventes","Caisse","Stock","Finance","Logistique","RH"
 
 export function EmployeeDialog({ open, onOpenChange }: { open:boolean; onOpenChange:(v:boolean)=>void }) {
   const [form, setForm] = useState<any>({});
-  useEffect(()=>{ setForm({ firstName:"", lastName:"", position:"", department:"Ventes", phone:"", email:"", hiredAt:new Date().toISOString().slice(0,10), salary:150000, status:"present", contractType:"CDI", idCard:"", bankAccount:"", address:""}); },[open]);
+  const [submitting, setSubmitting] = useState(false);
+  useEffect(()=>{
+    setForm({ firstName:"", lastName:"", position:"", department:"Ventes", phone:"", email:"", hiredAt:new Date().toISOString().slice(0,10), salary:150000, status:"present", contractType:"CDI", idCard:"", bankAccount:"", address:""});
+    setSubmitting(false);
+  },[open]);
   const submit = () => {
     if (!form.firstName || !form.lastName) return toast.error("Nom requis");
+    if (submitting) return;
+    setSubmitting(true);
     db.add("employees", form);
     toast.success("Employé ajouté");
     onOpenChange(false);
@@ -51,7 +57,7 @@ export function EmployeeDialog({ open, onOpenChange }: { open:boolean; onOpenCha
             <div><Label>Compte bancaire / Wave</Label><Input value={form.bankAccount||""} onChange={e=>setForm({...form,bankAccount:e.target.value})}/></div>
           </TabsContent>
         </Tabs>
-        <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>onOpenChange(false)}>Annuler</Button><Button onClick={submit}>Enregistrer</Button></DialogFooter>
+        <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>onOpenChange(false)} disabled={submitting}>Annuler</Button><Button onClick={submit} disabled={submitting}>{submitting ? "Enregistrement..." : "Enregistrer"}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -1007,34 +1007,6 @@ export function useHydrated() {
  * VEHICLE SYNC HELPERS — single source of truth for status changes.
  * ============================================================== */
 
-/** Enregistre une dépense ET son décaissement de caisse (synchronisation compta). */
-export function addExpense(payload: {
-  category: string; label: string; amount: number; date?: string;
-  hasReceipt?: boolean; source?: string; paidBy?: string; paymentMethod?: string;
-  /** Rattachement analytique à un véhicule (carburant, réparation, entretien…) */
-  vehicleId?: string;
-  /** "maintenance" pour les dépenses générées par le module Maintenance */
-  kind?: string;
-}) {
-  const date = payload.date ?? new Date().toISOString().slice(0, 10);
-  const e = db.add("expenses", {
-    category: payload.category, label: payload.label, amount: payload.amount,
-    date, hasReceipt: payload.hasReceipt ?? false,
-    source: payload.source ?? "Manuel", paidBy: payload.paidBy,
-    paymentMethod: payload.paymentMethod ?? "Caisse principale",
-    vehicleId: payload.vehicleId, kind: payload.kind,
-  } as any);
-  db.add("cash", {
-
-    type: "out",
-    label: payload.label,
-    amount: payload.amount,
-    date: new Date(date).toISOString(),
-    source: payload.paymentMethod ?? "Caisse principale",
-  });
-  return e;
-}
-
 export async function recordPayrollPayment(payload: {
   paymentId: string;
   employeeId: string;
@@ -1234,32 +1206,6 @@ export async function recordVehicleRentalReturn(
 export function isRentalOverdue(r: Rental): boolean {
   if (r.status !== "active") return false;
   return +new Date(r.endDate) < Date.now();
-}
-
-export function sellVehicle(payload: {
-  vehicleId: string; customer: string; phone?: string;
-  amount: number; payment: "cash" | "credit";
-}): VehicleSale {
-  const sale = db.add("vehicleSales", {
-    vehicleId: payload.vehicleId,
-    customer: payload.customer,
-    phone: payload.phone,
-    amount: payload.amount,
-    payment: payload.payment,
-    date: new Date().toISOString().slice(0, 10),
-    status: "done",
-  });
-  db.update("vehicles", payload.vehicleId, { status: "sold" } as any);
-  if (payload.payment === "cash") {
-    db.add("cash", {
-      type: "in",
-      label: `Vente véhicule — ${payload.customer}`,
-      amount: payload.amount,
-      date: new Date().toISOString(),
-      source: "Vente auto",
-    });
-  }
-  return sale;
 }
 
 export async function openVehicleMaintenance(payload: {

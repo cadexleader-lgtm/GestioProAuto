@@ -11,9 +11,15 @@ import { toast } from "sonner";
 
 export function SupplierDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v:boolean)=>void }) {
   const [form, setForm] = useState<any>({});
-  useEffect(()=>{ setForm({ name:"", company:"", contact:"", phone:"", email:"", city:"Dakar", country:"Sénégal", rc:"", ninea:"", paymentTerms:"30j", deliveryDays:7, totalPurchases:0, outstandingDebt:0, ordersInProgress:0, note:""}); },[open]);
+  const [submitting, setSubmitting] = useState(false);
+  useEffect(()=>{
+    setForm({ name:"", company:"", contact:"", phone:"", email:"", city:"Dakar", country:"Sénégal", rc:"", ninea:"", paymentTerms:"30j", deliveryDays:7, totalPurchases:0, outstandingDebt:0, ordersInProgress:0, note:""});
+    setSubmitting(false);
+  },[open]);
   const submit = () => {
     if (!form.name?.trim()) return toast.error("Nom requis");
+    if (submitting) return;
+    setSubmitting(true);
     db.add("suppliers", form);
     toast.success("Fournisseur ajouté");
     onOpenChange(false);
@@ -46,7 +52,7 @@ export function SupplierDialog({ open, onOpenChange }: { open: boolean; onOpenCh
             <div className="col-span-2"><Label>Note</Label><Textarea value={form.note||""} onChange={e=>setForm({...form,note:e.target.value})}/></div>
           </TabsContent>
         </Tabs>
-        <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>onOpenChange(false)}>Annuler</Button><Button onClick={submit}>Enregistrer</Button></DialogFooter>
+        <DialogFooter className="mt-4"><Button variant="outline" onClick={()=>onOpenChange(false)} disabled={submitting}>Annuler</Button><Button onClick={submit} disabled={submitting}>{submitting ? "Enregistrement..." : "Enregistrer"}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );
