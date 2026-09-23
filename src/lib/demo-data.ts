@@ -134,7 +134,12 @@ export interface Vehicle {
   wholesalePrice?: number;
   status: "available" | "sold" | "rented" | "maintenance";
   photo: string;
+  /** Photo de couverture — 1re photo de la galerie, utilisée partout où une vignette véhicule s'affiche. */
   image?: string;
+  /** Photos supplémentaires (jusqu'à 7, en plus de la couverture — 8 au total). */
+  photos?: string[];
+  /** Vidéo de présentation (optionnelle). */
+  video?: string;
   notes?: string;
   purchaseDate?: string;
   insuranceExpiry?: string;

@@ -12,13 +12,19 @@ import {
   privateDocumentSummary,
   uploadPrivateDocument,
   uploadVehiclePhoto,
+  uploadVehicleGalleryPhoto,
+  uploadVehicleVideo,
   type PendingPrivateDocument,
 } from "@/lib/demo-store";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, Upload, FileText, Download, Trash2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Upload, FileText, Download, Trash2, Plus, Video as VideoIcon, X } from "lucide-react";
 import type { Vehicle } from "@/lib/demo-data";
 import { VEHICLE_STATUS } from "@/lib/vehicle-status";
 import { formatFCFA } from "@/lib/format";
+
+const MAX_GALLERY_PHOTOS = 8;
+
+interface GalleryItem { key: string; url: string; file?: File }
 
 /* ================== VEHICLE WIZARD (Add + Edit + Documents) ================== */
 const STEPS = [
@@ -42,14 +48,16 @@ export function VehicleDialog({
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<any>({});
   const [pendingDocs, setPendingDocs] = useState<PendingPrivateDocument[]>([]);
-  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [pendingVideo, setPendingVideo] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setStep(0);
     setPendingDocs([]);
-    setPendingPhoto(null);
+    setPendingVideo(null);
     setSubmitting(false);
     setForm(
       vehicle
@@ -61,9 +69,14 @@ export function VehicleDialog({
             purchasePrice: 0, importFees: 0, customsFees: 0, repairFees: 0, maintenanceFees: 0,
             sellingPrice: 0, minPrice: 0, wholesalePrice: 0, status: "available", photo: "🚗",
             insuranceExpiry: "", techControlExpiry: "", carteGrise: "",
-            image: "", notes: "", documents: [],
+            image: "", photos: [], video: "", notes: "", documents: [],
           },
     );
+    const existing = vehicle
+      ? [vehicle.image, ...(vehicle.photos ?? [])].filter((u): u is string => !!u)
+      : [];
+    setGallery(existing.map((url) => ({ key: url, url })));
+    setVideoPreview(vehicle?.video ?? "");
   }, [open, vehicle]);
 
   const total = (form.purchasePrice || 0) + (form.importFees || 0) + (form.customsFees || 0) + (form.repairFees || 0) + (form.maintenanceFees || 0);
@@ -71,15 +84,33 @@ export function VehicleDialog({
   const marginWholesale = (form.wholesalePrice || 0) - total;
   const marginFloor = (form.minPrice || 0) - total;
 
-  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    const room = MAX_GALLERY_PHOTOS - gallery.length;
+    if (room <= 0) return toast.error(`Maximum ${MAX_GALLERY_PHOTOS} photos par véhicule.`);
+    const toAdd = files.slice(0, room);
+    if (files.length > toAdd.length) toast.info(`Seules ${toAdd.length} photo(s) ajoutée(s) — limite de ${MAX_GALLERY_PHOTOS} atteinte.`);
+    const items: GalleryItem[] = [];
+    for (const file of toAdd) {
+      if (file.size > 5_000_000) { toast.error(`${file.name} : trop volumineuse (max 5 Mo)`); continue; }
+      // Aperçu local immédiat (URL objet, pas de base64) — les fichiers ne
+      // sont envoyés au stockage (bucket public vehicle-photos) qu'à la
+      // validation du formulaire.
+      items.push({ key: crypto.randomUUID(), url: URL.createObjectURL(file), file });
+    }
+    setGallery((g) => [...g, ...items]);
+  };
+
+  const removeGalleryItem = (key: string) => setGallery((g) => g.filter((item) => item.key !== key));
+
+  const handleVideoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    if (file.size > 2_500_000) return toast.error("Image trop volumineuse (max 2.5 Mo)");
-    // Aperçu local immédiat (URL objet, pas de base64) — le fichier n'est
-    // envoyé au stockage (bucket public vehicle-photos) qu'à la validation
-    // du formulaire.
-    setPendingPhoto(file);
-    setForm((f: any) => ({ ...f, image: URL.createObjectURL(file) }));
+    if (file.size > 50_000_000) return toast.error("Vidéo trop volumineuse (max 50 Mo)");
+    setPendingVideo(file);
+    setVideoPreview(URL.createObjectURL(file));
   };
 
   const handleDocs = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,7 +152,7 @@ export function VehicleDialog({
   const submitVehicle = async () => {
     if (!form.brand || !form.model) {
       setStep(0);
-      return toast.error("Marque et modÃ¨le requis");
+      return toast.error("Marque et modèle requis");
     }
     if (submitting) return;
 
@@ -129,24 +160,45 @@ export function VehicleDialog({
     const vehicleId = vehicle?.id ?? form.id ?? crypto.randomUUID();
     const vehicleLabel = `${form.brand} ${form.model}${form.plate ? ` (${form.plate})` : ""}`;
 
-    // L'aperçu posé par handleImage() est une URL objet locale (blob:),
-    // invalide hors de cet onglet — jamais persistée telle quelle. On
-    // envoie le fichier réel au stockage et on remplace par l'URL publique
-    // avant d'écrire le véhicule.
-    let imageUrl = form.image as string;
-    if (pendingPhoto) {
+    // Les aperçus posés par handleGalleryAdd()/handleVideoPick() sont des
+    // URL objet locales (blob:), invalides hors de cet onglet — jamais
+    // persistées telles quelles. On envoie les fichiers réels au stockage
+    // et on remplace par les URL publiques avant d'écrire le véhicule.
+    // gallery[0] fait toujours office de couverture (form.image) ; le reste
+    // (jusqu'à 7 de plus, 8 au total) va dans form.photos.
+    const uploadedUrls: string[] = [];
+    let mediaFailed = false;
+    for (const item of gallery) {
+      if (!item.file) { uploadedUrls.push(item.url); continue; }
       try {
-        imageUrl = await uploadVehiclePhoto({ vehicleId, file: pendingPhoto });
+        const isCover = uploadedUrls.length === 0;
+        const url = isCover
+          ? await uploadVehiclePhoto({ vehicleId, file: item.file })
+          : await uploadVehicleGalleryPhoto({ vehicleId, file: item.file });
+        uploadedUrls.push(url);
       } catch (error) {
-        toast.error(error instanceof Error ? `Véhicule enregistré, photo non envoyée : ${error.message}` : "Véhicule enregistré, photo non envoyée.");
-        imageUrl = vehicle?.image || "";
+        mediaFailed = true;
+        console.error("[gestiopro] vehicle photo upload failed", error);
+      }
+    }
+    if (mediaFailed) toast.error("Véhicule enregistré, certaines photos n'ont pas pu être envoyées.");
+
+    let videoUrl = form.video as string;
+    if (pendingVideo) {
+      try {
+        videoUrl = await uploadVehicleVideo({ vehicleId, file: pendingVideo });
+      } catch (error) {
+        toast.error(error instanceof Error ? `Véhicule enregistré, vidéo non envoyée : ${error.message}` : "Véhicule enregistré, vidéo non envoyée.");
+        videoUrl = vehicle?.video || "";
       }
     }
 
     const cleanForm = {
       ...form,
       id: vehicleId,
-      image: imageUrl,
+      image: uploadedUrls[0] || "",
+      photos: uploadedUrls.slice(1),
+      video: videoUrl,
       documents: (form.documents || []).filter((d: any) => d.dataUrl),
     };
 
@@ -230,18 +282,51 @@ export function VehicleDialog({
         {/* STEP 0 — Général */}
         {step === 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div className="col-span-2 sm:col-span-3">
-              <Label>Photo du véhicule</Label>
-              <div className="flex items-center gap-3 mt-1">
-                <div className="w-20 h-20 rounded-lg bg-muted overflow-hidden flex items-center justify-center text-3xl shrink-0">
-                  {form.image ? <img src={form.image} alt="" className="w-full h-full object-cover" /> : form.photo}
+            <div className="col-span-2 sm:col-span-3 space-y-3">
+              <div>
+                <Label>Photos du véhicule ({gallery.length}/{MAX_GALLERY_PHOTOS})</Label>
+                <p className="text-[11px] text-muted-foreground mt-0.5">La première photo sert de couverture, visible partout dans l'app.</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {gallery.map((item, i) => (
+                    <div key={item.key} className="relative w-20 h-20 rounded-lg overflow-hidden border shrink-0 group">
+                      <img src={item.url} alt="" className="w-full h-full object-cover" />
+                      {i === 0 && <span className="absolute bottom-0 inset-x-0 bg-black/55 text-white text-[9px] text-center py-0.5">Couverture</span>}
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryItem(item.key)}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                  {gallery.length < MAX_GALLERY_PHOTOS && (
+                    <Label htmlFor="gallery-upload" className="w-20 h-20 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1 text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition shrink-0">
+                      <Plus size={18} />
+                      <span className="text-[10px]">Ajouter</span>
+                      <input id="gallery-upload" type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryAdd} />
+                    </Label>
+                  )}
                 </div>
-                <Input type="file" accept="image/*" onChange={handleImage} />
-                {form.image && (
-                  <Button type="button" variant="outline" size="sm"
-                    onClick={() => { setPendingPhoto(null); setForm({ ...form, image: "" }); }}>
-                    Retirer
-                  </Button>
+              </div>
+
+              <div>
+                <Label>Vidéo de présentation (optionnelle)</Label>
+                {videoPreview ? (
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <div className="w-20 h-14 rounded-lg overflow-hidden border bg-slate-900 shrink-0">
+                      <video src={videoPreview} className="w-full h-full object-cover" />
+                    </div>
+                    <Button type="button" variant="outline" size="sm"
+                      onClick={() => { setPendingVideo(null); setVideoPreview(""); setForm({ ...form, video: "" }); }}>
+                      <Trash2 size={14} /> Retirer
+                    </Button>
+                  </div>
+                ) : (
+                  <Label htmlFor="video-upload" className="mt-1.5 inline-flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition w-fit">
+                    <VideoIcon size={16} /> Ajouter une vidéo (max 50 Mo)
+                    <input id="video-upload" type="file" accept="video/*" className="hidden" onChange={handleVideoPick} />
+                  </Label>
                 )}
               </div>
             </div>

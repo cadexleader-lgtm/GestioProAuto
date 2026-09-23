@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatFCFA } from "@/lib/format";
 import { db, vehicleProfitability, isRentalOverdue } from "@/lib/demo-store";
 import type { Vehicle } from "@/lib/demo-data";
-import { Car, Fuel, Gauge, KeyRound, Wrench, ShoppingCart, Pencil, TrendingUp, TrendingDown, ArrowLeft } from "lucide-react";
+import { Car, Fuel, Gauge, KeyRound, Wrench, ShoppingCart, Pencil, Send, TrendingUp, TrendingDown, ArrowLeft, Play } from "lucide-react";
 import { VEHICLE_STATUS, RENTAL_STATUS, MAINTENANCE_STATUS, creditStatusLabel } from "@/lib/vehicle-status";
 import { useRole, can } from "@/lib/roles";
 
@@ -17,12 +18,19 @@ interface VehicleDetailSheetProps {
   onSell?: (v: Vehicle) => void;
   onMaintenance?: (v: Vehicle) => void;
   onEdit?: (v: Vehicle) => void;
+  onShare?: (v: Vehicle) => void;
 }
 
-export function VehicleDetailSheet({ vehicle, open, onOpenChange, onRent, onSell, onMaintenance, onEdit }: VehicleDetailSheetProps) {
+export function VehicleDetailSheet({ vehicle, open, onOpenChange, onRent, onSell, onMaintenance, onEdit, onShare }: VehicleDetailSheetProps) {
   const role = useRole();
   const canRent = can(role, "manage.rental");
   const canSell = can(role, "create.sale");
+  const [activePhoto, setActivePhoto] = useState<string | null>(null);
+  const [showVideo, setShowVideo] = useState(false);
+
+  useEffect(() => {
+    if (open) { setActivePhoto(null); setShowVideo(false); }
+  }, [open, vehicle?.id]);
 
   if (!vehicle) return null;
   const rentals = db.list("rentals").filter((r) => r.vehicleId === vehicle.id);
@@ -32,6 +40,8 @@ export function VehicleDetailSheet({ vehicle, open, onOpenChange, onRent, onSell
   const payments = db.list("vehiclePayments");
   const prof = vehicleProfitability(vehicle.id);
   const st = VEHICLE_STATUS[vehicle.status];
+  const gallery = [vehicle.image, ...(vehicle.photos ?? [])].filter((u): u is string => !!u);
+  const heroPhoto = activePhoto ?? vehicle.image;
 
   const canRentThis = vehicle.status === "available" && canRent && !!onRent;
   const canSellThis = vehicle.status === "available" && canSell && !!onSell;
@@ -43,8 +53,10 @@ export function VehicleDetailSheet({ vehicle, open, onOpenChange, onRent, onSell
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0 rounded-l-2xl">
         <div className="relative h-44 sm:h-56 bg-muted flex items-center justify-center overflow-hidden">
-          {vehicle.image ? (
-            <img src={vehicle.image} alt={`${vehicle.brand} ${vehicle.model}`} className="w-full h-full object-cover" />
+          {showVideo && vehicle.video ? (
+            <video src={vehicle.video} controls autoPlay className="w-full h-full object-contain bg-black" />
+          ) : heroPhoto ? (
+            <img src={heroPhoto} alt={`${vehicle.brand} ${vehicle.model}`} className="w-full h-full object-cover" />
           ) : (
             <span className="text-7xl sm:text-8xl">{vehicle.photo}</span>
           )}
@@ -58,18 +70,43 @@ export function VehicleDetailSheet({ vehicle, open, onOpenChange, onRent, onSell
             <span className={`w-1.5 h-1.5 rounded-full ${st.dotCls}`} /> {st.label}
           </span>
         </div>
+
+        {/* Galerie — photos + vidéo, jusqu'à 8 médias au total */}
+        {(gallery.length > 1 || vehicle.video) && (
+          <div className="px-4 sm:px-6 pt-3 flex gap-2 overflow-x-auto">
+            {gallery.map((url) => (
+              <button
+                key={url}
+                onClick={() => { setActivePhoto(url); setShowVideo(false); }}
+                className={`shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition ${!showVideo && heroPhoto === url ? "border-primary" : "border-transparent opacity-70 hover:opacity-100"}`}
+              >
+                <img src={url} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+            {vehicle.video && (
+              <button
+                onClick={() => setShowVideo(true)}
+                className={`shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 bg-slate-900 flex items-center justify-center text-white transition ${showVideo ? "border-primary" : "border-transparent opacity-70 hover:opacity-100"}`}
+              >
+                <Play size={18} />
+              </button>
+            )}
+          </div>
+        )}
+
         <SheetHeader className="px-4 sm:px-6 pt-5">
           <SheetTitle className="text-xl sm:text-2xl font-display">{vehicle.brand} {vehicle.model}</SheetTitle>
           <SheetDescription>{vehicle.year} · {vehicle.color} · {vehicle.plate}</SheetDescription>
         </SheetHeader>
 
         {/* Actions rapides — évite d'avoir à refermer la fiche pour agir */}
-        {(canRentThis || canSellThis || canMaintainThis || onEdit) && (
+        {(canRentThis || canSellThis || canMaintainThis || onEdit || onShare) && (
           <div className="px-4 sm:px-6 pt-4 flex flex-wrap gap-2">
             {canRentThis && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={act(onRent)}><KeyRound size={14} /> Louer</Button>}
             {canSellThis && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={act(onSell)}><ShoppingCart size={14} /> Vendre</Button>}
             {canMaintainThis && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={act(onMaintenance)}><Wrench size={14} /> Maintenance</Button>}
             {onEdit && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={act(onEdit)}><Pencil size={14} /> Modifier</Button>}
+            {onShare && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={act(onShare)}><Send size={14} /> Partager</Button>}
           </div>
         )}
 

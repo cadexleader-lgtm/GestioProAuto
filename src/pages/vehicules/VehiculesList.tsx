@@ -10,7 +10,7 @@ import {
 import {
   Plus, Search, Car, Fuel, Gauge, KeyRound, ShoppingCart,
   Wrench, Pencil, Eye, MoreVertical, Package, CheckCircle2, TrendingUp,
-  RefreshCw,
+  RefreshCw, Send, Images, Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatFCFA } from "@/lib/format";
@@ -22,6 +22,7 @@ import {
 } from "@/components/vehicles/VehicleActionsDialogs";
 import { SaleWorkflowDialog } from "@/components/vehicles/SaleWorkflowDialog";
 import { VehicleDetailSheet } from "@/components/vehicles/VehicleDetailSheet";
+import { VehicleShareDialog } from "@/components/vehicles/VehicleShareDialog";
 import type { Vehicle } from "@/lib/demo-data";
 import { useRole, can } from "@/lib/roles";
 import { VEHICLE_STATUS } from "@/lib/vehicle-status";
@@ -41,6 +42,7 @@ export function VehiculesList() {
   const [saleVehicle, setSaleVehicle] = useState<Vehicle | null>(null);
   const [maintFor, setMaintFor] = useState<Vehicle | null>(null);
   const [viewFor, setViewFor] = useState<Vehicle | null>(null);
+  const [shareFor, setShareFor] = useState<Vehicle | null>(null);
   const [migratingPhotos, setMigratingPhotos] = useState(false);
 
   const legacyPhotoCount = useMemo(
@@ -172,6 +174,12 @@ export function VehiculesList() {
                   <span className={`w-1.5 h-1.5 rounded-full ${st.dotCls}`} />
                   {st.label}
                 </span>
+                {((v.photos?.length ?? 0) > 0 || v.video) && (
+                  <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-black/55 text-white">
+                    {(v.photos?.length ?? 0) > 0 && <><Images size={11} /> {(v.photos?.length ?? 0) + 1}</>}
+                    {v.video && <Video size={11} className={(v.photos?.length ?? 0) > 0 ? "ml-1" : ""} />}
+                  </span>
+                )}
                 <div className="absolute top-2 right-2" onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -186,6 +194,8 @@ export function VehiculesList() {
                       {canSellThis && <DropdownMenuItem onClick={() => setSaleVehicle(v)}><ShoppingCart size={14} className="mr-2" /> Vendre</DropdownMenuItem>}
                       {canMaintainThis && <DropdownMenuItem onClick={() => setMaintFor(v)}><Wrench size={14} className="mr-2" /> Envoyer en maintenance</DropdownMenuItem>}
                       <DropdownMenuItem onClick={() => setEditFor(v)}><Pencil size={14} className="mr-2" /> Modifier</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setShareFor(v)}><Send size={14} className="mr-2" /> Partager avec un client</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -246,7 +256,9 @@ export function VehiculesList() {
         onSell={setSaleVehicle}
         onMaintenance={setMaintFor}
         onEdit={setEditFor}
+        onShare={setShareFor}
       />
+      <VehicleShareDialog vehicle={shareFor} open={!!shareFor} onOpenChange={(o) => !o && setShareFor(null)} />
     </div>
   );
 }

@@ -508,6 +508,50 @@ export async function uploadVehiclePhoto(input: { vehicleId: string; file: File 
 }
 
 /**
+ * Photo de galerie (en plus de la couverture) — chemin unique par photo
+ * (contrairement à la couverture, plusieurs coexistent : pas d'upsert sur
+ * un chemin stable ici, chaque ajout est un nouveau fichier).
+ */
+export async function uploadVehicleGalleryPhoto(input: { vehicleId: string; file: File }): Promise<string> {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const bucket = "vehicle-photos";
+  const ext = (input.file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const path = `${companyId}/${input.vehicleId}/gallery-${crypto.randomUUID()}.${ext}`;
+
+  const { error } = await sb.storage
+    .from(bucket)
+    .upload(path, input.file, { contentType: input.file.type || "image/jpeg" });
+
+  if (error) {
+    throw new Error(error.message || "La photo n'a pas pu être envoyée.");
+  }
+
+  const { data } = sb.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+/** Vidéo de présentation — chemin stable (upsert), une seule vidéo par véhicule. */
+export async function uploadVehicleVideo(input: { vehicleId: string; file: File }): Promise<string> {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const bucket = "vehicle-photos";
+  const ext = (input.file.name.split(".").pop() || "mp4").toLowerCase().replace(/[^a-z0-9]/g, "") || "mp4";
+  const path = `${companyId}/${input.vehicleId}/video.${ext}`;
+
+  const { error } = await sb.storage
+    .from(bucket)
+    .upload(path, input.file, { contentType: input.file.type || "video/mp4", upsert: true });
+
+  if (error) {
+    throw new Error(error.message || "La vidéo n'a pas pu être envoyée.");
+  }
+
+  const { data } = sb.storage.from(bucket).getPublicUrl(path);
+  return `${data.publicUrl}?v=${Date.now()}`;
+}
+
+/**
  * Attache un fichier PDF déjà généré côté client à un document de type
  * "bulletin" existant (créé par la RPC record_payroll_payment). La ligne
  * "documents" est verrouillée en écriture directe pour ce type — seule la
