@@ -14,7 +14,7 @@ import {
   FileText, Download, Send, Search, Plus, Trash2, FileSpreadsheet, Receipt,
   ScrollText, FileSignature, ClipboardList, BadgeCheck, RefreshCw, CalendarClock,
 } from "lucide-react";
-import { useCollection, db, getPrivateDocumentUrl } from "@/lib/demo-store";
+import { useCollection, db, getPrivateDocumentUrl, uploadPrivateDocument } from "@/lib/demo-store";
 import { useRole } from "@/lib/roles";
 import { formatFCFA } from "@/lib/format";
 import { useCompanyProfile } from "@/lib/company-profile";
@@ -54,6 +54,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 export function Documents() {
   const docs = useCollection("documents");
   const vehicles = useCollection("vehicles");
+  const vehicleSales = useCollection("vehicleSales");
   const profile = useCompanyProfile();
   const role = useRole();
   const canAccessDocuments = role === "patron" || role === "manager";
@@ -63,6 +64,7 @@ export function Documents() {
   const [expiringOnly, setExpiringOnly] = useState(false);
   const [q, setQ] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [migratingLegacy, setMigratingLegacy] = useState(false);
 
   const [form, setForm] = useState({
     party: "", phone: "", address: "", note: "", date: today(),
@@ -154,6 +156,22 @@ export function Documents() {
       );
   };
 
+  const legacyDocumentId = (...parts: Array<string | undefined>) =>
+    parts
+      .filter(Boolean)
+      .join("-")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 120);
+
+  const dataUrlToFile = async (dataUrl: string, name: string, type?: string) => {
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    return new File([blob], name || "document", { type: type || blob.type || "application/octet-stream" });
+  };
+
   const removeDocument = async (d: any) => {
     if (isPayrollDocument(d) || deletingId) return;
     setDeletingId(d.id);
@@ -175,13 +193,140 @@ export function Documents() {
       a.download = d.originalName || d.reference || d.title || "document";
       a.click();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "TÃ©lÃ©chargement indisponible.");
+      toast.error(error instanceof Error ? error.message : "Téléchargement indisponible.");
+    }
+  };
+
+  const legacyVehicleDocsCount = useMemo(
+    () => vehicles.reduce((count: number, v: any) => count + (v.documents ?? []).filter((f: any) => f.dataUrl).length, 0),
+    [vehicles],
+  );
+
+  const legacySaleDocsCount = useMemo(
+    () => vehicleSales.reduce((count: number, s: any) => count + (s.documents ?? []).filter((f: any) => f.dataUrl).length, 0),
+    [vehicleSales],
+  );
+
+  const legacyBase64Count = legacyVehicleDocsCount + legacySaleDocsCount;
+
+  const migrateLegacyBase64Documents = async () => {
+    if (!canAccessDocuments || migratingLegacy || legacyBase64Count === 0) return;
+
+    setMigratingLegacy(true);
+    let migrated = 0;
+    let failed = 0;
+
+    try {
+      for (const vehicle of vehicles as any[]) {
+        const legacyDocs = (vehicle.documents ?? []) as any[];
+        if (!legacyDocs.some((doc) => doc.dataUrl)) continue;
+
+        const keptDocs: any[] = [];
+
+        for (const doc of legacyDocs) {
+          if (!doc.dataUrl) {
+            keptDocs.push(doc);
+            continue;
+          }
+
+          try {
+            const file = await dataUrlToFile(doc.dataUrl, doc.name, doc.type);
+            await uploadPrivateDocument({
+              file,
+              documentId: legacyDocumentId("legacy", "vehicle", vehicle.id, doc.id),
+              type: "piece",
+              title: doc.name,
+              reference: doc.name,
+              relatedTo: vehicle.plate,
+              entityType: "vehicle",
+              entityId: vehicle.id,
+              entityLabel: `${vehicle.brand} ${vehicle.model}${vehicle.plate ? ` (${vehicle.plate})` : ""}`,
+              relationType: "legacy_vehicle_attachment",
+              expiresAt: doc.expiresAt,
+              origin: "Importé",
+              metadata: {
+                migratedFrom: "vehicles.data.documents",
+                legacyDocumentId: doc.id,
+                vehicleId: vehicle.id,
+                vehiclePlate: vehicle.plate,
+              },
+            });
+            migrated += 1;
+          } catch (error) {
+            failed += 1;
+            keptDocs.push(doc);
+            console.error("[gestiopro] legacy vehicle document migration failed", error);
+          }
+        }
+
+        db.update("vehicles", vehicle.id, { documents: keptDocs } as any);
+      }
+
+      for (const sale of vehicleSales as any[]) {
+        const legacyDocs = (sale.documents ?? []) as any[];
+        if (!legacyDocs.some((doc) => doc.dataUrl)) continue;
+
+        const nextDocs: any[] = [];
+
+        for (const doc of legacyDocs) {
+          if (!doc.dataUrl) {
+            nextDocs.push(doc);
+            continue;
+          }
+
+          try {
+            const file = await dataUrlToFile(doc.dataUrl, doc.name, doc.type);
+            const archived = await uploadPrivateDocument({
+              file,
+              documentId: legacyDocumentId("legacy", "sale", sale.id, doc.id),
+              type: "piece",
+              title: doc.name,
+              reference: doc.name,
+              relatedTo: sale.customer,
+              entityType: "sale",
+              entityId: sale.id,
+              entityLabel: sale.customer,
+              relationType: "legacy_sale_attachment",
+              origin: "Importé",
+              metadata: {
+                migratedFrom: "vehicle_sales.data.documents",
+                legacyDocumentId: doc.id,
+                saleId: sale.id,
+                vehicleId: sale.vehicleId,
+                customer: sale.customer,
+              },
+            });
+            nextDocs.push({
+              id: doc.id,
+              name: doc.name,
+              type: doc.type,
+              uploadedAt: doc.uploadedAt,
+              size: doc.size,
+              storageBucket: archived.storageBucket,
+              storagePath: archived.storagePath,
+            });
+            migrated += 1;
+          } catch (error) {
+            failed += 1;
+            nextDocs.push(doc);
+            console.error("[gestiopro] legacy sale document migration failed", error);
+          }
+        }
+
+        db.update("vehicleSales", sale.id, { documents: nextDocs } as any);
+      }
+
+      if (migrated > 0) toast.success(`${migrated} ancien(s) fichier(s) Base64 migré(s) vers le coffre privé.`);
+      if (failed > 0) toast.error(`${failed} fichier(s) n'ont pas pu être migrés et restent inchangés.`);
+      if (migrated === 0 && failed === 0) toast.info("Aucun ancien fichier Base64 à migrer.");
+    } finally {
+      setMigratingLegacy(false);
     }
   };
 
   const vehicleDocs = useMemo(
     () => vehicles.flatMap((v: any) =>
-      (v.documents ?? []).map((f: any) => ({
+      (v.documents ?? []).filter((f: any) => f.dataUrl).map((f: any) => ({
         id: `veh-${v.id}-${f.id}`,
         type: "piece",
         reference: f.name,
@@ -311,6 +456,17 @@ export function Documents() {
               onClick={() => setExpiringOnly((v) => !v)}>
               <CalendarClock size={15} /> Expire &lt; 30 j{expiringCount ? ` (${expiringCount})` : ""}
             </Button>
+            {legacyBase64Count > 0 && (
+              <Button
+                variant="outline"
+                className="rounded-xl gap-1.5 shrink-0 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                disabled={migratingLegacy}
+                onClick={() => void migrateLegacyBase64Documents()}
+              >
+                <RefreshCw size={15} />
+                {migratingLegacy ? "Migration..." : `Migrer Base64 (${legacyBase64Count})`}
+              </Button>
+            )}
             <Tabs value={filter} onValueChange={setFilter}>
               <TabsList className="rounded-xl overflow-x-auto max-w-full">
                 <TabsTrigger value="all" className="rounded-lg text-xs">Tous</TabsTrigger>
