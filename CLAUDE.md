@@ -4,7 +4,7 @@
 
 ## Vision
 
-**Décision stratégique (2026-09-21) : pivot mono-secteur.** GestioProAuto n'est plus une app multi-secteur — c'est désormais un **ERP automobile dédié**, exclusivement. Boutique/Électroménager/Restaurant sont des secteurs legacy à décommissionner (voir §4, Phase 3), pas des marchés à maintenir. Cible : PME automobiles au Bénin, puis Afrique. Ambition produit : un ERP au niveau de finition et de confiance d'un produit **Apple** — design system unique, pas un "template IA générique". Multi-tenant strict par `company_id`, 3 rôles (`patron` > `manager` > `terrain`).
+**Décision stratégique (2026-09-21) : pivot mono-secteur — exécutée (2026-09-24, commit `f1d59e0`).** GestioProAuto n'est plus une app multi-secteur — c'est un **ERP automobile dédié**, exclusivement. Boutique/Électroménager/Restaurant ont été **entièrement supprimés** du code (pas juste masqués — voir roadmap items 15-16) ; seules les tables Postgres correspondantes restent en base, orphelines, en attendant une validation explicite avant suppression. Cible : PME automobiles au Bénin, puis Afrique. Ambition produit : un ERP au niveau de finition et de confiance d'un produit **Apple** — design system unique, pas un "template IA générique". Multi-tenant strict par `company_id`, 3 rôles (`patron` > `manager` > `terrain`).
 
 ## Stack
 
@@ -21,25 +21,25 @@
 src/
   routes/            TanStack Router — 1 fichier = 1 route. app.tsx = layout + guard auth (client-only).
   pages/
-    vehicules/        Secteur Auto (PRIORITAIRE)
-    cross/            Pages transverses (tous secteurs) : Dépenses, Trésorerie, Documents, Fournisseurs, Personnel
-    electromenager/    Secteur secondaire
-    restaurant/        Secteur secondaire (candidat au nettoyage, cf. roadmap P1 §5)
-    *.tsx              Secteur "commerce" générique (Dashboard router, Reports, Sales, Stock, Customers, Categories, Settings)
+    vehicules/        Secteur Auto — LE seul secteur métier de l'app
+    cross/            Pages transverses : Dépenses, Trésorerie, Documents, Fournisseurs, Personnel
+    Dashboard.tsx      Rend directement VehiculesDashboard (plus de routage multi-secteur)
+    Settings.tsx       Paramètres entreprise (plus de sélecteur de secteur — un seul existe)
   components/
     vehicles/          Dialogues métier auto (vente, crédit, location, maintenance)
-    forms/             Dialogues métier transverses (Finance, RH, Fournisseurs, Secteur générique)
+    forms/             Dialogues métier transverses (Finance, RH, Fournisseurs) + SectorDialogs.tsx (VehicleDialog)
     layout/            AppShell, Sidebar, Topbar, MobileBottomNav
     analytics/         RevenueEvolutionChart (graphe CA/Dépenses)
-    sales/, stock/, customers/, settings/, pwa/   Secteur commerce générique
+    settings/, pwa/    TeamCard, CompanyBrandingCard, PWA install
     ui/                shadcn — ne pas modifier sans raison (généré)
   lib/
-    demo-store.ts      ⭐ CŒUR DE L'APP. Store réactif + toutes les fonctions d'écriture (RPC et legacy). Voir §2.
+    demo-store.ts      ⭐ CŒUR DE L'APP. Store réactif + toutes les fonctions d'écriture (RPC). Voir §2.
     tenant.ts           Session multi-tenant (company, role) — useTenant()
-    roles.ts            can(role, action) — permissions fines (actuellement peu branchées, cf. roadmap)
-    sectors.ts           Config des sous-secteurs et menus (pas de toggle par organisation actuellement)
-    format.ts, company-profile.ts, categories-data.ts, commerce-data.ts, demo-data.ts   Data/format helpers
-    pdf/engine.ts, pdf/templates.ts   Génération PDF (factures, contrats, reçus)
+    roles.ts            can(role, action) — permissions fines, branchées partout (cf. roadmap Phase 1)
+    sectors.ts           Un seul sous-secteur (`vehicules`) — structure conservée pour les menus (CROSS_MODULES + metierModules), pas pour du multi-secteur
+    mock-api.tsx         Alias tsconfig `@workspace/api-client-react` — ne garde que useGetCompany/useUpdateCompany/useListSectors (real data, pas du mock malgré le nom de fichier)
+    format.ts, company-profile.ts, demo-data.ts   Data/format helpers
+    pdf/engine.ts, pdf/templates.ts   Génération PDF (factures, contrats, reçus, bulletins)
     vehicle-pdf.ts       PDF spécifiques véhicule
   integrations/supabase/
     client.ts            Client Supabase navigateur
@@ -50,20 +50,22 @@ src/
 supabase/migrations/    Migrations SQL, chronologiques. Voir §2 pour la lecture des flux financiers.
 ```
 
+**Secteurs legacy retirés (2026-09-24, commit `f1d59e0`)** : Boutique/Électroménager/Restaurant n'existent plus dans `src/` — ni pages, ni routes, ni dialogues, ni data layer. Ne pas chercher `pages/restaurant/`, `pages/electromenager/`, `Sales.tsx`, `Stock.tsx`, `Categories.tsx`, `Customers.tsx`, `Reports.tsx`, `commerce-data.ts`, `categories-data.ts` — ils ont été supprimés intentionnellement, pas oubliés. Les tables Postgres correspondantes (`appliances`, `warranties`, `pro_invoices`, `appliance_credits`, `products`, `customers`, `sales`, `categories`, `dishes`, `resto_tables`, `orders`, `reservations`) existent encore en base mais sont orphelines (aucun code ne les lit/écrit) — suppression en attente d'une validation explicite séparée.
+
 ### Fichiers clés (résumé une ligne)
 
 | Fichier | Rôle |
 |---|---|
-| `src/lib/demo-store.ts` | Store de toutes les collections + fonctions RPC-backed (`recordVehicleCashSale`, `recordManualExpense`, etc.) + fonctions legacy à écriture directe (`addExpense`, `sellVehicle`, `startVehicleMaintenance`) |
+| `src/lib/demo-store.ts` | Store de toutes les collections + fonctions RPC-backed (`recordVehicleCashSale`, `recordManualExpense`, etc.) |
 | `src/lib/tenant.ts` | Session courante : `useTenant()`, `company`, `role`, `roleAtLeast()` |
-| `src/lib/roles.ts` | `can(role, action)` — permissions fines, peu utilisées dans l'UI actuellement |
-| `src/lib/sectors.ts` | Menus par sous-secteur (`vehicules`/`boutique`/`electromenager`/`restaurant`), pas de toggle par organisation |
+| `src/lib/roles.ts` | `can(role, action)` — permissions fines, branchées dans toute l'UI (Phase 1 terminée) |
+| `src/lib/sectors.ts` | Un seul sous-secteur (`vehicules`) — structure conservée pour les menus |
 | `src/routes/app.tsx` | Layout `/app/*`, garde d'auth **client-only** (`beforeLoad` → redirect si pas de session) |
 | `src/integrations/supabase/auth-middleware.ts` | Vraie barrière serveur : valide le JWT sur les server functions |
-| `src/pages/cross/Documents.tsx` | Centre documentaire (P0 en cours, cf. roadmap) |
+| `src/pages/cross/Documents.tsx` | Centre documentaire (items 6, 13 terminés — voir roadmap) |
 | `src/pages/cross/Tresorerie.tsx` + `src/components/forms/FinanceDialogs.tsx` | Journal de caisse |
 | `src/pages/cross/Depenses.tsx` | Journal des dépenses |
-| `src/pages/vehicules/VehiculesDashboard.tsx`, `VehiculesRapports.tsx`, `src/pages/Reports.tsx` | KPI/CA — **3 définitions distinctes du CA, non réconciliées** (voir §Conventions/pièges) |
+| `src/pages/vehicules/VehiculesDashboard.tsx`, `VehiculesRapports.tsx` | KPI/CA — **toujours 2 définitions distinctes du CA, non réconciliées** (`Reports.tsx` générique supprimé le 2026-09-24, `RevenueEvolutionChart.tsx` en a une 3e — voir roadmap item 17) |
 | `src/lib/demo-store.ts:vehicleProfitability()` | Source UNIQUE de la rentabilité véhicule (bien utilisée partout où affichée) |
 | `supabase/migrations/20260904153136_add_ledger_entries.sql` | Schéma du ledger central |
 
@@ -103,9 +105,9 @@ Modifier une RPC = modifier la migration SQL correspondante (nouvelle migration,
 
 ### Dépendances importantes
 
-- Modifier `ledger_entries` (schéma) → impacte les 8 RPC financières + `Tresorerie.tsx`/`Depenses.tsx`/`Reports.tsx` qui pourraient un jour le lire directement (actuellement **aucune page ne lit `ledger_entries`**, toutes lisent les collections dérivées `cash`/`expenses`/`vehicleSales`/etc. — donc modifier une RPC sans mettre à jour la collection locale correspondante désynchronise l'UI).
+- Modifier `ledger_entries` (schéma) → impacte les 8 RPC financières + `Tresorerie.tsx`/`Depenses.tsx` qui pourraient un jour le lire directement (actuellement **aucune page ne lit `ledger_entries`**, toutes lisent les collections dérivées `cash`/`expenses`/`vehicleSales`/etc. — donc modifier une RPC sans mettre à jour la collection locale correspondante désynchronise l'UI).
 - `demo-store.ts` → `TABLES` (mapping collection → table Postgres) : ajouter une collection nécessite d'ajouter l'entrée ici + dans `seeds` + dans `CollectionMap`.
-- Le CA/bénéfice est calculé **indépendamment** dans `Reports.tsx`, `VehiculesDashboard.tsx`, `VehiculesRapports.tsx`, `RevenueEvolutionChart.tsx` — modifier une définition n'impacte pas les autres. Chantier de réconciliation identifié mais pas fait.
+- Le CA/bénéfice est calculé **indépendamment** dans `VehiculesDashboard.tsx`, `VehiculesRapports.tsx`, `RevenueEvolutionChart.tsx` — modifier une définition n'impacte pas les autres. Chantier de réconciliation identifié mais pas fait (roadmap item 17).
 - `vehicleProfitability()` (demo-store.ts) dépend de `db.list("expenses")` — toute dépense non persistée côté serveur fausse la rentabilité véhicule si `vehicleId` renseigné.
 - Rôles : `roles.ts:can()` existe mais n'est branché nulle part sauf le garde ad hoc de `Documents.tsx` (`role === "patron" || role === "manager"`). Les RPC financières font leur propre vérification serveur (`company_role_at_least`) — c'est la vraie barrière, pas l'UI.
 
@@ -163,14 +165,12 @@ Modifier une RPC = modifier la migration SQL correspondante (nouvelle migration,
 14. ✅ **Terminé** (2026-09-24, commit `4deb025`) — **pas le même traitement que les documents, volontairement** : les photos ne sont pas confidentielles (contrairement aux documents RH/financiers) et doivent rester visibles par tous les rôles y compris terrain, donc bucket **public** dédié `vehicle-photos` (migration `20260924110000_create_vehicle_photos_bucket.sql`) plutôt qu'une extension du bucket privé `company-documents` — URL publique stable, pas de lien signé à rafraîchir, les ~9 pages qui affichent `<img src={v.image}>` n'ont pas eu besoin d'être modifiées. `uploadVehiclePhoto()` (demo-store.ts) : chemin stable par véhicule (`vehicle-photos/{company}/{vehicle}/cover.{ext}`, upsert — pas d'historique de versions à gérer, contrairement aux documents). `SectorDialogs.tsx` (`VehicleDialog.handleImage`) n'utilise plus `FileReader.readAsDataURL` — aperçu local par URL objet, upload réel seulement à la validation. Bouton de migration des photos legacy encore en base64 sur `VehiculesList.tsx` (même pattern que la migration Base64 déjà en place pour les documents). **⚠️ 1 migration en attente sur `gestiopro-dev`** : `20260924110000_create_vehicle_photos_bucket.sql`.
 
 ### Phase 3 — Recentrage mono-secteur (décision stratégique confirmée)
-15. Décommissionner Restaurant/Boutique/Électroménager : (a) masquer routes/menus, (b) désactiver les écritures, (c) vérifier les dépendances, (d) retirer les appels frontend, (e) garder les tables un temps, (f) supprimer seulement après validation explicite. **Ne rien supprimer sans confirmation.**
-16. Une fois (15) validé en prod : simplifier `src/lib/sectors.ts`/`Dashboard.tsx` (routeur par `subSectorId`) pour retirer l'abstraction multi-secteur devenue inutile — tech-debt, pas urgent.
-
-> **Pourquoi le nettoyage (Phase 3) passe avant le dashboard/rapports (Phase 4) et non l'inverse** : `Reports.tsx` calcule aujourd'hui un CA multi-secteur (boutique + véhicules + locations). Corriger sa logique avant le décommissionnement obligerait à la refaire une seconde fois une fois les secteurs legacy retirés. On décommissionne d'abord, on répare la logique financière une seule fois, en mono-secteur, ensuite.
+15. ✅ **Terminé — suppression complète, pas un masquage** (2026-09-24, commit `f1d59e0`, à la demande explicite de l'utilisateur : "supprime complètement... que le secteur auto soit indépendant"). Restaurant/Électroménager et les pages commerce génériques utilisées par Boutique (Sales/Stock/Categories/CommerceDashboard/Customers/Reports) retirés du code : pages, routes, dialogues, data layer (`commerce-data.ts`, `categories-data.ts`). Cartographie de dépendances faite par un agent Explore avant toute suppression pour ne rien casser côté vehicules. **Tables Postgres conservées** (orphelines, non lues/écrites par le code) : `appliances`, `warranties`, `pro_invoices`, `appliance_credits`, `products`, `customers`, `sales`, `categories`, `dishes`, `resto_tables`, `orders`, `reservations` — suppression en base toujours en attente d'une validation explicite séparée.
+16. ✅ **Terminé** (même commit `f1d59e0`) — `sectors.ts` simplifié à un seul sous-secteur (`vehicules`) ; `Dashboard.tsx` rend directement `VehiculesDashboard` (routeur `subSectorId` retiré) ; `mock-api.tsx` (alias `@workspace/api-client-react`) réduit aux hooks encore utilisés (`useGetCompany`/`useUpdateCompany`/`useListSectors`) ; sélecteurs de secteur retirés de `Settings.tsx`, `app.tsx` (création d'entreprise) et `inscription.tsx` (qui passe de 2 étapes à 1, l'étape "quelle activité" n'ayant plus de sens à choix unique).
 
 ### Phase 4 — Source unique de vérité métier (dashboard, rapports, statuts)
-17. Dashboard : distinguer clairement CA / encaissé réel / créances / acomptes / solde dû / dépenses / bénéfice / trésorerie disponible — source unique, pas de recalcul par page. 🆕 Constat technique : au moment de l'audit, `Reports.tsx`, `VehiculesDashboard.tsx`, `VehiculesRapports.tsx` et `RevenueEvolutionChart.tsx` avaient **4 définitions différentes du CA**, aucune ne lisant `ledger_entries`.
-18. Rapports : même source financière partout, pas de double comptage, export PDF/Excel fonctionnel (au moment de l'audit, l'export "Rapports auto" faisait `window.print()` et non un vrai PDF structuré comme `Reports.tsx`).
+17. Dashboard : distinguer clairement CA / encaissé réel / créances / acomptes / solde dû / dépenses / bénéfice / trésorerie disponible — source unique, pas de recalcul par page. Constat technique : au moment de l'audit initial, `Reports.tsx`, `VehiculesDashboard.tsx`, `VehiculesRapports.tsx` et `RevenueEvolutionChart.tsx` avaient **4 définitions différentes du CA**, aucune ne lisant `ledger_entries`. `Reports.tsx` (générique multi-secteur) a été supprimé le 2026-09-24 avec le nettoyage Phase 3 — **il en reste 3 à réconcilier** : `VehiculesDashboard.tsx`, `VehiculesRapports.tsx`, `RevenueEvolutionChart.tsx`.
+18. Rapports : même source financière partout, pas de double comptage, export PDF/Excel fonctionnel (au moment de l'audit, l'export "Rapports auto" faisait `window.print()` et non un vrai PDF structuré — le moteur `pdf/engine.ts`/`pdf/templates.ts:pdfReport()` existe déjà et est utilisé ailleurs, à réutiliser ici plutôt que d'en écrire un nouveau).
 19. Statuts métier véhicule cohérents (disponible/vendu/loué/en maintenance/indisponible, crédit en cours/terminé, contrat actif/terminé) entre Parking, Véhicules, Ventes, Locations, Crédits, Trésorerie, Dashboard.
 
 ### Phase 5 — Scalabilité produit
