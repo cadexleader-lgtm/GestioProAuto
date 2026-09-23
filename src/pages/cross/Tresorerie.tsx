@@ -11,6 +11,17 @@ import { RevenueEvolutionChart } from "@/components/analytics/RevenueEvolutionCh
 
 type Period = "day" | "month" | "year" | "all";
 
+// Les ventes/paiements enregistrent le moyen de paiement ("Cash", "Virement", "Chèque")
+// alors que les mouvements manuels utilisent des noms de compte ("Caisse principale",
+// "Banque") pour designer le même compte réel — on normalise pour ne pas les séparer
+// à tort. Doit rester alignée avec private.normalize_cash_account() côté serveur.
+function normalizeCashAccount(source: string): string {
+  const s = (source || "").trim();
+  if (s === "Cash") return "Caisse principale";
+  if (s === "Virement" || s === "Chèque" || s === "Cheque") return "Banque";
+  return s;
+}
+
 export function Tresorerie() {
   const cashMovements = useCollection("cash");
   const expenses = useCollection("expenses");
@@ -33,7 +44,7 @@ export function Tresorerie() {
 
   const periodMoves = useMemo(() => cashMovements
     .filter(m => inPeriod(m.date))
-    .filter(m => account === "all" || m.source === account)
+    .filter(m => account === "all" || normalizeCashAccount(m.source) === account)
     .slice()
     .sort((a, b) => (a.date < b.date ? 1 : -1)),
   [cashMovements, period, account]);
@@ -51,9 +62,10 @@ export function Tresorerie() {
   const accounts = useMemo(() => {
     const map = new Map<string, { in: number; out: number }>();
     cashMovements.forEach(m => {
-      const a = map.get(m.source) ?? { in: 0, out: 0 };
+      const key = normalizeCashAccount(m.source);
+      const a = map.get(key) ?? { in: 0, out: 0 };
       if (m.type === "in") a.in += m.amount; else a.out += m.amount;
-      map.set(m.source, a);
+      map.set(key, a);
     });
     return [...map.entries()]
       .map(([name, v]) => ({ name, ...v, balance: v.in - v.out }))
