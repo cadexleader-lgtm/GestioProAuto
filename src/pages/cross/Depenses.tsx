@@ -51,9 +51,13 @@ export function Depenses() {
       : period === "month" ? d.startsWith(monthKey)
       : d.startsWith(yearKey);
 
-  const totalToday = expenses.filter(e => e.date.startsWith(todayKey)).reduce((s, e) => s + e.amount, 0);
-  const totalMonth = expenses.filter(e => e.date.startsWith(monthKey)).reduce((s, e) => s + e.amount, 0);
-  const totalYear = expenses.filter(e => e.date.startsWith(yearKey)).reduce((s, e) => s + e.amount, 0);
+  // Les dépenses liées à un salaire annulé restent visibles pour la traçabilité
+  // mais ne doivent plus compter dans les totaux (l'argent est revenu en caisse).
+  const activeExpenses = useMemo(() => expenses.filter(e => (e as any).status !== "cancelled"), [expenses]);
+
+  const totalToday = activeExpenses.filter(e => e.date.startsWith(todayKey)).reduce((s, e) => s + e.amount, 0);
+  const totalMonth = activeExpenses.filter(e => e.date.startsWith(monthKey)).reduce((s, e) => s + e.amount, 0);
+  const totalYear = activeExpenses.filter(e => e.date.startsWith(yearKey)).reduce((s, e) => s + e.amount, 0);
 
   // Recettes du mois (caisse) pour situer le poids des dépenses
   const revenueMonth = cash
@@ -61,14 +65,14 @@ export function Depenses() {
     .reduce((s, m) => s + m.amount, 0);
   const ratio = revenueMonth > 0 ? Math.round((totalMonth / revenueMonth) * 100) : 0;
 
-  const filtered = useMemo(() => expenses
+  const filtered = useMemo(() => activeExpenses
     .filter(e => inPeriod(e.date))
     .filter(e => cat === "all" || e.category === cat)
     .filter(e => src === "all" || sourceOf(e) === src)
     .filter(e => !q || `${e.label} ${e.category}`.toLowerCase().includes(q.toLowerCase()))
     .slice()
     .sort((a, b) => (a.date < b.date ? 1 : -1)),
-  [expenses, period, cat, src, q]);
+  [activeExpenses, period, cat, src, q]);
 
   const periodTotal = filtered.reduce((s, e) => s + e.amount, 0);
 
@@ -84,7 +88,7 @@ export function Depenses() {
     return [...map.entries()].map(([name, value]) => ({ name: SOURCE_META[name]?.label ?? name, value }));
   }, [filtered]);
 
-  const categories = useMemo(() => [...new Set(expenses.map(e => e.category))], [expenses]);
+  const categories = useMemo(() => [...new Set(activeExpenses.map(e => e.category))], [activeExpenses]);
 
   const pendingMaint = maintenances.filter((m: any) => m.status !== "done");
 
@@ -106,14 +110,9 @@ export function Depenses() {
 
       {/* Actions rapides */}
       <div className="flex flex-wrap gap-2">
-        <div className="flex flex-col gap-1">
-          <Button variant="outline" size="sm" disabled>
-            <Users size={14} /> Paiement groupé — bientôt disponible
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            Le paiement individuel des salaires doit être effectué depuis Personnel. Le paiement groupé sera disponible prochainement.
-          </p>
-        </div>
+        <Button variant="outline" size="sm" onClick={() => setCat("Salaires")}>
+          <Users size={14} /> Dépenses salaires
+        </Button>
         <Button variant="outline" size="sm" onClick={() => setCat("Maintenance")}>
           <Wrench size={14} /> Dépenses maintenance
         </Button>

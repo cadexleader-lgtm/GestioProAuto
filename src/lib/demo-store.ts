@@ -59,6 +59,29 @@ export interface Payslip {
   advances: number;
   net: number;
   paidAt?: string;
+  status?: "posted" | "partial" | "cancelled";
+  netDue?: number;
+  paidAmount?: number;
+  remaining?: number;
+  installments?: { amount: number; paidAt: string; method: string; paymentId: string; ledgerEntryId?: string; expenseId?: string; cashMovementId?: string }[];
+  cancelledAt?: string;
+  cancelReason?: string;
+}
+
+export interface SalaryAdvance {
+  id: string;
+  employeeId: string;
+  amount: number;
+  remainingAmount: number;
+  currency: string;
+  method: string;
+  grantedAt: string;
+  note?: string;
+  status: "outstanding" | "settled";
+  settledInPayslipId?: string;
+  settledAt?: string;
+  ledgerEntryId?: string;
+  cashMovementId?: string;
 }
 
 export interface MaintenanceRecord {
@@ -143,6 +166,7 @@ type CollectionMap = {
   rentalPayments: RentalPayment;
   attendance: Attendance;
   payslips: Payslip;
+  salaryAdvances: SalaryAdvance;
   maintenance: MaintenanceRecord;
   vehicleMaintenances: VehicleMaintenance;
   vehiclePayments: VehiclePayment;
@@ -169,6 +193,7 @@ const seeds: { [K in keyof CollectionMap]: CollectionMap[K][] } = {
   rentalPayments: [],
   attendance: [],
   payslips: [],
+  salaryAdvances: [],
   maintenance: [
     { id: "mt1", vehicleId: "v1", date: "2026-05-10", type: "Vidange", description: "Vidange 10W40 + filtre", cost: 35000, nextDueKm: 55000 },
     { id: "mt2", vehicleId: "v6", date: "2026-06-01", type: "Réparation", description: "Réparation climatisation", cost: 95000 },
@@ -193,6 +218,7 @@ const TABLES: Record<keyof CollectionMap, string> = {
   rentalPayments: "rental_payments",
   attendance: "attendance",
   payslips: "payslips",
+  salaryAdvances: "salary_advances",
   maintenance: "maintenance",
   vehicleMaintenances: "vehicle_maintenances",
   vehiclePayments: "vehicle_payments",
@@ -1081,6 +1107,107 @@ export async function createEmployee(payload: Omit<Employee, "id"> & { employeeI
   return employee;
 }
 
+export async function terminateEmployee(payload: { employeeId: string; reason: string; terminatedAt: string }): Promise<Employee> {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data: row, error } = await sb.rpc("terminate_employee", {
+    p_company_id: companyId,
+    p_employee_id: payload.employeeId,
+    p_reason: payload.reason,
+    p_terminated_at: payload.terminatedAt,
+  });
+
+  if (error) throw new Error(rpcErrorMessage(error, "Le statut de l'employé n'a pas pu être modifié."));
+
+  const employee = { id: row.id, ...(row.data ?? {}) } as Employee;
+  db.upsertLocal("employees", employee);
+  return employee;
+}
+
+export async function reactivateEmployee(employeeId: string): Promise<Employee> {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data: row, error } = await sb.rpc("reactivate_employee", {
+    p_company_id: companyId,
+    p_employee_id: employeeId,
+  });
+
+  if (error) throw new Error(rpcErrorMessage(error, "L'employé n'a pas pu être réactivé."));
+
+  const employee = { id: row.id, ...(row.data ?? {}) } as Employee;
+  db.upsertLocal("employees", employee);
+  return employee;
+}
+
+export async function updateEmployeeSalary(payload: { employeeId: string; newSalary: number; effectiveAt: string; reason?: string }): Promise<Employee> {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data: row, error } = await sb.rpc("update_employee_salary", {
+    p_company_id: companyId,
+    p_employee_id: payload.employeeId,
+    p_new_salary: payload.newSalary,
+    p_effective_at: payload.effectiveAt,
+    p_reason: payload.reason ?? "",
+  });
+
+  if (error) throw new Error(rpcErrorMessage(error, "Le salaire n'a pas pu être modifié."));
+
+  const employee = { id: row.id, ...(row.data ?? {}) } as Employee;
+  db.upsertLocal("employees", employee);
+  return employee;
+}
+
+export async function grantSalaryAdvance(payload: {
+  advanceId: string;
+  employeeId: string;
+  amount: number;
+  currency: string;
+  method: string;
+  grantedAt: string;
+  note?: string;
+  idempotencyKey: string;
+}) {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data, error } = await sb.rpc("grant_salary_advance", {
+    p_company_id: companyId,
+    p_advance_id: payload.advanceId,
+    p_employee_id: payload.employeeId,
+    p_amount: payload.amount,
+    p_currency: payload.currency,
+    p_method: payload.method,
+    p_granted_at: payload.grantedAt,
+    p_note: payload.note ?? "",
+    p_idempotency_key: payload.idempotencyKey,
+  });
+
+  if (error) throw new Error(rpcErrorMessage(error, "L'avance n'a pas pu être enregistrée."));
+
+  if (data?.advance) db.upsertLocal("salaryAdvances", { id: data.advance_id, ...data.advance });
+  if (data?.cash) db.upsertLocal("cash", { id: data.cash_movement_id, ...data.cash, ledgerEntryId: data.ledger_entry_id });
+
+  return data;
+}
+
+/** Employé + montant total des avances en cours (non encore rattachées à un bulletin). */
+export function outstandingAdvancesFor(employeeId: string): { ids: string[]; total: number } {
+  const advances = db.list("salaryAdvances").filter((a) => a.employeeId === employeeId && a.status === "outstanding");
+  return { ids: advances.map((a) => a.id), total: advances.reduce((s, a) => s + a.remainingAmount, 0) };
+}
+
+async function settleSalaryAdvances(advanceIds: string[], payslipId: string) {
+  if (!companyId || advanceIds.length === 0) return;
+
+  const { data, error } = await sb.rpc("settle_salary_advances", {
+    p_company_id: companyId,
+    p_advance_ids: advanceIds,
+    p_payslip_id: payslipId,
+  });
+
+  if (error) return; // Paiement déjà acquis ; le rattachement des avances n'est pas bloquant.
+  (data as any[] | null)?.forEach((row) => db.upsertLocal("salaryAdvances", { id: row.id, ...row.data }));
+}
+
 /* ==============================================================
  * VEHICLE SYNC HELPERS — single source of truth for status changes.
  * ============================================================== */
@@ -1097,6 +1224,8 @@ export async function recordPayrollPayment(payload: {
   method: string;
   paidAt: string;
   idempotencyKey: string;
+  /** Avances en cours de l'employé à rattacher à ce bulletin (déjà comptées dans `deductions`/`advances`). */
+  settleAdvanceIds?: string[];
 }) {
   if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
 
@@ -1128,6 +1257,72 @@ export async function recordPayrollPayment(payload: {
     ledgerEntryId: data.ledger_entry_id,
   });
   if (data?.document) db.upsertLocal("documents", { id: data.document_id, ...data.document });
+
+  if (payload.settleAdvanceIds?.length) {
+    await settleSalaryAdvances(payload.settleAdvanceIds, data.payslip_id);
+  }
+
+  return data;
+}
+
+export async function recordPayrollInstallment(payload: {
+  paymentId: string;
+  employeeId: string;
+  month: string;
+  baseSalary: number;
+  bonuses: number;
+  deductions: number;
+  advances: number;
+  amount: number;
+  currency: string;
+  method: string;
+  paidAt: string;
+  idempotencyKey: string;
+  /** Avances en cours de l'employé à rattacher (uniquement sur le 1er versement du mois). */
+  settleAdvanceIds?: string[];
+}) {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data, error } = await sb.rpc("record_payroll_installment", {
+    p_company_id: companyId,
+    p_payment_id: payload.paymentId,
+    p_employee_id: payload.employeeId,
+    p_month: payload.month,
+    p_base_salary: payload.baseSalary,
+    p_bonuses: payload.bonuses,
+    p_deductions: payload.deductions,
+    p_advances: payload.advances,
+    p_amount: payload.amount,
+    p_currency: payload.currency,
+    p_method: payload.method,
+    p_paid_at: payload.paidAt,
+    p_idempotency_key: payload.idempotencyKey,
+  });
+
+  if (error) throw new Error(rpcErrorMessage(error, "Le versement n'a pas pu être enregistré."));
+
+  if (data?.payslip) db.upsertLocal("payslips", { id: data.payslip_id, ...data.payslip });
+  if (data?.document) db.upsertLocal("documents", { id: data.document_id, ...data.document });
+
+  if (payload.settleAdvanceIds?.length) {
+    await settleSalaryAdvances(payload.settleAdvanceIds, data.payslip_id);
+  }
+
+  return data;
+}
+
+export async function cancelPayrollPayment(payload: { payslipId: string; reason: string }) {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data, error } = await sb.rpc("cancel_payroll_payment", {
+    p_company_id: companyId,
+    p_payslip_id: payload.payslipId,
+    p_reason: payload.reason,
+  });
+
+  if (error) throw new Error(rpcErrorMessage(error, "Le paiement n'a pas pu être annulé."));
+
+  if (data?.payslip) db.upsertLocal("payslips", { id: data.payslip_id, ...data.payslip });
 
   return data;
 }

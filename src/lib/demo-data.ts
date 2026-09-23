@@ -35,10 +35,15 @@ export interface Employee {
   email: string;
   hiredAt: string;
   salary: number;
-  status: "present" | "absent" | "leave";
+  status: "present" | "absent" | "leave" | "inactive";
   /** auth.users.id du compte de connexion lié (rôle terrain/manager) — permet
    * à un employé de retrouver sa propre fiche. Absent si aucun compte lié. */
   userId?: string;
+  /** Renseigné uniquement si status === "inactive" (licenciement/démission/fin de contrat). */
+  terminatedAt?: string;
+  terminationReason?: string;
+  /** Historique des changements de salaire, du plus récent au plus ancien. */
+  salaryHistory?: { previousSalary: number; newSalary: number; effectiveAt: string; reason?: string; changedAt: string }[];
 }
 
 export const employees: Employee[] = [
@@ -70,6 +75,9 @@ export interface Expense {
   paidBy?: string;
   paymentMethod?: string;
   note?: string;
+  /** Présent uniquement si la dépense a été annulée (ex. salaire annulé) — exclue des totaux. */
+  status?: "cancelled";
+  cancelledAt?: string;
 }
 
 export const expenses: Expense[] = [

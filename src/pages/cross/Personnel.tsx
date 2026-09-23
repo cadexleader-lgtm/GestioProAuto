@@ -2,31 +2,44 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useCollection } from "@/lib/demo-store";
+import { useCollection, reactivateEmployee } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { Plus, Phone, Mail, Clock, Wallet, User, Users } from "lucide-react";
-import { EmployeeDialog, AttendanceDialog, PayrollDialog, BulkPayrollDialog } from "@/components/forms/HrDialogs";
+import { Plus, Phone, Mail, Clock, Wallet, Users, UserX } from "lucide-react";
+import {
+  EmployeeDialog, AttendanceDialog, PayrollDialog, BulkPayrollDialog, EmployeeDetailDialog,
+  TerminateEmployeeDialog, UpdateSalaryDialog, SalaryAdvanceDialog, CancelPayrollDialog,
+} from "@/components/forms/HrDialogs";
 import { useRole, can } from "@/lib/roles";
 import { useTenant } from "@/lib/tenant";
+import { toast } from "sonner";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
-  present: { label: "Présent",  cls: "bg-emerald-50 text-emerald-700" },
-  absent:  { label: "Absent",   cls: "bg-rose-50 text-rose-700" },
-  leave:   { label: "Congé",    cls: "bg-amber-50 text-amber-700" },
-  late:    { label: "Retard",   cls: "bg-orange-50 text-orange-700" },
+  present:  { label: "Présent",  cls: "bg-emerald-50 text-emerald-700" },
+  absent:   { label: "Absent",   cls: "bg-rose-50 text-rose-700" },
+  leave:    { label: "Congé",    cls: "bg-amber-50 text-amber-700" },
+  late:     { label: "Retard",   cls: "bg-orange-50 text-orange-700" },
+  inactive: { label: "Inactif",  cls: "bg-slate-100 text-slate-600" },
 };
 
 export function Personnel() {
   const role = useRole();
   const canPay = can(role, "manage.payroll");
   const { userId } = useTenant();
-  const employees = useCollection("employees");
+  const allEmployees = useCollection("employees");
   const attendance = useCollection("attendance");
   const payslips = useCollection("payslips");
   const [openEmp, setOpenEmp] = useState(false);
   const [openAtt, setOpenAtt] = useState(false);
   const [openPay, setOpenPay] = useState(false);
   const [openBulkPay, setOpenBulkPay] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [advanceId, setAdvanceId] = useState<string | null>(null);
+  const [salaryId, setSalaryId] = useState<string | null>(null);
+  const [terminateId, setTerminateId] = useState<string | null>(null);
+  const [cancelPayslip, setCancelPayslip] = useState<any | null>(null);
+
+  const employees = allEmployees;
 
   if (role === "terrain") {
     const me = employees.find((e) => e.userId === userId);
@@ -86,11 +99,15 @@ export function Personnel() {
     );
   }
 
-  const total = employees.length;
-  const present = employees.filter(e => e.status === "present").length;
-  const absent = employees.filter(e => e.status === "absent").length;
-  const massSalary = employees.reduce((s, e) => s + e.salary, 0);
-  const paidThisMonth = payslips.filter(p => p.month === new Date().toISOString().slice(0,7)).length;
+  const activeEmployees = employees.filter(e => e.status !== "inactive");
+  const inactiveEmployees = employees.filter(e => e.status === "inactive");
+  const visibleEmployees = showInactive ? employees : activeEmployees;
+
+  const total = activeEmployees.length;
+  const present = activeEmployees.filter(e => e.status === "present").length;
+  const absent = activeEmployees.filter(e => e.status === "absent").length;
+  const massSalary = activeEmployees.reduce((s, e) => s + e.salary, 0);
+  const paidThisMonth = payslips.filter(p => p.month === new Date().toISOString().slice(0,7) && (p as any).status !== "cancelled").length;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -131,6 +148,18 @@ export function Personnel() {
 
       <Card className="shadow-sm">
         <CardContent className="p-0 overflow-x-auto">
+          <div className="flex items-center justify-between px-6 py-3 border-b">
+            <p className="text-xs text-muted-foreground">{visibleEmployees.length} employé(s) affiché(s)</p>
+            {inactiveEmployees.length > 0 && (
+              <button
+                type="button"
+                className="text-xs text-primary hover:underline flex items-center gap-1"
+                onClick={() => setShowInactive(v => !v)}
+              >
+                <UserX size={12} /> {showInactive ? "Masquer" : "Afficher"} les inactifs ({inactiveEmployees.length})
+              </button>
+            )}
+          </div>
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
@@ -143,10 +172,10 @@ export function Personnel() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {employees.map(e => {
+              {visibleEmployees.map(e => {
                 const st = STATUS[e.status] || STATUS.present;
                 return (
-                  <tr key={e.id} className="hover:bg-muted/30">
+                  <tr key={e.id} className={`hover:bg-muted/30 cursor-pointer ${e.status === "inactive" ? "opacity-60" : ""}`} onClick={() => setDetailId(e.id)}>
                     <td className="px-6 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-primary/15 text-primary font-bold flex items-center justify-center text-xs">
@@ -178,6 +207,24 @@ export function Personnel() {
       <AttendanceDialog open={openAtt} onOpenChange={setOpenAtt} />
       <PayrollDialog open={openPay} onOpenChange={setOpenPay} />
       <BulkPayrollDialog open={openBulkPay} onOpenChange={setOpenBulkPay} />
+      <EmployeeDetailDialog
+        employeeId={detailId}
+        onOpenChange={(v) => !v && setDetailId(null)}
+        onAdvance={(id) => { setDetailId(null); setAdvanceId(id); }}
+        onEditSalary={(id) => { setDetailId(null); setSalaryId(id); }}
+        onTerminate={(id) => { setDetailId(null); setTerminateId(id); }}
+        onReactivate={(id) => {
+          setDetailId(null);
+          void reactivateEmployee(id)
+            .then(() => toast.success("Employé réactivé"))
+            .catch((error) => toast.error(error instanceof Error ? error.message : "La réactivation a échoué."));
+        }}
+        onCancelPayslip={(p) => { setDetailId(null); setCancelPayslip(p); }}
+      />
+      <SalaryAdvanceDialog employeeId={advanceId} onOpenChange={(v) => !v && setAdvanceId(null)} />
+      <UpdateSalaryDialog employeeId={salaryId} onOpenChange={(v) => !v && setSalaryId(null)} />
+      <TerminateEmployeeDialog employeeId={terminateId} onOpenChange={(v) => !v && setTerminateId(null)} />
+      <CancelPayrollDialog payslip={cancelPayslip} onOpenChange={(v) => !v && setCancelPayslip(null)} />
     </div>
   );
 }
