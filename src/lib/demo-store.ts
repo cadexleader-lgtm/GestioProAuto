@@ -362,6 +362,12 @@ function row(id: string, item: any) {
   return { id, company_id: companyId, data: rest };
 }
 
+/** Combine message + detail + hint renvoyes par une RPC Postgres en un seul message lisible. */
+function rpcErrorMessage(error: { message?: string; details?: string; hint?: string }, fallback: string): string {
+  const parts = [error?.message, error?.details, error?.hint].filter(Boolean);
+  return parts.length ? parts.join(" ") : fallback;
+}
+
 function fireAndForget(p: Promise<any>) {
   p.then((res: any) => {
     if (res?.error) console.error("[gestiopro] sync error", res.error.message ?? res.error);
@@ -748,7 +754,7 @@ export async function recordCashMovement(payload: CashMovementPayload) {
   });
 
   if (error) {
-    throw new Error(error.message || "Le mouvement de caisse n'a pas pu être enregistré.");
+    throw new Error(rpcErrorMessage(error, "Le mouvement de caisse n'a pas pu être enregistré."));
   }
 
   db.upsertLocal("cash", {
@@ -792,7 +798,7 @@ export async function recordCashTransfer(payload: CashTransferPayload) {
   });
 
   if (error) {
-    throw new Error(error.message || "Le virement n'a pas pu être enregistré.");
+    throw new Error(rpcErrorMessage(error, "Le virement n'a pas pu être enregistré."));
   }
 
   if (data?.out) {
