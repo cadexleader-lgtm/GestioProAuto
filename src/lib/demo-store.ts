@@ -536,13 +536,16 @@ export async function uploadPrivateDocument(input: {
   return documentData;
 }
 
-export async function getPrivateDocumentUrl(doc: { dataUrl?: string; storageBucket?: string; storagePath?: string }) {
+export async function getPrivateDocumentUrl(
+  doc: { dataUrl?: string; storageBucket?: string; storagePath?: string },
+  expiresInSeconds = 60,
+) {
   if (doc.dataUrl) return doc.dataUrl;
   if (!doc.storagePath) throw new Error("Aucun fichier privÃ© n'est associÃ© Ã  ce document.");
 
   const { data, error } = await sb.storage
     .from(doc.storageBucket ?? "company-documents")
-    .createSignedUrl(doc.storagePath, 60);
+    .createSignedUrl(doc.storagePath, expiresInSeconds);
 
   if (error || !data?.signedUrl) {
     throw new Error(error?.message || "Lien de tÃ©lÃ©chargement indisponible.");

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import {
 import {
   FileText, Download, Send, Search, Plus, Trash2, FileSpreadsheet, Receipt,
   ScrollText, FileSignature, RefreshCw, CalendarClock, ShieldAlert, FolderOpen,
-  Wallet, Sparkles,
+  Wallet, Sparkles, Eye, ChevronLeft, ChevronRight, ExternalLink,
 } from "lucide-react";
 import { useCollection, db, getPrivateDocumentUrl, uploadPrivateDocument } from "@/lib/demo-store";
 import { useRole } from "@/lib/roles";
@@ -73,6 +73,7 @@ const PARTY_REQUIRED_MESSAGE: Record<DocKind, string> = {
 
 const emptyLine = (): InvoiceLine => ({ designation: "", detail: "", qty: 1, unitPrice: 0 });
 const today = () => new Date().toISOString().slice(0, 10);
+const PAGE_SIZE = 20;
 
 export function Documents() {
   const docs = useCollection("documents");
@@ -90,6 +91,11 @@ export function Documents() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [migratingLegacy, setMigratingLegacy] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [page, setPage] = useState(1);
+  const [preview, setPreview] = useState<{ doc: any; url: string } | null>(null);
+  const [previewLoadingId, setPreviewLoadingId] = useState<string | null>(null);
+
+  useEffect(() => { setPage(1); }, [filter, entity, expiringOnly, q]);
 
   const [form, setForm] = useState({
     party: "", phone: "", address: "", note: "", date: today(),
@@ -219,6 +225,22 @@ export function Documents() {
       a.click();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Téléchargement indisponible.");
+    }
+  };
+
+  const openPreview = async (d: any) => {
+    if (previewLoadingId) return;
+    setPreviewLoadingId(d.id);
+    try {
+      // 5 min — assez pour consulter le document dans la fenêtre d'aperçu,
+      // contrairement au lien de téléchargement (60 s) qui n'a besoin de
+      // vivre que le temps du clic.
+      const url = await getPrivateDocumentUrl(d, 300);
+      setPreview({ doc: d, url });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Aperçu indisponible.");
+    } finally {
+      setPreviewLoadingId(null);
     }
   };
 
@@ -409,6 +431,10 @@ export function Documents() {
   const filteredGeneral = filtered.filter((d) => !isPayrollDocument(d));
   const filteredPayroll = filtered.filter((d) => isPayrollDocument(d));
 
+  const totalPages = Math.max(1, Math.ceil(filteredGeneral.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedGeneral = filteredGeneral.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   const isLineDoc = kind === "facture" || kind === "proforma";
 
   const renderDocRow = (d: any) => {
@@ -437,6 +463,12 @@ export function Documents() {
         )}
         <p className="font-bold text-sm hidden sm:block whitespace-nowrap">{d.amount ? formatFCFA(d.amount) : "—"}</p>
         <div className="flex gap-0.5 shrink-0">
+          {(d.dataUrl || d.storagePath) && (
+            <Button size="icon" variant="ghost" title="Aperçu" disabled={previewLoadingId === d.id}
+              onClick={() => void openPreview(d)}>
+              <Eye size={15} />
+            </Button>
+          )}
           {d.dataUrl || d.storagePath ? (
             <Button size="icon" variant="ghost" title="Télécharger" onClick={() => downloadDocument(d)}>
               <Download size={15} />
@@ -579,7 +611,7 @@ export function Documents() {
             </div>
           </div>
 
-          <div className="divide-y max-h-[520px] overflow-y-auto">
+          <div className="divide-y">
             {filteredGeneral.length === 0 && (
               <div className="p-12 flex flex-col items-center text-center gap-2">
                 <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
@@ -593,8 +625,26 @@ export function Documents() {
                 </p>
               </div>
             )}
-            {filteredGeneral.map((d: any) => renderDocRow(d))}
+            {pagedGeneral.map((d: any) => renderDocRow(d))}
           </div>
+
+          {filteredGeneral.length > PAGE_SIZE && (
+            <div className="flex items-center justify-between gap-3 p-4 border-t">
+              <p className="text-xs text-muted-foreground">
+                Page {currentPage} sur {totalPages} · {filteredGeneral.length} document(s)
+              </p>
+              <div className="flex gap-1.5">
+                <Button variant="outline" size="icon" className="rounded-xl" disabled={currentPage <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}>
+                  <ChevronLeft size={15} />
+                </Button>
+                <Button variant="outline" size="icon" className="rounded-xl" disabled={currentPage >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
+                  <ChevronRight size={15} />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -746,6 +796,32 @@ export function Documents() {
             <Button variant="outline" className="rounded-xl" onClick={() => setKind(null)} disabled={generating}>Annuler</Button>
             <Button className="rounded-xl gap-1.5" onClick={generate} disabled={generating}>
               <Download size={15} /> {generating ? "Génération..." : "Générer le PDF"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Aperçu inline */}
+      <Dialog open={!!preview} onOpenChange={(v) => !v && setPreview(null)}>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="truncate pr-6">{preview?.doc.reference} — {preview?.doc.title}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 rounded-xl border bg-muted/30 overflow-hidden">
+            {preview && (
+              (preview.doc.mimeType || "").startsWith("image/") ? (
+                <img src={preview.url} alt={preview.doc.title} className="w-full h-full object-contain" />
+              ) : (
+                <iframe src={preview.url} title={preview.doc.title} className="w-full h-full" />
+              )
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" className="rounded-xl gap-1.5" onClick={() => preview && window.open(preview.url, "_blank")}>
+              <ExternalLink size={15} /> Ouvrir dans un onglet
+            </Button>
+            <Button className="rounded-xl gap-1.5" onClick={() => preview && downloadDocument(preview.doc)}>
+              <Download size={15} /> Télécharger
             </Button>
           </DialogFooter>
         </DialogContent>
