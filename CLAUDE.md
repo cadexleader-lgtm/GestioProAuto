@@ -12,7 +12,11 @@
 - Backend : pas d'API custom, pas d'Edge Functions. Logique serveur = **RPC Postgres** (`SECURITY DEFINER`) + RLS.
 - DB : Supabase Postgres. Deux familles de tables : générique `jsonb` (majorité) et typées strictes (`companies`, `profiles`, `company_members`, `ledger_entries`).
 - Auth : Supabase Auth, session en localStorage, JWT validé côté serveur pour les server functions.
-- Storage : bucket privé `company-documents` (documents RH/financiers, lecture manager+) + bucket public `vehicle-photos` (photos de couverture véhicule, visibles par tous les rôles — voir roadmap item 14).
+- Storage : bucket privé `company-documents` (documents RH/financiers, lecture manager+) + bucket public `vehicle-photos` (photos + galerie jusqu'à 8 + vidéo optionnelle par véhicule, visibles par tous les rôles — voir roadmap item 14 et §Fonctionnalités ci-dessous).
+
+## Fonctionnalités notables hors numérotation roadmap
+
+- **Galerie véhicule (jusqu'à 8 photos) + vidéo + partage client** (2026-09-24, commit `3ed04f7`) — `Vehicle.photos[]`/`Vehicle.video` (demo-data.ts), `uploadVehicleGalleryPhoto()`/`uploadVehicleVideo()` (demo-store.ts, même bucket `vehicle-photos` étendu par `20260924120000_extend_vehicle_photos_bucket_gallery_video.sql` — 50 Mo, mimes vidéo ajoutés). `VehicleShareDialog.tsx` : partage la fiche véhicule (message de vente pré-rédigé + photos sélectionnées) vers WhatsApp en un geste sur mobile/PWA (API Web Share native, texte+fichiers) — **limite technique réelle sur desktop/navigateur non compatible** : un lien `wa.me` ne peut prérempli qu'un texte, jamais joindre un fichier ; le fallback télécharge les photos et ouvre WhatsApp avec le message prêt, l'utilisateur joint lui-même (annoncé dans le toast, pas silencieux) — voir `src/lib/vehicle-share.ts`. `src/lib/watermark.ts` : filigrane GestioPro discret apposé uniquement sur les photos **envoyées** (jamais sur l'original stocké), dégrade gracieusement vers l'original si le filigrane échoue (CORS…). **⚠️ 1 migration en attente sur `gestiopro-dev`** : `20260924120000_extend_vehicle_photos_bucket_gallery_video.sql`.
 - Déploiement : Cloudflare/Nitro (`.wrangler/`, `.output/`).
 
 ## 1. Structure du projet
