@@ -32,10 +32,11 @@ export function can(role: Role, action:
   | "manage.settings"
   | "manage.credit"
   | "manage.payroll"
+  | "manage.team"
   | "create.sale"
 ): boolean {
   if (role === "patron") return true;
-  if (role === "manager") return action !== "wipe.data" && action !== "manage.settings";
+  if (role === "manager") return action !== "wipe.data" && action !== "manage.settings" && action !== "manage.team";
   // terrain : saisie & consultation, aucun accès finances (vente, crédit, paie,
   // trésorerie) — cohérent avec ce que les RPC financières exigent déjà côté serveur
   // (company_role_at_least('manager')).

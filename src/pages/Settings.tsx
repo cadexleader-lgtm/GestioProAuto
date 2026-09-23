@@ -19,6 +19,7 @@ import { ROLES, useRole, can } from "@/lib/roles";
 import { isSoundEnabled, setSoundEnabled } from "@/lib/notifications";
 import { Switch } from "@/components/ui/switch";
 import { CompanyBrandingCard } from "@/components/settings/CompanyBrandingCard";
+import { TeamCard } from "@/components/settings/TeamCard";
 import { useState } from "react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -162,6 +163,8 @@ export function Settings() {
       </Card>
 
       <RolesAndAlertsCard />
+
+      <TeamCard />
 
       <CompanyBrandingCard />
 
