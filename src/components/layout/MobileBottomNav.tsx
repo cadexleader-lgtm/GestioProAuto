@@ -9,6 +9,7 @@ import {
 import { useGetCompany } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import { getSubSectorConfig } from "@/lib/sectors";
+import { useFeatureFlags, filterModulesByFlags } from "@/lib/feature-flags";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   LayoutDashboard, ShoppingCart, Package, Users, Settings,
@@ -35,8 +36,9 @@ export function MobileBottomNav() {
   const location = useLocation({ select: (s) => s.pathname });
   const { data: company } = useGetCompany();
   const sub = getSubSectorConfig(company?.subSectorId);
+  const flags = useFeatureFlags();
 
-  const primary = sub.metierModules.slice(0, 4);
+  const primary = filterModulesByFlags(sub.metierModules, flags).slice(0, 4);
   const items = [
     ...primary,
     { href: "/app/parametres", iconName: "Settings", label: "Réglages" },

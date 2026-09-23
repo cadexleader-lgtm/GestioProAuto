@@ -11,6 +11,7 @@ import {
 } from "@/components/forms/HrDialogs";
 import { useRole, can } from "@/lib/roles";
 import { useTenant } from "@/lib/tenant";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { toast } from "sonner";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -23,7 +24,8 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 
 export function Personnel() {
   const role = useRole();
-  const canPay = can(role, "manage.payroll");
+  const flags = useFeatureFlags();
+  const canPay = can(role, "manage.payroll") && flags.payroll;
   const { userId } = useTenant();
   const allEmployees = useCollection("employees");
   const attendance = useCollection("attendance");

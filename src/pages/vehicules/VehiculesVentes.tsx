@@ -11,11 +11,13 @@ import { toast } from "sonner";
 import { SaleWorkflowDialog } from "@/components/vehicles/SaleWorkflowDialog";
 import { useRole, can } from "@/lib/roles";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
+import { useFeatureFlags } from "@/lib/feature-flags";
 
 export function VehiculesVentes() {
   const role = useRole();
   const canSell = can(role, "create.sale");
   const canViewPage = can(role, "view.finance");
+  const flags = useFeatureFlags();
   const sales = useCollection("vehicleSales");
   const vehicles = useCollection("vehicles");
   const [q, setQ] = useState("");
@@ -65,6 +67,9 @@ export function VehiculesVentes() {
 
   if (!canViewPage) {
     return <RestrictedAccess title="Ventes de véhicules" message="Accès aux ventes restreint à votre rôle." />;
+  }
+  if (!flags.sales) {
+    return <RestrictedAccess title="Ventes de véhicules" message="Ce module est désactivé pour votre entreprise. Un patron peut le réactiver dans Paramètres." />;
   }
 
   return (

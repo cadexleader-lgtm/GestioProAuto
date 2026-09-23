@@ -14,11 +14,13 @@ import { toast } from "sonner";
 import type { VehicleCredit } from "@/lib/demo-data";
 import { useRole, can } from "@/lib/roles";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
+import { useFeatureFlags } from "@/lib/feature-flags";
 
 export function VehiculesCredits() {
   const role = useRole();
   const canManageCredit = can(role, "manage.credit");
   const canViewPage = can(role, "view.finance");
+  const flags = useFeatureFlags();
   const credits = useCollection("vehicleCredits");
   const vehicles = useCollection("vehicles");
   const payments = useCollection("vehiclePayments");
@@ -46,6 +48,9 @@ export function VehiculesCredits() {
 
   if (!canViewPage) {
     return <RestrictedAccess title="Ventes à crédit" message="Accès aux crédits restreint à votre rôle." />;
+  }
+  if (!flags.credit) {
+    return <RestrictedAccess title="Ventes à crédit" message="Ce module est désactivé pour votre entreprise. Un patron peut le réactiver dans Paramètres." />;
   }
 
   return (

@@ -21,6 +21,9 @@ import { Switch } from "@/components/ui/switch";
 import { CompanyBrandingCard } from "@/components/settings/CompanyBrandingCard";
 import { TeamCard } from "@/components/settings/TeamCard";
 import { useState } from "react";
+import { setFeatureFlags } from "@/lib/demo-store";
+import { FEATURE_FLAGS, useFeatureFlags } from "@/lib/feature-flags";
+import { SlidersHorizontal } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -156,6 +159,8 @@ export function Settings() {
 
       <RolesAndAlertsCard />
 
+      <FeatureFlagsCard />
+
       <TeamCard />
 
       <CompanyBrandingCard />
@@ -282,6 +287,67 @@ function RolesAndAlertsCard() {
             </div>
           </div>
           <Switch checked={sound} onCheckedChange={(v) => { setSound(v); setSoundEnabled(v); }} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * Feature Flags par organisation (item 22 roadmap) — le patron active/masque
+ * les modules métier réellement utilisés par son entreprise (ex. un loueur
+ * pur n'a pas besoin du module Ventes). Modifie une ligne unique dans
+ * company_settings via la RPC set_feature_flags (patron uniquement — la
+ * page Paramètres reste accessible à manager mais sans pouvoir toucher ces
+ * réglages, cohérent avec `manage.settings` déjà réservé au patron ailleurs).
+ */
+function FeatureFlagsCard() {
+  const role = useRole();
+  const canEdit = can(role, "manage.settings");
+  const flags = useFeatureFlags();
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+
+  const toggle = async (key: string, value: boolean) => {
+    if (savingKey) return;
+    setSavingKey(key);
+    try {
+      await setFeatureFlags({ [key]: value });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Le module n'a pas pu être mis à jour.");
+    } finally {
+      setSavingKey(null);
+    }
+  };
+
+  return (
+    <Card className="shadow-sm border-slate-200">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><SlidersHorizontal size={18}/> Modules activés</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Masquez les modules que votre entreprise n'utilise pas (ex. pas de location de véhicules).
+          Le module disparaît du menu et de la page pour toute l'équipe.
+        </p>
+        {!canEdit && (
+          <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            Réservé au rôle Patron.
+          </p>
+        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {FEATURE_FLAGS.map((f) => (
+            <div key={f.key} className="flex items-center justify-between rounded-2xl border border-slate-200 p-4">
+              <div className="min-w-0 pr-3">
+                <p className="font-semibold text-sm">{f.label}</p>
+                <p className="text-xs text-muted-foreground">{f.description}</p>
+              </div>
+              <Switch
+                checked={flags[f.key]}
+                disabled={!canEdit || savingKey === f.key}
+                onCheckedChange={(v) => void toggle(f.key, v)}
+              />
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>

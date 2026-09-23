@@ -15,10 +15,13 @@ import { generateRentalContract, sendWhatsApp } from "@/lib/vehicle-pdf";
 import type { Rental } from "@/lib/demo-data";
 import { useRole, can } from "@/lib/roles";
 import { RENTAL_STATUS as STATUS } from "@/lib/vehicle-status";
+import { RestrictedAccess } from "@/components/RestrictedAccess";
+import { useFeatureFlags } from "@/lib/feature-flags";
 
 export function VehiculesLocations() {
   const role = useRole();
   const canManageRental = can(role, "manage.rental");
+  const flags = useFeatureFlags();
   const rentals = useCollection("rentals");
   const vehicles = useCollection("vehicles");
   const [openPicker, setOpenPicker] = useState(false);
@@ -71,6 +74,10 @@ export function VehiculesLocations() {
   const rentVehicle = rentVehicleId ? vehicles.find((v) => v.id === rentVehicleId) ?? null : null;
   const returnRentalObj = returnId ? rentals.find((r) => r.id === returnId) : null;
   const returnVehicle = returnRentalObj ? vehicles.find((v) => v.id === returnRentalObj.vehicleId) ?? null : null;
+
+  if (!flags.rentals) {
+    return <RestrictedAccess title="Locations" message="Ce module est désactivé pour votre entreprise. Un patron peut le réactiver dans Paramètres." />;
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

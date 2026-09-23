@@ -15,8 +15,11 @@ import { MaintenanceVehicleDialog } from "@/components/vehicles/VehicleActionsDi
 import { toast } from "sonner";
 import type { VehicleMaintenance } from "@/lib/demo-store";
 import { MAINTENANCE_STATUS as STATUS } from "@/lib/vehicle-status";
+import { RestrictedAccess } from "@/components/RestrictedAccess";
+import { useFeatureFlags } from "@/lib/feature-flags";
 
 export function VehiculesMaintenance() {
+  const flags = useFeatureFlags();
   const items = useCollection("vehicleMaintenances");
   const vehicles = useCollection("vehicles");
   const [q, setQ] = useState("");
@@ -119,6 +122,10 @@ export function VehiculesMaintenance() {
       setCompletingId(null);
     }
   };
+
+  if (!flags.maintenance) {
+    return <RestrictedAccess title="Maintenance" message="Ce module est désactivé pour votre entreprise. Un patron peut le réactiver dans Paramètres." />;
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

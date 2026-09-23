@@ -1327,6 +1327,21 @@ export async function cancelPayrollPayment(payload: { payslipId: string; reason:
   return data;
 }
 
+export async function setFeatureFlags(flags: Record<string, boolean>) {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data: row, error } = await sb.rpc("set_feature_flags", {
+    p_company_id: companyId,
+    p_flags: flags,
+  });
+
+  if (error) throw new Error(rpcErrorMessage(error, "Les modules n'ont pas pu être mis à jour."));
+
+  const setting = { id: row.id, ...(row.data ?? {}) };
+  db.upsertLocal("settings", setting);
+  return setting;
+}
+
 export async function startRental(
   payload: Omit<Rental, "id"> & { rentalId: string; idempotencyKey: string; currency: string; method: string },
 ) {

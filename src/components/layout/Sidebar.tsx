@@ -12,6 +12,7 @@ import {
 import { useGetCompany } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import { getSubSectorConfig, getCrossModules } from "@/lib/sectors";
+import { useFeatureFlags, filterModulesByFlags } from "@/lib/feature-flags";
 import logoIcon from "@/assets/gestiopro-icon.png";
 
 interface SidebarProps {
@@ -31,6 +32,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const location = useLocation({ select: (s) => s.pathname });
   const { data: company } = useGetCompany();
   const sub = getSubSectorConfig(company?.subSectorId);
+  const flags = useFeatureFlags();
   const [hovered, setHovered] = useState(false);
 
   // Mobile: expanded when isOpen. Desktop: expanded on hover.
@@ -140,10 +142,10 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2.5 py-2 custom-scrollbar space-y-0.5">
           {sectionLabel("Métier")}
-          {sub.metierModules.map(renderItem)}
+          {filterModulesByFlags(sub.metierModules, flags).map(renderItem)}
 
           {sectionLabel("Transversal")}
-          {getCrossModules(company?.subSectorId).map(renderItem)}
+          {filterModulesByFlags(getCrossModules(company?.subSectorId), flags).map(renderItem)}
 
           {sectionLabel("Entreprise")}
           {renderItem({ href: "/app/parametres", iconName: "Settings", label: "Paramètres" })}

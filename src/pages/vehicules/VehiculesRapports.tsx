@@ -15,6 +15,8 @@ import {
 } from "recharts";
 import { TrendingUp, TrendingDown, Minus, Car, KeyRound, Users, Wallet, Download, Trophy, Wrench } from "lucide-react";
 import { toast } from "sonner";
+import { RestrictedAccess } from "@/components/RestrictedAccess";
+import { useFeatureFlags } from "@/lib/feature-flags";
 
 /**
  * Palette — validée colorblind-safe (skill dataviz, palette.md), utilisée
@@ -33,6 +35,7 @@ const PERIODS = { "30": "30 derniers jours", "90": "3 derniers mois", "365": "12
 type Period = keyof typeof PERIODS;
 
 export function VehiculesRapports() {
+  const flags = useFeatureFlags();
   const vehicles = useCollection("vehicles");
   const sales = useCollection("vehicleSales");
   const credits = useCollection("vehicleCredits");
@@ -187,6 +190,10 @@ export function VehiculesRapports() {
       setExporting(false);
     }
   };
+
+  if (!flags.reports) {
+    return <RestrictedAccess title="Rapports" message="Ce module est désactivé pour votre entreprise. Un patron peut le réactiver dans Paramètres." />;
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

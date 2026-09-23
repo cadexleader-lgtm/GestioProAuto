@@ -27,6 +27,7 @@ import {
 } from "@/lib/pdf/templates";
 import { SignaturePad } from "@/components/ui/signature-pad";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { toast } from "sonner";
 
 /**
@@ -83,6 +84,7 @@ export function Documents() {
   const role = useRole();
   const { company } = useTenant();
   const canAccessDocuments = role === "patron" || role === "manager";
+  const flags = useFeatureFlags();
   const [kind, setKind] = useState<DocKind | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const [entity, setEntity] = useState<string>("all");
@@ -504,6 +506,9 @@ export function Documents() {
 
   if (!canAccessDocuments) {
     return <RestrictedAccess title="Documents" message="Accès aux documents restreint à votre rôle." />;
+  }
+  if (!flags.documents) {
+    return <RestrictedAccess title="Documents" message="Ce module est désactivé pour votre entreprise. Un patron peut le réactiver dans Paramètres." />;
   }
 
   return (
