@@ -555,6 +555,34 @@ export async function getPrivateDocumentUrl(
 }
 
 /**
+ * Photo de couverture d'un véhicule — bucket PUBLIC dédié (`vehicle-photos`),
+ * distinct du coffre-fort privé `company-documents` : une photo de véhicule
+ * n'est pas une donnée sensible et doit rester visible par tous les rôles
+ * (y compris terrain). Chemin stable par véhicule (upsert), pas d'historique
+ * de versions à gérer — un remplacement écrase simplement l'ancien fichier.
+ */
+export async function uploadVehiclePhoto(input: { vehicleId: string; file: File }): Promise<string> {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const bucket = "vehicle-photos";
+  const ext = (input.file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const path = `${companyId}/${input.vehicleId}/cover.${ext}`;
+
+  const { error } = await sb.storage
+    .from(bucket)
+    .upload(path, input.file, { contentType: input.file.type || "image/jpeg", upsert: true });
+
+  if (error) {
+    throw new Error(error.message || "La photo n'a pas pu être envoyée.");
+  }
+
+  const { data } = sb.storage.from(bucket).getPublicUrl(path);
+  // Le chemin est stable (upsert) : on casse le cache navigateur/CDN sur
+  // chaque remplacement, sinon l'ancienne image reste affichée.
+  return `${data.publicUrl}?v=${Date.now()}`;
+}
+
+/**
  * Attache un fichier PDF déjà généré côté client à un document de type
  * "bulletin" existant (créé par la RPC record_payroll_payment). La ligne
  * "documents" est verrouillée en écriture directe pour ce type — seule la

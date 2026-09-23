@@ -10,10 +10,12 @@ import {
 import {
   Plus, Search, Car, Fuel, Gauge, KeyRound, ShoppingCart,
   Wrench, Pencil, Eye, MoreVertical, Package, CheckCircle2, TrendingUp,
+  RefreshCw,
 } from "lucide-react";
+import { toast } from "sonner";
 import { formatFCFA } from "@/lib/format";
 import { vehicleCost } from "@/lib/demo-data";
-import { useCollection } from "@/lib/demo-store";
+import { db, useCollection, uploadVehiclePhoto } from "@/lib/demo-store";
 import { VehicleDialog } from "@/components/forms/SectorDialogs";
 import {
   RentVehicleDialog, MaintenanceVehicleDialog,
@@ -45,6 +47,39 @@ export function VehiculesList() {
   const [saleVehicle, setSaleVehicle] = useState<Vehicle | null>(null);
   const [maintFor, setMaintFor] = useState<Vehicle | null>(null);
   const [viewFor, setViewFor] = useState<Vehicle | null>(null);
+  const [migratingPhotos, setMigratingPhotos] = useState(false);
+
+  const legacyPhotoCount = useMemo(
+    () => vehicles.filter((v) => v.image?.startsWith("data:")).length,
+    [vehicles],
+  );
+
+  const migrateLegacyPhotos = async () => {
+    if (migratingPhotos || legacyPhotoCount === 0) return;
+    setMigratingPhotos(true);
+    let migrated = 0;
+    let failed = 0;
+    try {
+      for (const v of vehicles) {
+        if (!v.image?.startsWith("data:")) continue;
+        try {
+          const blob = await (await fetch(v.image)).blob();
+          const ext = blob.type.split("/")[1] || "jpg";
+          const file = new File([blob], `cover.${ext}`, { type: blob.type });
+          const url = await uploadVehiclePhoto({ vehicleId: v.id, file });
+          db.update("vehicles", v.id, { image: url } as any);
+          migrated += 1;
+        } catch (error) {
+          failed += 1;
+          console.error("[gestiopro] legacy vehicle photo migration failed", error);
+        }
+      }
+      if (migrated > 0) toast.success(`${migrated} photo(s) migrée(s) vers le stockage.`);
+      if (failed > 0) toast.error(`${failed} photo(s) n'ont pas pu être migrées et restent inchangées.`);
+    } finally {
+      setMigratingPhotos(false);
+    }
+  };
 
   const stats = useMemo(() => {
     const total = vehicles.length;
@@ -80,7 +115,20 @@ export function VehiculesList() {
             {stats.sold > 0 && <> Les véhicules vendus sont archivés dans <button onClick={() => setFilter("sold")} className="text-primary font-semibold underline">l'historique</button>.</>}
           </p>
         </div>
-        <Button onClick={() => setOpenAdd(true)} className="shadow-lg shadow-primary/20"><Plus size={16} /> Ajouter</Button>
+        <div className="flex gap-2">
+          {legacyPhotoCount > 0 && (
+            <Button
+              variant="outline"
+              className="rounded-xl gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+              disabled={migratingPhotos}
+              onClick={() => void migrateLegacyPhotos()}
+            >
+              <RefreshCw size={15} />
+              {migratingPhotos ? "Migration..." : `Migrer photos (${legacyPhotoCount})`}
+            </Button>
+          )}
+          <Button onClick={() => setOpenAdd(true)} className="shadow-lg shadow-primary/20"><Plus size={16} /> Ajouter</Button>
+        </div>
       </div>
 
       {/* KPI dashboard */}

@@ -10,6 +10,7 @@ import {
   getPrivateDocumentUrl,
   privateDocumentSummary,
   uploadPrivateDocument,
+  uploadVehiclePhoto,
   type PendingPrivateDocument,
 } from "@/lib/demo-store";
 import { toast } from "sonner";
@@ -38,12 +39,14 @@ export function VehicleDialog({
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<any>({});
   const [pendingDocs, setPendingDocs] = useState<PendingPrivateDocument[]>([]);
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setStep(0);
     setPendingDocs([]);
+    setPendingPhoto(null);
     setSubmitting(false);
     setForm(
       vehicle
@@ -69,9 +72,11 @@ export function VehicleDialog({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2_500_000) return toast.error("Image trop volumineuse (max 2.5 Mo)");
-    const r = new FileReader();
-    r.onload = () => setForm((f: any) => ({ ...f, image: r.result as string }));
-    r.readAsDataURL(file);
+    // Aperçu local immédiat (URL objet, pas de base64) — le fichier n'est
+    // envoyé au stockage (bucket public vehicle-photos) qu'à la validation
+    // du formulaire.
+    setPendingPhoto(file);
+    setForm((f: any) => ({ ...f, image: URL.createObjectURL(file) }));
   };
 
   const handleDocs = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,9 +140,25 @@ export function VehicleDialog({
     setSubmitting(true);
     const vehicleId = vehicle?.id ?? form.id ?? crypto.randomUUID();
     const vehicleLabel = `${form.brand} ${form.model}${form.plate ? ` (${form.plate})` : ""}`;
+
+    // L'aperçu posé par handleImage() est une URL objet locale (blob:),
+    // invalide hors de cet onglet — jamais persistée telle quelle. On
+    // envoie le fichier réel au stockage et on remplace par l'URL publique
+    // avant d'écrire le véhicule.
+    let imageUrl = form.image as string;
+    if (pendingPhoto) {
+      try {
+        imageUrl = await uploadVehiclePhoto({ vehicleId, file: pendingPhoto });
+      } catch (error) {
+        toast.error(error instanceof Error ? `Véhicule enregistré, photo non envoyée : ${error.message}` : "Véhicule enregistré, photo non envoyée.");
+        imageUrl = vehicle?.image || "";
+      }
+    }
+
     const cleanForm = {
       ...form,
       id: vehicleId,
+      image: imageUrl,
       documents: (form.documents || []).filter((d: any) => d.dataUrl),
     };
 
@@ -229,7 +250,12 @@ export function VehicleDialog({
                   {form.image ? <img src={form.image} alt="" className="w-full h-full object-cover" /> : form.photo}
                 </div>
                 <Input type="file" accept="image/*" onChange={handleImage} />
-                {form.image && <Button type="button" variant="outline" size="sm" onClick={() => setForm({ ...form, image: "" })}>Retirer</Button>}
+                {form.image && (
+                  <Button type="button" variant="outline" size="sm"
+                    onClick={() => { setPendingPhoto(null); setForm({ ...form, image: "" }); }}>
+                    Retirer
+                  </Button>
+                )}
               </div>
             </div>
             <div><Label>Marque *</Label><Input value={form.brand || ""} onChange={(e) => setForm({ ...form, brand: e.target.value })} /></div>
