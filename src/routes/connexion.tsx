@@ -6,6 +6,7 @@ import { z } from "zod";
 import logoIcon from "@/assets/gestiopro-icon.webp";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PasswordInput } from "@/components/PasswordInput";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 const searchSchema = z.object({
@@ -179,14 +180,12 @@ function LoginPage() {
                       Mot de passe oublié ?
                     </button>
                   </div>
-                  <input
+                  <PasswordInput
                     id="login-password"
-                    type="password"
                     autoComplete="current-password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={setPassword}
                     placeholder="••••••••"
-                    className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
                 <button

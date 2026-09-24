@@ -9,6 +9,7 @@ import { createCompany } from "@/lib/tenant";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { PasswordInput, PasswordStrengthMeter } from "@/components/PasswordInput";
 
 export const Route = createFileRoute("/inscription")({
   head: () => ({
@@ -166,7 +167,16 @@ function SignupPage() {
                   <Field label="Téléphone *" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+221 ..." />
                 </div>
                 <Field label="Adresse" value={form.address} onChange={(v) => setForm({ ...form, address: v })} placeholder="Avenue Bourguiba, Dakar" />
-                <Field label="Mot de passe *" type="password" value={form.password} onChange={(v) => setForm({ ...form, password: v })} placeholder="Min. 8 caractères" />
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mot de passe *</label>
+                  <PasswordInput
+                    autoComplete="new-password"
+                    value={form.password}
+                    onChange={(v) => setForm({ ...form, password: v })}
+                    placeholder="Min. 8 caractères"
+                  />
+                  <PasswordStrengthMeter value={form.password} />
+                </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Ville" value={form.city} onChange={(v) => setForm({ ...form, city: v })} placeholder="Dakar" />
                   <div>

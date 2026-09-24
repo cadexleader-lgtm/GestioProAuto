@@ -6,6 +6,7 @@ import logoIcon from "@/assets/gestiopro-icon.webp";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { PasswordInput, PasswordStrengthMeter } from "@/components/PasswordInput";
 
 export const Route = createFileRoute("/reinitialiser-mot-de-passe")({
   head: () => ({
@@ -87,26 +88,25 @@ function ResetPasswordPage() {
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                 <div>
                   <label htmlFor="new-password" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nouveau mot de passe</label>
-                  <input
+                  <PasswordInput
                     id="new-password"
-                    type="password"
                     autoComplete="new-password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={setPassword}
                     placeholder="Min. 8 caractères"
-                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    bg="bg-background"
                   />
+                  <PasswordStrengthMeter value={password} />
                 </div>
                 <div>
                   <label htmlFor="confirm-password" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Confirmer le mot de passe</label>
-                  <input
+                  <PasswordInput
                     id="confirm-password"
-                    type="password"
                     autoComplete="new-password"
                     value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
+                    onChange={setConfirm}
                     placeholder="Min. 8 caractères"
-                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    bg="bg-background"
                   />
                 </div>
                 <button
