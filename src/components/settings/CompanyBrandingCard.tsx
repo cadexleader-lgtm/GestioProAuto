@@ -14,7 +14,6 @@ import {
   EMPTY_PROFILE,
   type CompanyProfile,
 } from "@/lib/company-profile";
-import { pdfInvoice } from "@/lib/pdf/templates";
 
 function readImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -48,9 +47,10 @@ export function CompanyBrandingCard() {
 
   const save = () => { saveCompanyProfile(p); setDirty(false); toast.success("Identité de l'entreprise enregistrée"); };
 
-  const preview = () => {
+  const preview = async () => {
     saveCompanyProfile(p);
     setDirty(false);
+    const { pdfInvoice } = await import("@/lib/pdf/templates");
     pdfInvoice({
       reference: "APERCU-001",
       customer: { name: "Client de démonstration", phone: "+229 00 00 00 00" },

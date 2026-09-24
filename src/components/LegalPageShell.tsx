@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import logoIcon from "@/assets/gestiopro-icon.png";
+import logoIcon from "@/assets/gestiopro-icon.webp";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 

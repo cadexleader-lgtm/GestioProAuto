@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { ArrowRight, ShieldCheck, Zap, Users2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
-import logoIcon from "@/assets/gestiopro-icon.png";
+import logoIcon from "@/assets/gestiopro-icon.webp";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { ThemeToggle } from "@/components/ThemeToggle";

@@ -478,8 +478,7 @@ export function pdfReport(opts: { title: string; period: string; sections: Repor
   return d;
 }
 
-/* ---------- WhatsApp helper (conservé) ---------- */
-export function sendWhatsApp(phone: string, message: string) {
-  const clean = phone.replace(/[^\d]/g, "");
-  window.open(`https://wa.me/${clean}?text=${encodeURIComponent(message)}`, "_blank");
-}
+/* ---------- WhatsApp helper : déplacé dans @/lib/whatsapp.ts (perf, voir ce
+ * fichier) pour que les appelants qui n'ont besoin que d'envoyer un message
+ * WhatsApp n'entraînent pas jsPDF dans leur chunk de route. ---------- */
+export { sendWhatsApp } from "@/lib/whatsapp";

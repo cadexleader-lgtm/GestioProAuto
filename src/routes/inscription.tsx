@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Clock, CreditCard, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import logoIcon from "@/assets/gestiopro-icon.png";
+import logoIcon from "@/assets/gestiopro-icon.webp";
 import { createCompany } from "@/lib/tenant";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";

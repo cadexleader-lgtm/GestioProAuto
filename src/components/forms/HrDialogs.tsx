@@ -14,7 +14,6 @@ import {
   terminateEmployee, reactivateEmployee, updateEmployeeSalary, grantSalaryAdvance,
   outstandingAdvancesFor, cancelPayrollPayment,
 } from "@/lib/demo-store";
-import { pdfPayslip } from "@/lib/pdf/templates";
 import { toast } from "sonner";
 import { Users, Check, X, Loader2, Wallet, UserX, UserCheck, TrendingUp, History, Ban } from "lucide-react";
 import { formatFCFA } from "@/lib/format";
@@ -182,6 +181,7 @@ export function PayrollDialog({ open, onOpenChange }: { open:boolean; onOpenChan
         onOpenChange(false);
         if (result?.status === "posted" && result?.document_id) {
           try {
+            const { pdfPayslip } = await import("@/lib/pdf/templates");
             const doc = pdfPayslip({
               reference: result.document_id, month: form.month, paidAt,
               employee: { firstName: emp.firstName, lastName: emp.lastName, position: emp.position, department: emp.department, phone: emp.phone, email: emp.email },
@@ -225,6 +225,7 @@ export function PayrollDialog({ open, onOpenChange }: { open:boolean; onOpenChan
 
         if (result?.document_id) {
           try {
+            const { pdfPayslip } = await import("@/lib/pdf/templates");
             const doc = pdfPayslip({
               reference: result.document_id, month: form.month, paidAt,
               employee: { firstName: emp.firstName, lastName: emp.lastName, position: emp.position, department: emp.department, phone: emp.phone, email: emp.email },
@@ -246,7 +247,7 @@ export function PayrollDialog({ open, onOpenChange }: { open:boolean; onOpenChan
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-w-md">
+    <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
       <DialogHeader><DialogTitle>{completingPartial ? "Compléter le paiement" : "Générer bulletin de paie"}</DialogTitle></DialogHeader>
       <div className="space-y-3 mt-4">
         <div><Label>Employé</Label>
@@ -414,6 +415,7 @@ export function BulkPayrollDialog({ open, onOpenChange }: { open: boolean; onOpe
 
         if (result?.document_id) {
           try {
+            const { pdfPayslip } = await import("@/lib/pdf/templates");
             const doc = pdfPayslip({
               reference: result.document_id,
               month,

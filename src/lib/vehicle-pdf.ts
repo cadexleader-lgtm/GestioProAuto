@@ -10,13 +10,15 @@ import { formatFCFA } from "./format";
 import type { Vehicle, VehicleCredit, Rental } from "./demo-data";
 import type { VehicleSale, VehiclePayment } from "./demo-store";
 import { uploadPrivateDocument } from "./demo-store";
-import {
-  pdfRentalContract, pdfSaleContract, pdfCreditContract, pdfReceipt, sendWhatsApp as waSend,
-} from "./pdf/templates";
+import { sendWhatsApp as waSend } from "./whatsapp";
+// jsPDF (~475 Ko) n'est chargé qu'à l'appel réel d'une des fonctions
+// ci-dessous (import() dynamique), pas au chargement des pages Ventes/
+// Crédits/Locations qui importent ce module — voir CLAUDE.md perf.
 
 const label = (v: Vehicle) => `${v.brand} ${v.model} (${v.plate})`;
 
 export async function generateRentalContract(rental: Rental, vehicle: Vehicle) {
+  const { pdfRentalContract } = await import("./pdf/templates");
   const doc = pdfRentalContract(rental, vehicle);
   const filename = `contrat-location-${rental.id}.pdf`;
   await uploadPrivateDocument({
@@ -38,6 +40,7 @@ export async function generateRentalContract(rental: Rental, vehicle: Vehicle) {
 }
 
 export async function generateSaleInvoice(sale: VehicleSale, vehicle: Vehicle) {
+  const { pdfSaleContract } = await import("./pdf/templates");
   const doc = pdfSaleContract(sale, vehicle);
   const filename = `contrat-vente-${sale.id}.pdf`;
   await uploadPrivateDocument({
@@ -58,6 +61,7 @@ export async function generateSaleInvoice(sale: VehicleSale, vehicle: Vehicle) {
 }
 
 export async function generateCreditSchedule(credit: VehicleCredit, vehicle: Vehicle, payments: VehiclePayment[]) {
+  const { pdfCreditContract } = await import("./pdf/templates");
   const doc = pdfCreditContract(credit, vehicle, payments);
   const filename = `contrat-credit-${credit.id}.pdf`;
   await uploadPrivateDocument({
@@ -79,6 +83,7 @@ export async function generateCreditSchedule(credit: VehicleCredit, vehicle: Veh
 }
 
 export async function generatePaymentReceipt(payment: VehiclePayment, credit: VehicleCredit, vehicle: Vehicle) {
+  const { pdfReceipt } = await import("./pdf/templates");
   const paidBefore = 0;
   const doc = pdfReceipt({
     reference: payment.id,

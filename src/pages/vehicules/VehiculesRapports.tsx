@@ -3,7 +3,6 @@ import {
   useCollection, vehicleProfitability, rentalContractedAmount,
   signedRevenueInRange, creditPaymentsInRange, creditOutstandingTotal,
 } from "@/lib/demo-store";
-import { pdfReport } from "@/lib/pdf/templates";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -140,10 +139,11 @@ export function VehiculesRapports() {
   const sellPct = splitTotal > 0 ? Math.round((totals.saleRevenue / splitTotal) * 100) : 0;
   const rentPct = 100 - sellPct;
 
-  const exportPdf = () => {
+  const exportPdf = async () => {
     if (exporting) return;
     setExporting(true);
     try {
+      const { pdfReport } = await import("@/lib/pdf/templates");
       pdfReport({
         title: "Rapport Auto",
         period: PERIODS[period],

@@ -21,10 +21,8 @@ import { useRole } from "@/lib/roles";
 import { useTenant } from "@/lib/tenant";
 import { formatFCFA } from "@/lib/format";
 import { useCompanyProfile } from "@/lib/company-profile";
-import {
-  pdfInvoice, pdfReceipt, sendWhatsApp,
-  type InvoiceLine,
-} from "@/lib/pdf/templates";
+import type { InvoiceLine } from "@/lib/pdf/templates";
+import { sendWhatsApp } from "@/lib/whatsapp";
 import { SignaturePad } from "@/components/ui/signature-pad";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
 import { useFeatureFlags } from "@/lib/feature-flags";
@@ -124,7 +122,8 @@ export function Documents() {
     return `${t.prefix}-${new Date().getFullYear()}-${String(n).padStart(4, "0")}`;
   };
 
-  const buildPdf = (k: DocKind, reference: string, data: typeof form) => {
+  const buildPdf = async (k: DocKind, reference: string, data: typeof form) => {
+    const { pdfInvoice, pdfReceipt } = await import("@/lib/pdf/templates");
     const signatures = data.signature ? { client: data.signature } : undefined;
     if (k === "facture" || k === "proforma") {
       return pdfInvoice({
@@ -150,7 +149,7 @@ export function Documents() {
 
     setGenerating(true);
     try {
-      const doc = buildPdf(kind, reference, form);
+      const doc = await buildPdf(kind, reference, form);
       await uploadPrivateDocument({
         file: doc.toFile(`${kind}-${reference}.pdf`),
         type: kind,
@@ -174,8 +173,8 @@ export function Documents() {
     }
   };
 
-  const regenerate = (d: any) => {
-    if (d.payload) buildPdf(d.type as DocKind, d.reference, d.payload);
+  const regenerate = async (d: any) => {
+    if (d.payload) await buildPdf(d.type as DocKind, d.reference, d.payload);
     else toast.error("Document sans données source");
   };
 

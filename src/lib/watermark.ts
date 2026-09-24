@@ -3,7 +3,7 @@
  * le fichier stocké/original) — un petit badge discret en bas à droite,
  * marketing léger pour l'app quand une photo circule chez un client.
  */
-import logoIcon from "@/assets/gestiopro-icon.png";
+import logoIcon from "@/assets/gestiopro-icon.webp";
 
 let cachedLogo: HTMLImageElement | null = null;
 

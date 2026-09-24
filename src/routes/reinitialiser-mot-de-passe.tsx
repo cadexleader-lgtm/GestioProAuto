@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import logoIcon from "@/assets/gestiopro-icon.png";
+import logoIcon from "@/assets/gestiopro-icon.webp";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AnimatedBackground } from "@/components/AnimatedBackground";

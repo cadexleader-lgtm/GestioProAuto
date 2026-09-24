@@ -13,7 +13,7 @@ import { useGetCompany } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import { getSubSectorConfig, getCrossModules } from "@/lib/sectors";
 import { useFeatureFlags, filterModulesByFlags } from "@/lib/feature-flags";
-import logoIcon from "@/assets/gestiopro-icon.png";
+import logoIcon from "@/assets/gestiopro-icon.webp";
 
 interface SidebarProps {
   isOpen: boolean;
