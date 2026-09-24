@@ -154,6 +154,23 @@ export interface Vehicle {
   techControlExpiry?: string;
   carteGrise?: string;
   documents?: { id: string; name: string; type: string; dataUrl: string; uploadedAt: string; size: number }[];
+  /** Traceur GPS physique associé — voir src/lib/gps/ingest.server.ts pour le point d'entrée webhook. */
+  tracker?: {
+    deviceId: string;
+    provider?: string;
+    /** Secret à configurer sur le boîtier/plateforme GPS pour authentifier ses pings. */
+    webhookToken: string;
+    addedAt: string;
+  };
+  /** Dernière position connue — saisie manuelle ou reçue via le webhook du tracker. */
+  lastPosition?: {
+    lat: number;
+    lng: number;
+    speedKmh?: number;
+    heading?: number;
+    recordedAt: string;
+    source: "manual" | "webhook";
+  };
 }
 
 export const vehicles: Vehicle[] = [

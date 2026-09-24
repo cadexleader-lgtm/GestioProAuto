@@ -345,6 +345,14 @@ export function NotificationCenter() {
       expiryCheck({ key: `reminder-due-${s.id}`, date: s.reminders.nextDueDate, label: "Rappel client", who, href: "/app/auto/clients", toastEmoji: "📅" });
     });
 
+    /* --- Assurance / contrôle technique du véhicule lui-même (tant qu'il est dans le parc) --- */
+    vehicles.forEach((v) => {
+      if (v.status === "sold") return;
+      const label = vName(v.id);
+      expiryCheck({ key: `vehicle-insurance-${v.id}`, date: v.insuranceExpiry, label: "Assurance véhicule", who: label, href: "/app/auto/vehicules", toastEmoji: "🛡️" });
+      expiryCheck({ key: `vehicle-tech-${v.id}`, date: v.techControlExpiry, label: "Contrôle technique véhicule", who: label, href: "/app/auto/vehicules", toastEmoji: "🔍" });
+    });
+
     /* --- Documents arrivant à expiration --- */
     documents.forEach((doc: any) => {
       if (!doc.expiresAt) return;

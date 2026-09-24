@@ -1,79 +1,103 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearch } from "@tanstack/react-router";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCollection, isRentalOverdue } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { MapPin, Gauge, Navigation, Satellite, Wrench, CheckCircle2, AlertTriangle } from "lucide-react";
+import { MapPin, Gauge, Navigation, Satellite, Wrench, CheckCircle2, AlertTriangle, HelpCircle, Radio } from "lucide-react";
 import type { Vehicle } from "@/lib/demo-data";
 import { VEHICLE_STATUS } from "@/lib/vehicle-status";
+import { useRole, can } from "@/lib/roles";
+import { VehicleTrackerDialog } from "@/components/vehicles/VehicleTrackerDialog";
 
-/** Bounding box approx. Dakar */
-const BOX = { latMin: 14.68, latMax: 14.75, lngMin: -17.50, lngMax: -17.41 };
+/** Centre par défaut — Cotonou, Bénin (marché cible de l'app), utilisé tant
+ * qu'aucun véhicule n'a de position connue. Remplace l'ancien centre fixe
+ * sur Dakar hérité d'un signal entièrement simulé. */
+const DEFAULT_CENTER: [number, number] = [6.3703, 2.3912];
 
-function hash(id: string) {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return h;
+function statusColor(status: Vehicle["status"], late: boolean) {
+  if (late) return "#e11d48"; // rose-600
+  if (status === "rented") return "#4f46e5"; // indigo-600
+  if (status === "maintenance") return "#f59e0b"; // amber-500
+  return "#059669"; // emerald-600
 }
 
-/** Position simulée, déterministe par véhicule, animée pour les véhicules en circulation. */
-function simulate(v: Vehicle, tick: number, moving: boolean) {
-  const h = hash(v.id);
-  const baseLat = BOX.latMin + ((h % 1000) / 1000) * (BOX.latMax - BOX.latMin);
-  const baseLng = BOX.lngMin + (((h >> 10) % 1000) / 1000) * (BOX.lngMax - BOX.lngMin);
-  const amp = moving ? 0.012 : 0;
-  const phase = (h % 628) / 100;
-  const lat = baseLat + Math.sin(tick / 6 + phase) * amp;
-  const lng = baseLng + Math.cos(tick / 8 + phase) * amp;
-  const trip = Array.from({ length: 8 }, (_, i) => {
-    const t = tick - (7 - i) * 0.8;
-    return {
-      lat: baseLat + Math.sin(t / 6 + phase) * amp,
-      lng: baseLng + Math.cos(t / 8 + phase) * amp,
-    };
+function markerIcon(color: string, active: boolean, moving: boolean) {
+  const size = active ? 40 : 32;
+  return L.divIcon({
+    className: "",
+    html: `<div style="width:${size}px;height:${size}px;background:${color}" class="relative flex items-center justify-center rounded-full text-white shadow-lg ring-4 ring-white">
+      <svg xmlns="http://www.w3.org/2000/svg" width="${size * 0.45}" height="${size * 0.45}" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(45deg)"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+      ${moving ? `<span style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;background:#34d399;border-radius:9999px;border:2px solid white"></span>` : ""}
+    </div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   });
-  const speed = moving ? 25 + ((h >> 3) % 45) + Math.round(Math.sin(tick / 3 + phase) * 10) : 0;
-  return { lat, lng, trip, speed: Math.max(0, speed) };
+}
+
+/** Recentre/zoome la carte quand la sélection change, sans re-render forcé du reste. */
+function FlyToSelection({ position }: { position: [number, number] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (position) map.flyTo(position, Math.max(map.getZoom(), 13), { duration: 0.6 });
+  }, [position, map]);
+  return null;
+}
+
+function ago(iso: string) {
+  const ms = Date.now() - +new Date(iso);
+  const m = Math.floor(ms / 60000);
+  if (m < 1) return "à l'instant";
+  if (m < 60) return `il y a ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `il y a ${h} h`;
+  return `il y a ${Math.floor(h / 24)} j`;
 }
 
 export function VehiculesGPS() {
+  const role = useRole();
+  const canManage = can(role, "manage.rental");
   const vehicles = useCollection("vehicles");
   const rentals = useCollection("rentals");
-  const [tick, setTick] = useState(0);
   const search = useSearch({ strict: false }) as { v?: string };
   const [selected, setSelected] = useState<string | null>(search.v ?? null);
+  const [trackerVehicle, setTrackerVehicle] = useState<Vehicle | null>(null);
 
   useEffect(() => {
     if (search.v) setSelected(search.v);
   }, [search.v]);
 
-  useEffect(() => {
-    const t = setInterval(() => setTick((x) => x + 1), 3000);
-    return () => clearInterval(t);
-  }, []);
-
-  const tracked = useMemo(() => {
+  const fleet = useMemo(() => {
     return vehicles
       .filter((v) => v.status !== "sold")
       .map((v) => {
         const rental = rentals.find((r) => r.vehicleId === v.id && r.status === "active") ?? null;
-        const moving = v.status === "rented";
-        const sim = simulate(v, tick, moving);
-        return { v, rental, ...sim, late: rental ? isRentalOverdue(rental) : false };
+        const late = rental ? isRentalOverdue(rental) : false;
+        const moving = v.status === "rented" && !!v.lastPosition && (v.lastPosition.speedKmh ?? 0) > 3;
+        return { v, rental, late, moving };
       });
-  }, [vehicles, rentals, tick]);
+  }, [vehicles, rentals]);
 
-  const toXY = (lat: number, lng: number) => ({
-    x: ((lng - BOX.lngMin) / (BOX.lngMax - BOX.lngMin)) * 100,
-    y: 100 - ((lat - BOX.latMin) / (BOX.latMax - BOX.latMin)) * 100,
-  });
+  const positioned = fleet.filter((f) => f.v.lastPosition);
+  const unpositioned = fleet.filter((f) => !f.v.lastPosition);
 
-  const onRoad = tracked.filter((t) => t.v.status === "rented").length;
-  const parked = tracked.filter((t) => t.v.status === "available").length;
-  const garage = tracked.filter((t) => t.v.status === "maintenance").length;
-  const alerts = tracked.filter((t) => t.late).length;
+  const onRoad = fleet.filter((f) => f.v.status === "rented").length;
+  const parked = fleet.filter((f) => f.v.status === "available").length;
+  const garage = fleet.filter((f) => f.v.status === "maintenance").length;
+  const alerts = fleet.filter((f) => f.late).length;
+
+  const selectedEntry = fleet.find((f) => f.v.id === selected);
+  const flyTarget: [number, number] | null = selectedEntry?.v.lastPosition
+    ? [selectedEntry.v.lastPosition.lat, selectedEntry.v.lastPosition.lng]
+    : null;
+
+  const initialCenter: [number, number] = positioned[0]?.v.lastPosition
+    ? [positioned[0].v.lastPosition!.lat, positioned[0].v.lastPosition!.lng]
+    : DEFAULT_CENTER;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -81,11 +105,11 @@ export function VehiculesGPS() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Suivi GPS de la flotte</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Positions synchronisées avec le parc, les locations et la maintenance (signal simulé pour la démo).
+            Carte réelle · positions issues des trackers connectés ou saisies manuellement.
           </p>
         </div>
         <Badge variant="secondary" className="gap-1.5 py-1.5 px-3">
-          <Satellite size={13} className="text-emerald-600" /> {tracked.length} véhicule(s) tracké(s)
+          <Satellite size={13} className="text-emerald-600" /> {positioned.length}/{fleet.length} véhicule(s) localisé(s)
         </Badge>
       </div>
 
@@ -99,86 +123,68 @@ export function VehiculesGPS() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 rounded-2xl overflow-hidden border shadow-sm">
           <CardContent className="p-0">
-            <div className="relative aspect-[4/3] bg-[radial-gradient(circle_at_30%_20%,#eff6ff,#ecfdf5_45%,#fffbeb)]">
-              <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
-                <defs>
-                  <pattern id="gps-grid" width="8" height="8" patternUnits="userSpaceOnUse">
-                    <path d="M 8 0 L 0 0 0 8" fill="none" stroke="rgba(15,23,42,0.05)" strokeWidth="0.4" />
-                  </pattern>
-                </defs>
-                <rect width="100" height="100" fill="url(#gps-grid)" />
-                <path d="M 0 38 Q 30 33 60 50 T 100 56" stroke="rgba(100,116,139,0.30)" strokeWidth="1.6" fill="none" />
-                <path d="M 18 0 Q 24 50 34 100" stroke="rgba(100,116,139,0.30)" strokeWidth="1.6" fill="none" />
-                <path d="M 76 0 L 70 100" stroke="rgba(100,116,139,0.30)" strokeWidth="1.6" fill="none" />
-                <path d="M 0 76 Q 50 70 100 82" stroke="rgba(100,116,139,0.30)" strokeWidth="1.6" fill="none" />
-
-                {tracked.filter((t) => t.v.status === "rented").map((t) => {
-                  const pts = t.trip.map((p) => toXY(p.lat, p.lng));
-                  const d = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-                  const active = selected === t.v.id;
+            <div className="relative aspect-[4/3]">
+              <MapContainer center={initialCenter} zoom={positioned.length ? 12 : 6} style={{ height: "100%", width: "100%" }} scrollWheelZoom>
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <FlyToSelection position={flyTarget} />
+                {positioned.map(({ v, late, moving }) => {
+                  const active = selected === v.id;
                   return (
-                    <path key={t.v.id} d={d} fill="none" strokeDasharray="2 1.5"
-                      stroke={active ? "hsl(221 83% 45%)" : "hsl(221 83% 53%)"}
-                      strokeWidth={active ? 1.8 : 1.1} opacity={selected && !active ? 0.3 : 0.9} />
+                    <Marker
+                      key={v.id}
+                      position={[v.lastPosition!.lat, v.lastPosition!.lng]}
+                      icon={markerIcon(statusColor(v.status, late), active, moving)}
+                      eventHandlers={{ click: () => setSelected(active ? null : v.id) }}
+                    >
+                      <Popup>
+                        <p className="font-semibold text-sm">{v.brand} {v.model}</p>
+                        <p className="text-xs text-muted-foreground">{v.plate}</p>
+                        <p className="text-xs mt-1">Position {ago(v.lastPosition!.recordedAt)} ({v.lastPosition!.source === "webhook" ? "tracker" : "manuelle"})</p>
+                      </Popup>
+                    </Marker>
                   );
                 })}
-              </svg>
+              </MapContainer>
 
-              {tracked.map((t) => {
-                const pos = toXY(t.lat, t.lng);
-                const active = selected === t.v.id;
-                const color = t.late ? "bg-rose-600" : t.v.status === "rented" ? "bg-indigo-600"
-                  : t.v.status === "maintenance" ? "bg-amber-500" : "bg-emerald-600";
-                return (
-                  <button
-                    key={t.v.id}
-                    onClick={() => setSelected(active ? null : t.v.id)}
-                    className="absolute transition-all duration-1000 ease-linear"
-                    style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: "translate(-50%,-50%)", opacity: selected && !active ? 0.45 : 1 }}
-                  >
-                    <span className={`relative flex ${active ? "w-11 h-11" : "w-9 h-9"} items-center justify-center rounded-full ${color} text-white shadow-lg ring-4 ring-white transition-all`}>
-                      <Navigation size={active ? 18 : 15} className="rotate-45" />
-                      {t.speed > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white animate-pulse" />}
-                    </span>
-                    <span className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur rounded-md shadow px-2 py-0.5 text-[10px] font-bold whitespace-nowrap border">
-                      {t.v.plate}
-                    </span>
-                  </button>
-                );
-              })}
-
-              <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur rounded-xl shadow-md px-3 py-2 text-xs">
-                <p className="font-bold flex items-center gap-1.5"><MapPin size={12} className="text-primary" /> Dakar, Sénégal</p>
-                <p className="text-muted-foreground mt-0.5">Rafraîchissement auto · 3 s</p>
-              </div>
+              {positioned.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
+                  <div className="text-center px-6">
+                    <HelpCircle size={36} className="mx-auto opacity-40 mb-2" />
+                    <p className="text-sm text-muted-foreground">Aucun véhicule localisé pour l'instant.<br />Associez un tracker ou saisissez une position manuelle.</p>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
         <div className="space-y-3 lg:max-h-[640px] lg:overflow-y-auto lg:pr-1">
-          {tracked.length === 0 && (
+          {fleet.length === 0 && (
             <div className="text-center py-12 text-muted-foreground rounded-2xl border border-dashed">
               <Satellite size={40} className="mx-auto opacity-30 mb-3" />
               <p className="text-sm">Aucun véhicule à suivre</p>
             </div>
           )}
-          {tracked.map((t) => {
-            const st = VEHICLE_STATUS[t.v.status];
-            const active = selected === t.v.id;
+          {positioned.map(({ v, rental, late }) => {
+            const st = VEHICLE_STATUS[v.status];
+            const active = selected === v.id;
             return (
               <Card
-                key={t.v.id}
-                onClick={() => setSelected(active ? null : t.v.id)}
+                key={v.id}
+                onClick={() => setSelected(active ? null : v.id)}
                 className={`rounded-2xl cursor-pointer transition-all ${active ? "ring-2 ring-primary shadow-lg" : "hover:shadow-md"}`}
               >
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center text-2xl shrink-0 overflow-hidden">
-                      {t.v.image ? <img src={t.v.image} alt="" className="w-full h-full object-cover" /> : t.v.photo}
+                      {v.image ? <img src={v.image} alt="" className="w-full h-full object-cover" /> : v.photo}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-display font-bold text-sm truncate">{t.v.brand} {t.v.model}</h3>
-                      <p className="text-[11px] text-muted-foreground">{t.v.plate}</p>
+                      <h3 className="font-display font-bold text-sm truncate">{v.brand} {v.model}</h3>
+                      <p className="text-[11px] text-muted-foreground">{v.plate}</p>
                     </div>
                     <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md border shrink-0 ${st.badgeCls}`}>
                       <st.icon size={13} /> {st.label}
@@ -187,41 +193,86 @@ export function VehiculesGPS() {
 
                   <div className="grid grid-cols-2 gap-2 mt-3 text-[11px]">
                     <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                      <Gauge size={12} /> {t.speed > 0 ? `${t.speed} km/h` : "À l'arrêt"}
+                      {v.tracker ? <Radio size={12} className="text-emerald-600" /> : <Gauge size={12} />}
+                      {v.lastPosition?.speedKmh != null ? `${Math.round(v.lastPosition.speedKmh)} km/h` : v.tracker ? "Tracker actif" : "Position manuelle"}
                     </span>
                     <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                      <MapPin size={12} /> {t.lat.toFixed(4)}, {t.lng.toFixed(4)}
+                      <MapPin size={12} /> {ago(v.lastPosition!.recordedAt)}
                     </span>
                   </div>
 
-                  {t.rental && (
-                    <div className={`mt-3 rounded-xl p-2.5 text-[11px] ${t.late ? "bg-rose-50 text-rose-800" : "bg-indigo-50 text-indigo-800"}`}>
-                      <p className="font-semibold truncate">{t.rental.customer}</p>
+                  {rental && (
+                    <div className={`mt-3 rounded-xl p-2.5 text-[11px] ${late ? "bg-rose-50 text-rose-800" : "bg-indigo-50 text-indigo-800"}`}>
+                      <p className="font-semibold truncate">{rental.customer}</p>
                       <p>
-                        Retour {new Date(t.rental.endDate).toLocaleDateString("fr-FR")} ·{" "}
-                        {formatFCFA(t.rental.dailyRate)}/j {t.late && "· EN RETARD"}
+                        Retour {new Date(rental.endDate).toLocaleDateString("fr-FR")} ·{" "}
+                        {formatFCFA(rental.dailyRate)}/j {late && "· EN RETARD"}
                       </p>
                     </div>
                   )}
 
-                  {t.v.status === "maintenance" && (
-                    <p className="mt-3 text-[11px] text-amber-700 bg-amber-50 rounded-xl p-2.5">Immobilisé à l'atelier — signal statique.</p>
-                  )}
-
-                  {t.rental?.phone && (
+                  {rental?.phone && (
                     <Button
                       size="sm" variant="outline" className="mt-3 w-full"
-                      onClick={(e) => { e.stopPropagation(); window.open(`tel:${t.rental!.phone}`); }}
+                      onClick={(e) => { e.stopPropagation(); window.open(`tel:${rental.phone}`); }}
                     >
                       Appeler le conducteur
+                    </Button>
+                  )}
+
+                  {canManage && (
+                    <Button
+                      size="sm" variant="ghost" className="mt-2 w-full"
+                      onClick={(e) => { e.stopPropagation(); setTrackerVehicle(v); }}
+                    >
+                      <Satellite size={13} /> Gérer le tracker / la position
                     </Button>
                   )}
                 </CardContent>
               </Card>
             );
           })}
+
+          {unpositioned.length > 0 && (
+            <>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground pt-2 px-1">
+                Position inconnue ({unpositioned.length})
+              </p>
+              {unpositioned.map(({ v }) => {
+                const st = VEHICLE_STATUS[v.status];
+                return (
+                  <Card key={v.id} className="rounded-2xl opacity-80">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center text-2xl shrink-0 overflow-hidden">
+                          {v.image ? <img src={v.image} alt="" className="w-full h-full object-cover" /> : v.photo}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-display font-bold text-sm truncate">{v.brand} {v.model}</h3>
+                          <p className="text-[11px] text-muted-foreground">{v.plate}</p>
+                        </div>
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md border shrink-0 ${st.badgeCls}`}>
+                          <st.icon size={13} /> {st.label}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-3 flex items-center gap-1.5">
+                        <HelpCircle size={12} /> {v.tracker ? "Tracker associé, en attente du premier signal" : "Aucun tracker ni position renseignée"}
+                      </p>
+                      {canManage && (
+                        <Button size="sm" variant="outline" className="mt-2 w-full" onClick={() => setTrackerVehicle(v)}>
+                          <Satellite size={13} /> {v.tracker ? "Voir le tracker" : "Ajouter un tracker"}
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </>
+          )}
         </div>
       </div>
+
+      <VehicleTrackerDialog vehicle={trackerVehicle} open={!!trackerVehicle} onOpenChange={(v) => !v && setTrackerVehicle(null)} />
     </div>
   );
 }

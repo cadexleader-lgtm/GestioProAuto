@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { handleGpsPing } from "./lib/gps/ingest.server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -40,6 +41,14 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      // Point d'entrée public pour les boîtiers GPS — intercepté avant le
+      // routeur TanStack Start (dont la protection CSRF sur les server
+      // functions bloquerait toute requête cross-origin d'un appareil externe).
+      const url = new URL(request.url);
+      if (url.pathname === "/api/gps/ping") {
+        return await handleGpsPing(request);
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
