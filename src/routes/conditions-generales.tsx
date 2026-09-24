@@ -82,7 +82,7 @@ function TermsPage() {
       <p>Les présentes conditions sont régies par le droit [pays du siège de l'entreprise éditrice].</p>
 
       <h2>10. Contact</h2>
-      <p>Pour toute question : [email de contact].</p>
+      <p>Pour toute question : cadexleader@gmail.com.</p>
     </LegalPageShell>
   );
 }

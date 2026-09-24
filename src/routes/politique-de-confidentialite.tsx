@@ -67,7 +67,7 @@ function PrivacyPolicyPage() {
       <h2>7. Vos droits</h2>
       <p>
         Selon la réglementation applicable, vous pouvez disposer d'un droit d'accès, de rectification, d'opposition et
-        de suppression de vos données personnelles. Toute demande peut être adressée à [email de contact] ; elle est
+        de suppression de vos données personnelles. Toute demande peut être adressée à cadexleader@gmail.com ; elle est
         traitée après vérification de l'identité du demandeur et, pour les données saisies par une entreprise, en
         coordination avec le patron/administrateur de cette entreprise.
       </p>
@@ -80,7 +80,7 @@ function PrivacyPolicyPage() {
       </p>
 
       <h2>9. Contact</h2>
-      <p>Pour toute question relative à cette politique : [email de contact].</p>
+      <p>Pour toute question relative à cette politique : cadexleader@gmail.com.</p>
     </LegalPageShell>
   );
 }

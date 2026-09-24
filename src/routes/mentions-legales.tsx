@@ -29,9 +29,9 @@ function MentionsLegalesPage() {
       <ul>
         <li>Numéro d'identification fiscale (IFU ou équivalent local) : [numéro]</li>
         <li>Capital social (le cas échéant) : [montant] FCFA</li>
-        <li>Téléphone : [numéro de téléphone]</li>
-        <li>Email de contact : [email de contact]</li>
-        <li>Directeur de la publication : [nom et fonction]</li>
+        <li>Téléphone : +229 01 56 50 13 48 / +229 01 41 82 27 30</li>
+        <li>Email de contact : cadexleader@gmail.com</li>
+        <li>Directeur de la publication : HAZOUME Clarence Akuègnon Alvin, fondateur</li>
       </ul>
 
       <h2>Hébergement</h2>
@@ -58,7 +58,7 @@ function MentionsLegalesPage() {
       </p>
 
       <h2>Contact</h2>
-      <p>Pour toute question relative à ces mentions légales : [email de contact].</p>
+      <p>Pour toute question relative à ces mentions légales : cadexleader@gmail.com.</p>
     </LegalPageShell>
   );
 }
