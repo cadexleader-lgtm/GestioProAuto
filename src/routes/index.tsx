@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import {
   ArrowRight, Check, Car, KeyRound, CreditCard, Wrench,
-  BarChart3, Wallet, Boxes, Users, Truck, Receipt, Sparkles, ShieldCheck, ChevronDown, Smartphone,
+  BarChart3, Wallet, Boxes, Users, Truck, Receipt, Sparkles, ShieldCheck, ChevronDown, Smartphone, Menu, X,
 } from "lucide-react";
 import logoIcon from "@/assets/gestiopro-icon.webp";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -86,7 +86,15 @@ const faqs = [
   },
 ];
 
+const NAV_LINKS = [
+  { href: "#activites", label: "Activités" },
+  { href: "#modules", label: "Modules" },
+  { href: "#tarifs", label: "Tarifs" },
+  { href: "#faq", label: "FAQ" },
+];
+
 function Nav() {
+  const [mobileOpen, setMobileOpen] = useState(false);
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
@@ -95,23 +103,57 @@ function Nav() {
           <span className="font-display text-lg font-bold text-foreground">GestioPro</span>
         </Link>
         <nav className="hidden items-center gap-8 md:flex">
-          <a href="#activites" className="text-sm text-muted-foreground transition hover:text-foreground">Activités</a>
-          <a href="#modules" className="text-sm text-muted-foreground transition hover:text-foreground">Modules</a>
-          <a href="#tarifs" className="text-sm text-muted-foreground transition hover:text-foreground">Tarifs</a>
-          <a href="#faq" className="text-sm text-muted-foreground transition hover:text-foreground">FAQ</a>
+          {NAV_LINKS.map((l) => (
+            <a key={l.href} href={l.href} className="text-sm text-muted-foreground transition hover:text-foreground">{l.label}</a>
+          ))}
         </nav>
         <div className="flex items-center gap-1 sm:gap-2">
           <ThemeToggle />
-          <Link to="/connexion" className="inline-flex rounded-xl px-3 py-2 text-sm font-medium text-foreground/80 transition hover:bg-muted sm:px-4">
+          <Link to="/connexion" className="hidden sm:inline-flex rounded-xl px-3 py-2 text-sm font-medium text-foreground/80 transition hover:bg-muted sm:px-4">
             Connexion
           </Link>
-          <Link to="/inscription" className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:bg-primary/90 sm:px-4">
+          <Link to="/inscription" className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:bg-primary/90 sm:px-4">
             <span className="hidden sm:inline">Essai gratuit</span>
-            <span className="sm:hidden">Essai</span>
             <ArrowRight size={14} />
           </Link>
+          <button
+            type="button"
+            aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen((v) => !v)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-foreground transition hover:bg-muted md:hidden"
+          >
+            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
       </div>
+
+      {mobileOpen && (
+        <div className="border-t border-border bg-background/95 backdrop-blur-xl md:hidden">
+          <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-3 sm:px-6">
+            {NAV_LINKS.map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground/80 transition hover:bg-muted hover:text-foreground"
+              >
+                {l.label}
+              </a>
+            ))}
+            <div className="mt-2 flex flex-col gap-2 border-t border-border pt-3">
+              <Link to="/connexion" onClick={() => setMobileOpen(false)}
+                className="rounded-xl border border-border px-4 py-2.5 text-center text-sm font-medium text-foreground transition hover:bg-muted">
+                Connexion
+              </Link>
+              <Link to="/inscription" onClick={() => setMobileOpen(false)}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:bg-primary/90">
+                Essai gratuit <ArrowRight size={14} />
+              </Link>
+            </div>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }
@@ -132,7 +174,14 @@ function LandingPage() {
 
       {/* HERO — seule section avec le fond net, non flouté */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10"><AnimatedBackground variant="bubbles" /></div>
+        {/* Hauteur bornée a un ecran (h-[100dvh]) plutot que inset-0 sur toute la
+            section : sur mobile, le hero (texte + boutons + maquette) est bien plus
+            haut qu'un ecran une fois empile en colonne — avec inset-0, le SVG en
+            preserveAspectRatio="...slice" (cover) devait alors zoomer enormement
+            pour couvrir cette forme tres etroite et tres haute, ne laissant voir
+            qu'un fragment agrandi d'une bulle. Borne a 100dvh, le ratio reste
+            raisonnable ; l'exces est de toute facon coupe par overflow-hidden. */}
+        <div className="absolute inset-x-0 top-0 -z-10 h-[100dvh]"><AnimatedBackground variant="bubbles" /></div>
         <div className="mx-auto max-w-7xl px-4 pt-16 pb-20 sm:px-6 sm:pt-24">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mx-auto max-w-3xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold text-primary">
