@@ -132,6 +132,25 @@
   --chart-4: 280 65% 60%;
   --chart-5: 340 75% 55%;
 
+  /* Palette graphes — validée colorblind-safe (skill dataviz), source unique
+     pour toutes les pages avec graphe/histogramme. Un sens = une couleur,
+     partout (item 25). */
+  --chart-ventes: 211 68% 51%;
+  --chart-locations: 16 79% 56%;
+  --chart-profit: 120 89% 33%;
+  --chart-cout: 0 57% 53%;
+  --chart-grid: 48 15% 87%;
+  --chart-axis: 48 4% 53%;
+
+  --chart-cat-1: 221 83% 53%;
+  --chart-cat-2: 16 79% 56%;
+  --chart-cat-3: 142 71% 40%;
+  --chart-cat-4: 280 65% 60%;
+  --chart-cat-5: 340 75% 55%;
+  --chart-cat-6: 199 89% 48%;
+  --chart-cat-7: 174 62% 40%;
+  --chart-cat-8: 38 92% 50%;
+
   --app-font-sans: 'Manrope', system-ui, sans-serif;
   --app-font-display: 'Sora', system-ui, sans-serif;
   --app-font-serif: Georgia, serif;
@@ -210,6 +229,22 @@
   --chart-3: 142 71% 45%;
   --chart-4: 280 65% 60%;
   --chart-5: 340 75% 55%;
+
+  --chart-ventes: 211 85% 64%;
+  --chart-locations: 16 88% 65%;
+  --chart-profit: 142 60% 48%;
+  --chart-cout: 0 72% 63%;
+  --chart-grid: 217 22% 24%;
+  --chart-axis: 215 16% 57%;
+
+  --chart-cat-1: 221 83% 64%;
+  --chart-cat-2: 16 85% 65%;
+  --chart-cat-3: 142 55% 50%;
+  --chart-cat-4: 280 65% 70%;
+  --chart-cat-5: 340 75% 68%;
+  --chart-cat-6: 199 89% 60%;
+  --chart-cat-7: 174 55% 52%;
+  --chart-cat-8: 38 92% 60%;
 }
 
 @layer base {
@@ -223,6 +258,14 @@
       radial-gradient(900px 500px at -10% 30%, hsla(48, 96%, 80%, 0.10), transparent 60%),
       radial-gradient(800px 600px at 50% 110%, hsla(221, 60%, 80%, 0.14), transparent 60%),
       linear-gradient(180deg, hsl(210, 50%, 98%) 0%, hsl(210, 45%, 96%) 100%);
+    background-attachment: fixed;
+  }
+  .dark body {
+    background:
+      radial-gradient(1100px 600px at 90% -10%, hsla(221, 83%, 53%, 0.16), transparent 60%),
+      radial-gradient(900px 500px at -10% 20%, hsla(280, 65%, 55%, 0.08), transparent 60%),
+      radial-gradient(900px 700px at 50% 115%, hsla(211, 70%, 45%, 0.12), transparent 60%),
+      linear-gradient(180deg, hsl(224, 42%, 9%) 0%, hsl(222, 47%, 7%) 100%);
     background-attachment: fixed;
   }
 }

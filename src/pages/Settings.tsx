@@ -13,7 +13,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect } from "react";
 import { db } from "@/lib/demo-store";
-import { Database, Trash2, Shield, Volume2 } from "lucide-react";
+import { Database, Trash2, Shield, Volume2, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/lib/theme";
 import { ROLES, useRole, can } from "@/lib/roles";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
 import { isSoundEnabled, setSoundEnabled } from "@/lib/notifications";
@@ -252,8 +253,9 @@ export function Settings() {
 function RolesAndAlertsCard() {
   const role = useRole();
   const [sound, setSound] = useState(isSoundEnabled());
+  const [theme, setThemeState] = useTheme();
   return (
-    <Card className="shadow-sm border-slate-200">
+    <Card className="shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Shield size={18}/> Rôles & notifications</CardTitle>
       </CardHeader>
@@ -266,7 +268,7 @@ function RolesAndAlertsCard() {
                 key={r.id}
                 type="button"
                 disabled
-                className={`text-left rounded-2xl border-2 p-4 transition-all ${role === r.id ? "border-primary bg-primary/5 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}
+                className={`text-left rounded-2xl border-2 p-4 transition-all ${role === r.id ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-muted-foreground/30"}`}
               >
                 <p className="font-display font-bold">{r.label}</p>
                 <p className="text-xs text-muted-foreground mt-1">{r.description}</p>
@@ -278,7 +280,18 @@ function RolesAndAlertsCard() {
           </p>
         </div>
 
-        <div className="flex items-center justify-between rounded-2xl border border-slate-200 p-4">
+        <div className="flex items-center justify-between rounded-2xl border border-border p-4">
+          <div className="flex items-start gap-3">
+            {theme === "dark" ? <Moon size={20} className="text-primary mt-0.5"/> : <Sun size={20} className="text-primary mt-0.5"/>}
+            <div>
+              <p className="font-semibold text-sm">Thème sombre</p>
+              <p className="text-xs text-muted-foreground">Interface sombre, plus confortable en soirée ou en faible luminosité.</p>
+            </div>
+          </div>
+          <Switch checked={theme === "dark"} onCheckedChange={(v) => setThemeState(v ? "dark" : "light")} />
+        </div>
+
+        <div className="flex items-center justify-between rounded-2xl border border-border p-4">
           <div className="flex items-start gap-3">
             <Volume2 size={20} className="text-primary mt-0.5"/>
             <div>

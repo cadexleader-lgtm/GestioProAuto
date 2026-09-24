@@ -19,16 +19,17 @@ import { RestrictedAccess } from "@/components/RestrictedAccess";
 import { useFeatureFlags } from "@/lib/feature-flags";
 
 /**
- * Palette — validée colorblind-safe (skill dataviz, palette.md), utilisée
- * cohéremment sur toute la page : une couleur = un seul sens, partout.
+ * Palette — validée colorblind-safe (skill dataviz), source unique partagée
+ * via des variables CSS (styles.css) avec un jeu de valeurs dédié au thème
+ * sombre — une couleur = un seul sens, sur toute l'app, dans les deux thèmes.
  */
 const COLOR = {
-  ventes: "#2a78d6",      // catégoriel slot 1 — bleu
-  locations: "#eb6834",   // catégoriel slot 2 — orange
-  profit: "#0ca30c",      // statut "bon"
-  cout: "#d03b3b",         // statut "critique"
-  grid: "#e1e0d9",         // hairline
-  axis: "#898781",         // muted
+  ventes: "hsl(var(--chart-ventes))",
+  locations: "hsl(var(--chart-locations))",
+  profit: "hsl(var(--chart-profit))",
+  cout: "hsl(var(--chart-cout))",
+  grid: "hsl(var(--chart-grid))",
+  axis: "hsl(var(--chart-axis))",
 };
 
 const PERIODS = { "30": "30 derniers jours", "90": "3 derniers mois", "365": "12 derniers mois" } as const;

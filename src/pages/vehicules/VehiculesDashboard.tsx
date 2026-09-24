@@ -183,14 +183,14 @@ export function VehiculesDashboard() {
               <AreaChart data={evolution}>
                 <defs>
                   <linearGradient id="gLoc" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} /><stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} /></linearGradient>
-                  <linearGradient id="gVente" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity={0.35} /><stop offset="100%" stopColor="#10b981" stopOpacity={0} /></linearGradient>
+                  <linearGradient id="gVente" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(var(--chart-profit))" stopOpacity={0.35} /><stop offset="100%" stopColor="hsl(var(--chart-profit))" stopOpacity={0} /></linearGradient>
                 </defs>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={(v) => `${(v / 1_000_000).toFixed(1)}M`} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip formatter={(v: number) => formatFCFA(v)} contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))" }} />
                 <Area type="monotone" dataKey="loc" name="Location" stroke="hsl(var(--primary))" fill="url(#gLoc)" strokeWidth={2} />
-                <Area type="monotone" dataKey="vente" name="Vente" stroke="#10b981" fill="url(#gVente)" strokeWidth={2} />
+                <Area type="monotone" dataKey="vente" name="Vente" stroke="hsl(var(--chart-profit))" fill="url(#gVente)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </div>

@@ -12,10 +12,10 @@ export function AppShell({ children }: AppShellProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-[100dvh] text-foreground font-sans overflow-hidden relative flex bg-gradient-to-br from-slate-50 via-white to-blue-50/40 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
+    <div className="min-h-[100dvh] text-foreground font-sans overflow-hidden relative flex bg-gradient-to-br from-background via-background to-primary/[0.03] dark:to-primary/[0.05]">
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-primary/[0.06] blur-[120px]" />
-        <div className="absolute top-[40%] -left-[10%] w-[50%] h-[50%] rounded-full bg-accent/[0.05] blur-[100px]" />
+        <div className="absolute -top-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-primary/[0.07] dark:bg-primary/[0.10] blur-[120px]" />
+        <div className="absolute top-[40%] -left-[10%] w-[50%] h-[50%] rounded-full bg-accent/[0.05] dark:bg-primary/[0.06] blur-[100px]" />
       </div>
 
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} />

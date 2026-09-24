@@ -12,7 +12,11 @@ import { ExpenseDialog } from "@/components/forms/FinanceDialogs";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
 import { useRole, can } from "@/lib/roles";
 
-const COLORS = ["hsl(221 83% 53%)","hsl(48 96% 53%)","hsl(142 71% 45%)","hsl(280 65% 60%)","hsl(340 75% 55%)","hsl(199 89% 48%)","hsl(25 95% 53%)","hsl(174 62% 47%)","hsl(258 75% 63%)","hsl(0 0% 60%)"];
+// Palette catégorielle partagée (styles.css --chart-cat-1..8), adaptée au thème sombre.
+const COLORS = [
+  "hsl(var(--chart-cat-1))", "hsl(var(--chart-cat-2))", "hsl(var(--chart-cat-3))", "hsl(var(--chart-cat-4))",
+  "hsl(var(--chart-cat-5))", "hsl(var(--chart-cat-6))", "hsl(var(--chart-cat-7))", "hsl(var(--chart-cat-8))",
+];
 
 type Period = "day" | "month" | "year" | "all";
 
@@ -196,7 +200,7 @@ export function Depenses() {
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
                   <Tooltip formatter={(v: number) => formatFCFA(v)} contentStyle={{ borderRadius: 12 }} />
-                  <Bar dataKey="value" radius={[8, 8, 0, 0]} fill="hsl(221 83% 53%)" />
+                  <Bar dataKey="value" radius={[8, 8, 0, 0]} fill="hsl(var(--chart-cat-1))" />
                 </BarChart>
               </ResponsiveContainer>
             </div>

@@ -1,7 +1,8 @@
 import { unbindCompany } from "@/lib/demo-store";
 import { resetTenant } from "@/lib/tenant";
 import { useState, useEffect } from "react";
-import { Menu, Search, User, Settings, LogOut, HelpCircle, Maximize2, Moon, FileText, ChevronDown } from "lucide-react";
+import { Menu, Search, User, Settings, LogOut, HelpCircle, Maximize2, FileText, ChevronDown } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -92,6 +93,8 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
         <InstallAppButton className="hidden md:inline-flex h-9" />
 
+        <ThemeToggle className="hidden md:inline-flex" />
+
         <NotificationsBell />
 
         <DropdownMenu>
@@ -120,9 +123,10 @@ export function Topbar({ onMenuClick }: TopbarProps) {
             <DropdownMenuItem onClick={handleFullscreen}>
               <Maximize2 size={16} /> Plein écran
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toast.info("Thème sombre bientôt disponible")}>
-              <Moon size={16} /> Thème
-            </DropdownMenuItem>
+            <div className="md:hidden flex items-center justify-between px-2 py-1.5 text-sm text-foreground">
+              Thème
+              <ThemeToggle className="p-1.5" />
+            </div>
             <DropdownMenuItem onClick={() => toast.info("Centre d'aide bientôt disponible")}>
               <HelpCircle size={16} /> Aide & Support
             </DropdownMenuItem>

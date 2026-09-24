@@ -1,13 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Clock, CreditCard, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import logoIcon from "@/assets/gestiopro-icon.png";
 import { createCompany } from "@/lib/tenant";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/inscription")({
   head: () => ({
@@ -18,6 +19,12 @@ export const Route = createFileRoute("/inscription")({
   }),
   component: SignupPage,
 });
+
+const steps = [
+  { icon: Clock, text: "Configuration en 5 minutes, sans installation" },
+  { icon: CreditCard, text: "Sans carte bancaire pour l'essai" },
+  { icon: Sparkles, text: "Votre équipe peut rejoindre l'espace dès aujourd'hui" },
+];
 
 function SignupPage() {
   const navigate = useNavigate();
@@ -100,9 +107,39 @@ function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 font-sans text-slate-900">
-      <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-4 py-8 sm:px-6">
-        <Link to="/" className="inline-flex items-center gap-2.5 self-start">
+    <div className="min-h-screen font-sans text-foreground lg:grid lg:grid-cols-2">
+      {/* Panneau gauche — desktop uniquement */}
+      <div className="relative hidden overflow-hidden bg-gradient-to-br from-primary/[0.08] via-transparent to-blue-500/[0.06] lg:flex lg:flex-col lg:justify-between lg:p-12 lg:border-r lg:border-border">
+        <div className="absolute -bottom-32 -right-20 h-96 w-96 rounded-full bg-primary/10 blur-[100px]" />
+        <Link to="/" className="relative inline-flex items-center gap-2.5">
+          <img src={logoIcon} alt="GestioPro" className="h-9 w-9 rounded-lg shadow-sm" />
+          <span className="font-display text-xl font-bold">GestioPro</span>
+        </Link>
+
+        <div className="relative max-w-sm">
+          <h2 className="font-display text-3xl font-bold leading-tight tracking-tight">
+            Votre espace de gestion automobile, prêt en quelques minutes.
+          </h2>
+          <ul className="mt-8 space-y-4">
+            {steps.map((s) => (
+              <li key={s.text} className="flex items-start gap-3">
+                <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <s.icon size={16} />
+                </span>
+                <span className="text-sm text-muted-foreground">{s.text}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <p className="relative text-xs text-muted-foreground/70">© {new Date().getFullYear()} GestioPro · L'ERP des PME automobiles africaines</p>
+      </div>
+
+      {/* Formulaire */}
+      <div className="relative flex min-h-screen flex-col px-4 py-8 sm:px-6">
+        <div className="absolute right-4 top-4 sm:right-6 sm:top-6"><ThemeToggle /></div>
+
+        <Link to="/" className="inline-flex items-center gap-2.5 self-start lg:hidden">
           <img src={logoIcon} alt="GestioPro" className="h-9 w-9 rounded-lg shadow-sm" />
           <span className="font-display text-lg font-bold">GestioPro</span>
         </Link>
@@ -111,12 +148,12 @@ function SignupPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="mx-auto mt-10 w-full"
+          className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-6"
         >
             <form onSubmit={handleSubmit}>
-              <div className="text-center">
-                <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Votre entreprise</h1>
-                <p className="mt-3 text-sm text-slate-500">Quelques infos pour configurer votre espace GestioPro Auto.</p>
+              <div>
+                <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Votre entreprise</h1>
+                <p className="mt-2 text-sm text-muted-foreground">Quelques infos pour configurer votre espace GestioPro Auto.</p>
               </div>
 
               <div className="mt-8 space-y-4">
@@ -131,11 +168,11 @@ function SignupPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Ville" value={form.city} onChange={(v) => setForm({ ...form, city: v })} placeholder="Dakar" />
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Pays</label>
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pays</label>
                     <select
                       value={form.country}
                       onChange={(e) => setForm({ ...form, country: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
+                      className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                     >
                       <option value="SN">🇸🇳 Sénégal</option>
                       <option value="CI">🇨🇮 Côte d'Ivoire</option>
@@ -153,22 +190,22 @@ function SignupPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary/90 disabled:opacity-60"
+                className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition hover:bg-primary/90 disabled:opacity-60"
               >
                 {submitting ? "Création..." : "Créer mon compte"} <ArrowRight size={16} />
               </button>
-              <div className="my-4 flex items-center gap-3 text-[10px] uppercase tracking-wider text-slate-400">
-                <div className="h-px flex-1 bg-slate-200" /> ou <div className="h-px flex-1 bg-slate-200" />
+              <div className="my-4 flex items-center gap-3 text-[10px] uppercase tracking-wider text-muted-foreground">
+                <div className="h-px flex-1 bg-border" /> ou <div className="h-px flex-1 bg-border" />
               </div>
               <button
                 type="button"
                 onClick={handleGoogle}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-muted"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .55 4.1 1.6l3-3C17.2 1.7 14.8.7 12 .7 7.4.7 3.5 3.4 1.6 7.3l3.5 2.7C6.1 7 8.8 5 12 5z"/><path fill="#4285F4" d="M23.3 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.4c-.3 1.5-1.1 2.7-2.4 3.5l3.7 2.9c2.2-2 3.6-5 3.6-8.5z"/><path fill="#FBBC05" d="M5.1 14.3c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2L1.6 7.3C.6 9 0 11 0 12.3s.6 3.3 1.6 5l3.5-3z"/><path fill="#34A853" d="M12 24c3.2 0 6-1 8-2.9l-3.7-2.9c-1 .7-2.4 1.1-4.3 1.1-3.2 0-5.9-2-6.9-4.9l-3.5 2.7C3.5 20.6 7.4 24 12 24z"/></svg>
                 Continuer avec Google
               </button>
-              <p className="mt-4 text-center text-xs text-slate-500">
+              <p className="mt-4 text-center text-xs text-muted-foreground">
                 Déjà un compte ? <Link to="/connexion" className="font-medium text-primary hover:underline">Se connecter</Link>
               </p>
             </form>
@@ -183,13 +220,13 @@ function Field({ label, value, onChange, placeholder, type = "text" }: {
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</label>
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
+        className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
       />
     </div>
   );

@@ -187,9 +187,9 @@ export function RevenueEvolutionChart({ title = "Évolution CA vs Dépenses", cl
                     );
                   }}
                 />
-                <Bar dataKey="depenses" name="Dépenses" fill="#f43f5e" fillOpacity={0.35} radius={[4, 4, 0, 0]} barSize={period === "M" || period === "J" ? 6 : 18} />
+                <Bar dataKey="depenses" name="Dépenses" fill="hsl(var(--chart-cout))" fillOpacity={0.35} radius={[4, 4, 0, 0]} barSize={period === "M" || period === "J" ? 6 : 18} />
                 <Area type="monotone" dataKey="ca" name="Encaissements" stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#ca-grad)" />
-                <Line type="monotone" dataKey="cumul" name="Cumul net" stroke="#10b981" strokeWidth={2} dot={false} strokeDasharray="5 4" />
+                <Line type="monotone" dataKey="cumul" name="Cumul net" stroke="hsl(var(--chart-profit))" strokeWidth={2} dot={false} strokeDasharray="5 4" />
               </ComposedChart>
             </ResponsiveContainer>
           )}
@@ -197,8 +197,8 @@ export function RevenueEvolutionChart({ title = "Évolution CA vs Dépenses", cl
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-3 text-[11px] text-muted-foreground">
           <Legend color="hsl(var(--primary))" label="Encaissements" />
-          <Legend color="#f43f5e" label="Dépenses" />
-          <Legend color="#10b981" label="Cumul net" dashed />
+          <Legend color="hsl(var(--chart-cout))" label="Dépenses" />
+          <Legend color="hsl(var(--chart-profit))" label="Cumul net" dashed />
         </div>
       </CardContent>
     </Card>
