@@ -7,8 +7,8 @@ export function RestrictedAccess({ title, message = "Accès restreint à votre r
       <div>
         <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">{title}</h1>
       </div>
-      <Card className="border-amber-200 bg-amber-50/60 shadow-sm">
-        <CardContent className="p-6 text-sm text-amber-900">{message}</CardContent>
+      <Card className="border-amber-200 dark:border-amber-800/40 bg-amber-50/60 dark:bg-amber-950/30 shadow-sm">
+        <CardContent className="p-6 text-sm text-amber-900 dark:text-amber-300">{message}</CardContent>
       </Card>
     </div>
   );
