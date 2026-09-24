@@ -119,11 +119,20 @@ function Nav() {
 function LandingPage() {
   return (
     <div className="min-h-screen font-sans text-foreground">
-      <div className="fixed inset-0 -z-10"><AnimatedBackground variant="bubbles" /></div>
+      {/* Fond discret pour tout le reste de la page : flouté, peu opaque —
+          seul le hero ci-dessous a sa propre version nette par-dessus, pour
+          que les yeux se concentrent sur le contenu une fois le hero passe
+          au scroll (avant ce changement, le fond restait net et vif partout,
+          ce qui laissait "transparaitre" les sections et cassait le rendu
+          pro de l'accueil). */}
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <AnimatedBackground variant="bubbles" className="scale-110 blur-2xl opacity-35 dark:opacity-40" />
+      </div>
       <Nav />
 
-      {/* HERO */}
-      <section>
+      {/* HERO — seule section avec le fond net, non flouté */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 -z-10"><AnimatedBackground variant="bubbles" /></div>
         <div className="mx-auto max-w-7xl px-4 pt-16 pb-20 sm:px-6 sm:pt-24">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mx-auto max-w-3xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold text-primary">
