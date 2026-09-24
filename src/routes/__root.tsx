@@ -10,6 +10,12 @@ import {
 import { useEffect, useRef, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+// Préchargement des 2 poids de police réellement critiques pour le premier
+// rendu (texte courant + titres) — pas les 8 poids importés dans styles.css,
+// pour ne pas gaspiller de bande passante sur des poids non utilisés
+// au-dessus de la ligne de flottaison.
+import manropeRegularWoff2 from "@fontsource/manrope/files/manrope-latin-400-normal.woff2?url";
+import soraBoldWoff2 from "@fontsource/sora/files/sora-latin-700-normal.woff2?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { THEME_INIT_SCRIPT } from "../lib/theme";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -110,8 +116,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/d7194376-cf82-4375-ac46-eb12ccae0eb8" },
     ],
     links: [
+      // Poids de police critiques pour le premier rendu (texte + titres) —
+      // avant la feuille de style pour que le navigateur les découvre au
+      // plus tôt (voir import ci-dessus, ne précharge que 2 des 8 poids
+      // chargés par styles.css, ceux réellement utilisés au-dessus du pli).
+      { rel: "preload", as: "font", type: "font/woff2", href: manropeRegularWoff2, crossOrigin: "anonymous" },
+      { rel: "preload", as: "font", type: "font/woff2", href: soraBoldWoff2, crossOrigin: "anonymous" },
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
       { rel: "apple-touch-icon", sizes: "180x180", href: "/icons/apple-touch-icon.png" },
     ],
