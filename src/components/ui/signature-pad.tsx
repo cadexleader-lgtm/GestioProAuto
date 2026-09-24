@@ -42,12 +42,25 @@ export function SignaturePad({ label = "Signature", value, onChange, className, 
     }
   }, [value]);
 
+  // Redessine à chaque changement de `value` (ex: signature de l'entreprise
+  // chargée de façon asynchrone après le montage — cas réel dans
+  // CompanyBrandingCard où `useCompanyProfile()` peuple `value` après coup).
   useEffect(() => {
     setup();
-    const ro = new ResizeObserver(() => setup());
-    if (canvasRef.current) ro.observe(canvasRef.current);
+  }, [setup]);
+
+  // L'observateur de redimensionnement doit toujours appeler la dernière
+  // version de `setup` (donc la dernière `value`) : un effet à dépendances
+  // vides capturerait pour toujours la fermeture du montage initial et
+  // repeindrait avec une valeur obsolète après un redimensionnement.
+  const setupRef = useRef(setup);
+  useEffect(() => { setupRef.current = setup; }, [setup]);
+  useEffect(() => {
+    const c = canvasRef.current;
+    if (!c) return;
+    const ro = new ResizeObserver(() => setupRef.current());
+    ro.observe(c);
     return () => ro.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const pos = (e: React.PointerEvent) => {

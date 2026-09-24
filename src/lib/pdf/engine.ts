@@ -18,6 +18,32 @@ function hexToRgb(hex: string): RGB {
   return [parseInt(m[1]!, 16), parseInt(m[2]!, 16), parseInt(m[3]!, 16)];
 }
 
+/**
+ * `formatFCFA()`/`toLocaleString("fr-FR")` séparent les milliers avec un espace
+ * insécable fine (U+202F) — un vrai espace en HTML/CSS, mais absent des polices
+ * standard jsPDF ("helvetica" = WinAnsi) : le montant s'affichait "20/000" au
+ * lieu de "20 000" (glyphe de repli mal rendu). Patché une seule fois ici,
+ * sur l'instance jsPDF elle-même, plutôt que dans chaque appel de `d.text()`
+ * du fichier (et de vehicle-pdf.ts/templates.ts) — corrige tous les montants,
+ * dates et libellés d'un coup, présents et futurs.
+ */
+function sanitizeJsPdfSpaces(doc: jsPDF) {
+  const stripUnsupportedSpaces = (s: string) => s.replace(/[    ⁠]/g, " ");
+  const originalText = doc.text.bind(doc);
+  (doc as any).text = (text: unknown, ...rest: unknown[]) => {
+    const clean = Array.isArray(text)
+      ? text.map((t) => (typeof t === "string" ? stripUnsupportedSpaces(t) : t))
+      : typeof text === "string" ? stripUnsupportedSpaces(text) : text;
+    return (originalText as any)(clean, ...rest);
+  };
+  const originalGetTextWidth = doc.getTextWidth.bind(doc);
+  (doc as any).getTextWidth = (text: string) =>
+    originalGetTextWidth(typeof text === "string" ? stripUnsupportedSpaces(text) : text);
+  const originalSplitText = doc.splitTextToSize.bind(doc);
+  (doc as any).splitTextToSize = (text: string, maxWidth: number, opts?: unknown) =>
+    originalSplitText(typeof text === "string" ? stripUnsupportedSpaces(text) : text, maxWidth, opts);
+}
+
 export interface DocMeta {
   /** Ex: "CONTRAT DE VENTE" */
   title: string;
@@ -67,6 +93,7 @@ export class PdfDoc {
     this.accent = hexToRgb(this.profile.accentColor || "#2563eb");
     this.footerText = this.profile.documentFooter || "";
     this.doc.setFont("helvetica", "normal");
+    sanitizeJsPdfSpaces(this.doc);
   }
 
   get contentW() { return PAGE.w - PAGE.ml - PAGE.mr; }
@@ -112,10 +139,19 @@ export class PdfDoc {
       } catch { /* logo illisible : on ignore */ }
     }
 
+    // Répartit l'espace du bandeau entre le bloc identité (gauche, largeur
+    // variable — nom/adresse d'entreprise saisis par l'utilisateur) et le
+    // bloc titre/référence (droite, aligné à droite) : sans ceci, un nom
+    // d'entreprise long débordait largement du bandeau et chevauchait le
+    // titre du document (aucun clip() n'était appliqué ici auparavant).
+    const availW = PAGE.w - PAGE.mr - textX;
+    const leftMaxW = Math.max(40, availW * 0.56 - 4);
+    const rightMaxW = Math.max(40, availW * 0.44 - 4);
+
     d.setTextColor(255, 255, 255);
     d.setFont("helvetica", "bold");
     d.setFontSize(16);
-    d.text(p.name || "Votre entreprise", textX, 14);
+    d.text(this.clip(p.name || "Votre entreprise", leftMaxW), textX, 14);
 
     d.setFont("helvetica", "normal");
     d.setFontSize(7.6);
@@ -124,19 +160,19 @@ export class PdfDoc {
       [p.phone, p.phone2].filter(Boolean).join(" · "),
       [p.email, p.website].filter(Boolean).join(" · "),
     ].filter(Boolean);
-    contact.forEach((l, i) => d.text(l, textX, 20 + i * 4));
+    contact.forEach((l, i) => d.text(this.clip(l, leftMaxW), textX, 20 + i * 4));
 
     // bloc titre à droite
     d.setFont("helvetica", "bold");
     d.setFontSize(13);
-    d.text(meta.title.toUpperCase(), PAGE.w - PAGE.mr, 13, { align: "right" });
+    d.text(this.clip(meta.title.toUpperCase(), rightMaxW), PAGE.w - PAGE.mr, 13, { align: "right" });
     d.setFont("helvetica", "normal");
     d.setFontSize(8);
     const right: string[] = [];
     if (meta.reference) right.push(`N° ${meta.reference}`);
     if (meta.date) right.push(meta.date);
     if (meta.subtitle) right.push(meta.subtitle);
-    right.forEach((l, i) => d.text(l, PAGE.w - PAGE.mr, 19 + i * 4, { align: "right" }));
+    right.forEach((l, i) => d.text(this.clip(l, rightMaxW), PAGE.w - PAGE.mr, 19 + i * 4, { align: "right" }));
 
     this.y = 44;
     d.setTextColor(...DARK);
@@ -144,7 +180,7 @@ export class PdfDoc {
     if (meta.tag) {
       d.setFontSize(7);
       d.setTextColor(...GREY);
-      d.text(meta.tag, PAGE.w - PAGE.mr, 40, { align: "right" });
+      d.text(this.clip(meta.tag, rightMaxW), PAGE.w - PAGE.mr, 40, { align: "right" });
       d.setTextColor(...DARK);
     }
   }
@@ -237,7 +273,7 @@ export class PdfDoc {
         const w = widths[i]!;
         const align = c.align ?? "left";
         const tx = align === "right" ? x + w - 2.5 : align === "center" ? x + w / 2 : x + 2.5;
-        d.text(c.header, tx, this.y + 5, { align });
+        d.text(this.clip(c.header, w - 5), tx, this.y + 5, { align });
         x += w;
       });
       this.y += 7.5;
@@ -282,6 +318,7 @@ export class PdfDoc {
     items.forEach((kv, i) => {
       const last = highlightLast && i === items.length - 1;
       const yy = this.y + 6 + i * 6.4;
+      const fs = last ? 9.4 : 8.4;
       if (last) {
         d.setFillColor(...this.accent);
         d.rect(x + 1, yy - 4.6, w - 2, 7, "F");
@@ -289,9 +326,15 @@ export class PdfDoc {
       } else {
         d.setTextColor(...GREY);
       }
+      // Le libellé peut être un texte composé dynamique (ex: "Location (30 j × 25 000 FCFA)") :
+      // on réserve d'abord la place nécessaire au montant (toujours en gras) avant de
+      // tronquer le libellé, pour ne jamais faire chevaucher les deux dans ce bloc étroit.
+      d.setFont("helvetica", "bold");
+      d.setFontSize(fs);
+      const valueW = d.getTextWidth(kv.value);
+      const labelMaxW = Math.max(14, w - 8 - valueW - 4);
       d.setFont("helvetica", last ? "bold" : "normal");
-      d.setFontSize(last ? 9.4 : 8.4);
-      d.text(kv.label, x + 4, yy);
+      d.text(this.clip(kv.label, labelMaxW), x + 4, yy);
       if (!last) d.setTextColor(...DARK);
       d.setFont("helvetica", "bold");
       d.text(kv.value, x + w - 4, yy, { align: "right" });
@@ -350,16 +393,34 @@ export class PdfDoc {
       d.setFont("helvetica", "bold");
       d.setFontSize(7.4);
       d.setTextColor(...GREY);
-      d.text(s.label.toUpperCase(), x + 3.5, this.y + 5.5);
+      d.text(this.clip(s.label.toUpperCase(), w - 7), x + 3.5, this.y + 5.5);
       if (s.dataUrl) {
-        try { d.addImage(s.dataUrl, x + 4, this.y + 7, w - 8, 18, undefined, "FAST"); } catch { /* ignore */ }
+        try {
+          // Le pad de signature (souris/doigt) n'a pas le même ratio largeur/hauteur
+          // que cette zone du PDF : étirer l'image dans une boîte fixe la déforme
+          // (traits écrasés ou trop épais). On conserve son ratio d'origine et on
+          // la centre dans la zone disponible, comme un `object-fit: contain`.
+          const boxW = w - 8;
+          const boxH = 18;
+          let iw = boxW;
+          let ih = boxH;
+          const props = d.getImageProperties(s.dataUrl);
+          if (props?.width && props?.height) {
+            const ratio = props.width / props.height;
+            if (boxW / boxH > ratio) { ih = boxH; iw = boxH * ratio; }
+            else { iw = boxW; ih = boxW / ratio; }
+          }
+          const ix = x + 4 + (boxW - iw) / 2;
+          const iy = this.y + 7 + (boxH - ih) / 2;
+          d.addImage(s.dataUrl, ix, iy, iw, ih, undefined, "FAST");
+        } catch { /* ignore */ }
       }
       d.setDrawColor(...LINE);
       d.line(x + 4, this.y + 26, x + w - 4, this.y + 26);
       d.setFont("helvetica", "normal");
       d.setFontSize(7.4);
       d.setTextColor(...DARK);
-      d.text(s.name || "", x + 4, this.y + 30.5);
+      d.text(this.clip(s.name || "", w - 8), x + 4, this.y + 30.5);
     });
     this.y += h + 6;
   }
