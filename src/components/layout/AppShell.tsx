@@ -14,11 +14,13 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="min-h-[100dvh] text-foreground font-sans overflow-hidden relative flex bg-gradient-to-br from-background via-background to-primary/[0.03] dark:to-primary/[0.05]">
-      {/* Même fond que le site public, mais discret : flouté et peu opaque pour
-          ne jamais distraire pendant le travail — visible sur toutes les pages
-          de l'app puisque injecté ici une seule fois, jamais page par page. */}
+      {/* Fond "voile" (même famille que les pages de connexion), discret : légèrement
+          flouté mais les formes/mouvement restent visibles — visible sur toutes les
+          pages de l'app puisque injecté ici une seule fois, jamais page par page.
+          Les cartes de contenu restent en `bg-card` opaque (100%), donc la légibilité
+          des composants n'est jamais affectée par ce fond. */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <AnimatedBackground variant="bubbles" className="scale-110 blur-3xl opacity-25 dark:opacity-30" />
+        <AnimatedBackground variant="silk" className="scale-110 blur-md opacity-35 dark:opacity-40" />
         <div className="absolute -top-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-primary/[0.07] dark:bg-primary/[0.10] blur-[120px]" />
         <div className="absolute top-[40%] -left-[10%] w-[50%] h-[50%] rounded-full bg-accent/[0.05] dark:bg-primary/[0.06] blur-[100px]" />
       </div>

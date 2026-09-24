@@ -67,7 +67,7 @@ export function VehiculesCredits() {
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Kpi label="Crédits actifs" value={String(stats.active)} icon={<CreditCard className="text-indigo-600" size={18} />} />
         <Kpi label="Reste à encaisser" value={formatFCFA(stats.totalDue)} icon={<Wallet className="text-violet-600" size={18} />} />
         <Kpi label="En retard" value={String(stats.late)} icon={<AlertTriangle className="text-rose-600" size={18} />} tone={stats.late > 0 ? "rose" : undefined} />
@@ -134,7 +134,7 @@ export function VehiculesCredits() {
 
       {/* Historique — contrats soldés */}
       {settledCredits.length > 0 && (
-        <div className="rounded-2xl border bg-white/60 dark:bg-card backdrop-blur-xl overflow-hidden">
+        <div className="rounded-2xl border bg-white/88 dark:bg-card backdrop-blur-xl overflow-hidden">
           <button onClick={() => setShowHistory(v => !v)} className="w-full flex items-center justify-between px-4 sm:px-6 py-4 hover:bg-muted/40 transition">
             <span className="inline-flex items-center gap-2 font-display font-semibold text-sm">
               <Archive size={16} className="text-muted-foreground" /> Contrats soldés ({settledCredits.length})
@@ -257,7 +257,7 @@ export function VehiculesCredits() {
 }
 
 function Kpi({ label, value, icon, tone }: { label: string; value: string; icon: React.ReactNode; tone?: "rose" }) {
-  const cls = tone === "rose" ? "bg-gradient-to-br from-rose-50 to-rose-100/60 border-rose-200 dark:from-rose-950/40 dark:to-rose-950/20 dark:border-rose-800/40" : "bg-white/70 border-slate-200/60 dark:bg-card dark:border-border";
+  const cls = tone === "rose" ? "bg-gradient-to-br from-rose-50 to-rose-100/60 border-rose-200 dark:from-rose-950/40 dark:to-rose-950/20 dark:border-rose-800/40" : "bg-white/88 border-slate-200/60 dark:bg-card dark:border-border";
   return (
     <div className={`rounded-2xl border p-4 backdrop-blur-xl ${cls}`}>
       <div className="flex items-center gap-2 mb-1.5">

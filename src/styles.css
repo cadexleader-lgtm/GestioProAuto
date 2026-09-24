@@ -258,7 +258,11 @@
       radial-gradient(900px 500px at -10% 30%, hsla(48, 96%, 80%, 0.10), transparent 60%),
       radial-gradient(800px 600px at 50% 110%, hsla(221, 60%, 80%, 0.14), transparent 60%),
       linear-gradient(180deg, hsl(210, 50%, 98%) 0%, hsl(210, 45%, 96%) 100%);
-    background-attachment: fixed;
+    /* `background-attachment: fixed` est connu pour mal se comporter sur
+       Safari iOS (le fond "décroche" au scroll). Les pages qui ont besoin
+       d'un fond qui reste fixe au défilement utilisent leur propre calque
+       `position: fixed; inset: 0` (voir AnimatedBackground.tsx) — ce
+       dégradé de body reste donc un simple fond qui défile normalement. */
   }
   .dark body {
     background:
@@ -266,7 +270,6 @@
       radial-gradient(900px 500px at -10% 20%, hsla(280, 65%, 55%, 0.08), transparent 60%),
       radial-gradient(900px 700px at 50% 115%, hsla(211, 70%, 45%, 0.12), transparent 60%),
       linear-gradient(180deg, hsl(224, 42%, 9%) 0%, hsl(222, 47%, 7%) 100%);
-    background-attachment: fixed;
   }
 }
 

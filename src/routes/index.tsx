@@ -5,7 +5,7 @@ import {
   ArrowRight, Check, Car, KeyRound, CreditCard, Wrench,
   BarChart3, Wallet, Boxes, Users, Truck, Receipt, Sparkles, ShieldCheck, ChevronDown, Smartphone,
 } from "lucide-react";
-import logoIcon from "@/assets/gestiopro-icon.png";
+import logoIcon from "@/assets/gestiopro-icon.webp";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 
@@ -164,7 +164,7 @@ function LandingPage() {
         >
           <div className="absolute inset-x-4 -bottom-8 h-24 rounded-[50%] bg-primary/25 blur-3xl" />
           <div
-            className="relative rounded-3xl border border-border bg-card/80 p-3 shadow-[0_30px_80px_-20px_rgba(15,23,42,0.35)] backdrop-blur-xl"
+            className="relative rounded-3xl border border-border bg-card/90 p-3 shadow-[0_30px_80px_-20px_rgba(15,23,42,0.35)] backdrop-blur-xl"
             style={{ transform: "rotateX(8deg)" }}
           >
             {/* mock topbar */}

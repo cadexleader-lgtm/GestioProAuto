@@ -278,7 +278,7 @@ export function VehiculesGPS() {
 }
 
 function Kpi({ label, value, icon, tone }: { label: string; value: number; icon: React.ReactNode; tone?: "rose" }) {
-  const cls = tone === "rose" ? "bg-gradient-to-br from-rose-50 to-rose-100/60 border-rose-200 dark:from-rose-950/40 dark:to-rose-950/20 dark:border-rose-800/40" : "bg-white/70 border-slate-200/60 dark:bg-card dark:border-border";
+  const cls = tone === "rose" ? "bg-gradient-to-br from-rose-50 to-rose-100/60 border-rose-200 dark:from-rose-950/40 dark:to-rose-950/20 dark:border-rose-800/40" : "bg-white/88 border-slate-200/60 dark:bg-card dark:border-border";
   return (
     <div className={`rounded-2xl border p-4 backdrop-blur-xl ${cls}`}>
       <div className="flex items-center gap-2 mb-1.5">

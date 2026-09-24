@@ -246,7 +246,7 @@ export function VehiculesMaintenance() {
       />
 
       <Dialog open={!!editingId} onOpenChange={(o) => { if (!o) setEditingId(null); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Modifier les coûts</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
             <div className="grid grid-cols-2 gap-3">
@@ -270,7 +270,7 @@ export function VehiculesMaintenance() {
 function Kpi({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone?: "amber" }) {
   const cls = tone === "amber"
     ? "bg-gradient-to-br from-amber-50 to-amber-100/60 border-amber-200 dark:from-amber-950/40 dark:to-amber-950/20 dark:border-amber-800/40"
-    : "bg-white/70 border-slate-200/60 dark:bg-card dark:border-border";
+    : "bg-white/88 border-slate-200/60 dark:bg-card dark:border-border";
   return (
     <div className={`rounded-2xl border p-4 backdrop-blur-xl ${cls}`}>
       <div className="flex items-center gap-2 mb-1.5">

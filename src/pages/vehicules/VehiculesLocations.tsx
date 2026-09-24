@@ -166,7 +166,7 @@ export function VehiculesLocations() {
 
       {/* Historique des locations */}
       {history.length > 0 && (
-        <div className="rounded-2xl border bg-white/60 dark:bg-card backdrop-blur-xl overflow-hidden">
+        <div className="rounded-2xl border bg-white/88 dark:bg-card backdrop-blur-xl overflow-hidden">
           <button
             onClick={() => setShowHistory((v) => !v)}
             className="w-full flex items-center justify-between px-4 sm:px-6 py-4 hover:bg-muted/40 transition"
@@ -245,7 +245,7 @@ export function VehiculesLocations() {
 function Kpi({ label, value, valueText, icon, tone }: { label: string; value?: number; valueText?: string; icon: React.ReactNode; tone?: "rose" }) {
   const cls = tone === "rose"
     ? "bg-gradient-to-br from-rose-50 to-rose-100/60 border-rose-200 dark:from-rose-950/40 dark:to-rose-950/20 dark:border-rose-800/40"
-    : "bg-white/70 border-slate-200/60 dark:bg-card dark:border-border";
+    : "bg-white/88 border-slate-200/60 dark:bg-card dark:border-border";
   return (
     <div className={`rounded-2xl border p-4 backdrop-blur-xl ${cls}`}>
       <div className="flex items-center gap-2 mb-1.5">
