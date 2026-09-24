@@ -119,12 +119,12 @@ function Nav() {
 function LandingPage() {
   return (
     <div className="min-h-screen font-sans text-foreground">
+      <div className="fixed inset-0 -z-10"><AnimatedBackground variant="bubbles" /></div>
       <Nav />
 
       {/* HERO */}
-      <section className="relative overflow-hidden">
-        <AnimatedBackground variant="bubbles" />
-        <div className="relative mx-auto max-w-7xl px-4 pt-16 pb-20 sm:px-6 sm:pt-24">
+      <section>
+        <div className="mx-auto max-w-7xl px-4 pt-16 pb-20 sm:px-6 sm:pt-24">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mx-auto max-w-3xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold text-primary">
             <Sparkles size={14} /> ERP moderne · Pensé pour l'automobile africaine

@@ -2,10 +2,13 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import logoIcon from "@/assets/gestiopro-icon.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 export function LegalPageShell({ title, updatedAt, children }: { title: string; updatedAt: string; children: React.ReactNode }) {
   return (
     <div className="min-h-screen font-sans text-foreground">
+      <div className="fixed inset-0 -z-10"><AnimatedBackground variant="bubbles" /></div>
+
       <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2.5">
@@ -22,10 +25,12 @@ export function LegalPageShell({ title, updatedAt, children }: { title: string; 
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-        <h1 className="font-display text-3xl font-bold tracking-tight">{title}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Dernière mise à jour : {updatedAt}</p>
-        <div className="prose prose-sm sm:prose-base prose-neutral dark:prose-invert mt-8 max-w-none prose-headings:font-display prose-headings:font-bold prose-a:text-primary">
-          {children}
+        <div className="rounded-3xl border border-border bg-card/85 backdrop-blur-md p-6 sm:p-10 shadow-sm">
+          <h1 className="font-display text-3xl font-bold tracking-tight">{title}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Dernière mise à jour : {updatedAt}</p>
+          <div className="prose prose-sm sm:prose-base prose-neutral dark:prose-invert mt-8 max-w-none prose-headings:font-display prose-headings:font-bold prose-a:text-primary">
+            {children}
+          </div>
         </div>
       </main>
 
