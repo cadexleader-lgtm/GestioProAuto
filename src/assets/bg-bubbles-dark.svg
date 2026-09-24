@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+  <style>
+    .f{transform-box:fill-box;transform-origin:center;animation:ease-in-out infinite alternate}
+    .a{animation-name:dA;animation-duration:18s}
+    .b{animation-name:dB;animation-duration:22s}
+    .c{animation-name:dC;animation-duration:26s}
+    .d{animation-name:dD;animation-duration:20s}
+    .p{animation-name:pulse;animation-duration:9s}
+    @keyframes dA{to{transform:translate(-30px,40px) scale(1.04)}}
+    @keyframes dB{to{transform:translate(40px,-25px) scale(1.06)}}
+    @keyframes dC{to{transform:translate(-45px,-30px) scale(1.03)}}
+    @keyframes dD{to{transform:translate(25px,-35px) scale(1.05)}}
+    @keyframes pulse{from{opacity:.35}to{opacity:.7}}
+    @media (prefers-reduced-motion:reduce){.f{animation:none}}
+  </style>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0E1524"/>
+      <stop offset="1" stop-color="#0A0E1A"/>
+    </linearGradient>
+    <radialGradient id="blue" cx="35%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#8FBBFF"/>
+      <stop offset="0.55" stop-color="#4F8FFF"/>
+      <stop offset="1" stop-color="#2453C7"/>
+    </radialGradient>
+    <radialGradient id="glass" cx="40%" cy="30%" r="75%">
+      <stop offset="0" stop-color="#7FA7FF" stop-opacity="0.16"/>
+      <stop offset="0.7" stop-color="#4E6FCF" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#233769" stop-opacity="0.10"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#BFD4FF" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#3E5FB8" stop-opacity="0.25"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="45"/></filter>
+  </defs>
+
+  <rect width="1440" height="900" fill="url(#bg)"/>
+
+  <!-- halos diffus -->
+  <circle class="f p" cx="1230" cy="360" r="160" fill="#5A93F7" opacity="0.4" filter="url(#glow)"/>
+  <circle class="f p" style="animation-delay:-4s" cx="60" cy="520" r="100" fill="#5A93F7" opacity="0.35" filter="url(#glow)"/>
+
+  <!-- sphères bleues -->
+  <circle class="f b" cx="1230" cy="360" r="120" fill="url(#blue)" filter="url(#soft)"/>
+  <circle class="f d" cx="30" cy="520" r="72" fill="url(#blue)" filter="url(#soft)"/>
+
+  <!-- grandes bulles de verre -->
+  <circle class="f a" cx="760" cy="-40" r="440" fill="url(#glass)" stroke="url(#rim)" stroke-width="1.5"/>
+  <circle class="f c" cx="1420" cy="660" r="360" fill="url(#glass)" stroke="url(#rim)" stroke-width="1.5"/>
+  <circle class="f b" style="animation-delay:-7s" cx="240" cy="930" r="200" fill="url(#glass)" stroke="url(#rim)" stroke-width="1.5"/>
+</svg>

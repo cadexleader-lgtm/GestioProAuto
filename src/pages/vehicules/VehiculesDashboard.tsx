@@ -178,19 +178,30 @@ export function VehiculesDashboard() {
               <p className="text-xs text-muted-foreground">6 derniers mois — ventes signées + contrats de location, sans assimilation à la trésorerie</p>
             </div>
           </div>
+          <div className="flex items-center gap-4 mb-3">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(var(--chart-ventes))" }} /> Ventes
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(var(--chart-locations))" }} /> Locations
+            </span>
+          </div>
           <div className="h-[280px]">
             <ResponsiveContainer>
-              <AreaChart data={evolution}>
+              <AreaChart data={evolution} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="gLoc" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} /><stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} /></linearGradient>
-                  <linearGradient id="gVente" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(var(--chart-profit))" stopOpacity={0.35} /><stop offset="100%" stopColor="hsl(var(--chart-profit))" stopOpacity={0} /></linearGradient>
+                  <linearGradient id="gVente" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(var(--chart-ventes))" stopOpacity={0.32} /><stop offset="100%" stopColor="hsl(var(--chart-ventes))" stopOpacity={0} /></linearGradient>
+                  <linearGradient id="gLoc" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(var(--chart-locations))" stopOpacity={0.28} /><stop offset="100%" stopColor="hsl(var(--chart-locations))" stopOpacity={0} /></linearGradient>
                 </defs>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={(v) => `${(v / 1_000_000).toFixed(1)}M`} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip formatter={(v: number) => formatFCFA(v)} contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))" }} />
-                <Area type="monotone" dataKey="loc" name="Location" stroke="hsl(var(--primary))" fill="url(#gLoc)" strokeWidth={2} />
-                <Area type="monotone" dataKey="vente" name="Vente" stroke="hsl(var(--chart-profit))" fill="url(#gVente)" strokeWidth={2} />
+                <CartesianGrid vertical={false} stroke="hsl(var(--chart-grid))" />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: "hsl(var(--chart-axis))" }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={(v) => `${(v / 1_000_000).toFixed(1)}M`} tick={{ fontSize: 11, fill: "hsl(var(--chart-axis))" }} axisLine={false} tickLine={false} width={42} />
+                <Tooltip
+                  formatter={(v: number, name) => [formatFCFA(v), name]}
+                  contentStyle={{ borderRadius: 10, border: "1px solid hsl(var(--border))", background: "hsl(var(--popover))", color: "hsl(var(--popover-foreground))", fontSize: 12 }}
+                />
+                <Area type="monotone" dataKey="vente" name="Ventes" stroke="hsl(var(--chart-ventes))" strokeWidth={2.5} fill="url(#gVente)" />
+                <Area type="monotone" dataKey="loc" name="Locations" stroke="hsl(var(--chart-locations))" strokeWidth={2.5} fill="url(#gLoc)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -216,7 +227,7 @@ export function VehiculesDashboard() {
                     <p className="text-[11px] text-muted-foreground">{v.plate}</p>
                   </div>
                   <div className="text-right">
-                    <p className={`text-sm font-bold ${prof!.profit >= 0 ? "text-emerald-700" : "text-rose-700"}`}>{formatFCFA(prof!.profit)}</p>
+                    <p className={`text-sm font-bold ${prof!.profit >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"}`}>{formatFCFA(prof!.profit)}</p>
                     <p className="text-[10px] text-muted-foreground">bénéfice</p>
                   </div>
                 </div>
@@ -242,7 +253,7 @@ export function VehiculesDashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm truncate">{c.name}</p>
                   </div>
-                  <p className="text-sm font-bold text-emerald-700">{formatFCFA(c.total)}</p>
+                  <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{formatFCFA(c.total)}</p>
                 </div>
               ))}
             </div>

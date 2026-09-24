@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
+import { useState } from "react";
 import {
   ArrowRight, Check, Car, KeyRound, CreditCard, Wrench,
-  BarChart3, Wallet, Boxes, Users, Truck, Receipt, Sparkles, ShieldCheck,
+  BarChart3, Wallet, Boxes, Users, Truck, Receipt, Sparkles, ShieldCheck, ChevronDown, Smartphone,
 } from "lucide-react";
 import logoIcon from "@/assets/gestiopro-icon.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -44,9 +46,44 @@ const trustPoints = [
 ];
 
 const plans = [
-  { name: "Starter", price: "9 000", period: "FCFA / mois", desc: "Pour démarrer une activité.", features: ["1 utilisateur", "1 point de vente", "Modules de base", "Rapports", "Support email"], highlight: false },
-  { name: "Business", price: "24 000", period: "FCFA / mois", desc: "PME en croissance, multi-équipes.", features: ["5 utilisateurs", "Multi-modules", "Fournisseurs & RH", "Facturation Pro", "Crédits clients", "Support prioritaire"], highlight: true },
-  { name: "Enterprise", price: "Sur devis", period: "", desc: "Multi-sites, multi-pays.", features: ["Utilisateurs illimités", "API & intégrations", "SLA dédié", "Account manager", "Formation"], highlight: false },
+  { name: "Découverte", price: "Gratuit", period: "sans engagement", desc: "Pour essayer sans risque.", features: ["1 utilisateur", "Jusqu'à 5 véhicules", "Ventes cash & fiche véhicule", "Documents de base"], highlight: false, addOns: false },
+  { name: "Starter", price: "9 000", period: "FCFA / mois", desc: "Pour démarrer une activité.", features: ["2 utilisateurs", "Jusqu'à 20 véhicules", "Ventes cash, maintenance", "Documents & rapports", "Support WhatsApp"], highlight: false, addOns: false },
+  { name: "Business", price: "24 000", period: "FCFA / mois", desc: "PME en croissance, multi-équipes.", features: ["5 utilisateurs", "Jusqu'à 60 véhicules", "Fournisseurs & documents Pro", "Support prioritaire"], highlight: true, addOns: true },
+  { name: "Enterprise", price: "Sur devis", period: "", desc: "Multi-sites, multi-pays.", features: ["Utilisateurs illimités", "Parc illimité, multi-succursale", "API & intégrations", "SLA dédié, account manager", "Formation sur site"], highlight: false, addOns: false },
+];
+
+const addOnModules = [
+  { label: "Location", price: "5 000" },
+  { label: "Crédit clients", price: "5 000" },
+  { label: "RH & Paie", price: "5 000" },
+  { label: "Traceur GPS", price: "7 000" },
+];
+
+const faqs = [
+  {
+    q: "Comment se passe le paiement de l'abonnement ?",
+    a: "Aucun prélèvement automatique surprise. Chaque mois, vous recevez une notification (WhatsApp ou dans l'application) avec un lien de paiement Mobile Money (MTN, Moov, Orange Money) — vous payez vous-même, quand vous voulez, avant la date d'échéance.",
+  },
+  {
+    q: "Puis-je n'activer que les modules dont j'ai besoin ?",
+    a: "Oui. Un loueur qui ne vend pas de véhicule n'a pas besoin du module Crédit, un concessionnaire pur n'a pas besoin du module Location. Sur la formule Business, chaque module additionnel s'active à la carte, vous ne payez que ce que vous utilisez.",
+  },
+  {
+    q: "Que se passe-t-il si je ne paie pas à temps ?",
+    a: "Pas de coupure brutale. L'accès passe d'abord en lecture seule après un délai de grâce, le temps de régulariser — vos données restent intactes et consultables.",
+  },
+  {
+    q: "Mes données sont-elles partagées avec d'autres entreprises ?",
+    a: "Non. Chaque entreprise cliente a son espace strictement cloisonné (multi-tenant) — personne d'autre que vos propres utilisateurs, selon leur rôle, ne peut voir vos ventes, vos clients ou vos finances.",
+  },
+  {
+    q: "L'application fonctionne-t-elle hors connexion ?",
+    a: "GestioPro Auto est une PWA installable sur téléphone ou ordinateur comme une application native, mais nécessite une connexion internet pour synchroniser les données en temps réel entre les membres de votre équipe.",
+  },
+  {
+    q: "Puis-je changer de formule à tout moment ?",
+    a: "Oui, à la hausse comme à la baisse, depuis les paramètres de votre compte. Aucun engagement de durée sur les formules mensuelles.",
+  },
 ];
 
 function Nav() {
@@ -61,6 +98,7 @@ function Nav() {
           <a href="#activites" className="text-sm text-muted-foreground transition hover:text-foreground">Activités</a>
           <a href="#modules" className="text-sm text-muted-foreground transition hover:text-foreground">Modules</a>
           <a href="#tarifs" className="text-sm text-muted-foreground transition hover:text-foreground">Tarifs</a>
+          <a href="#faq" className="text-sm text-muted-foreground transition hover:text-foreground">FAQ</a>
         </nav>
         <div className="flex items-center gap-1 sm:gap-2">
           <ThemeToggle />
@@ -84,7 +122,9 @@ function LandingPage() {
       <Nav />
 
       {/* HERO */}
-      <section className="mx-auto max-w-7xl px-4 pt-16 pb-20 sm:px-6 sm:pt-24">
+      <section className="relative overflow-hidden">
+        <AnimatedBackground variant="bubbles" />
+        <div className="relative mx-auto max-w-7xl px-4 pt-16 pb-20 sm:px-6 sm:pt-24">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mx-auto max-w-3xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold text-primary">
             <Sparkles size={14} /> ERP moderne · Pensé pour l'automobile africaine
@@ -179,6 +219,7 @@ function LandingPage() {
             </div>
           </div>
         </motion.div>
+        </div>
       </section>
 
       {/* MODULES AUTO */}
@@ -224,19 +265,22 @@ function LandingPage() {
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-widest text-primary">Tarifs simples</p>
           <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">Un abonnement clair, sans surprise</h2>
-          <p className="mt-4 text-base text-muted-foreground">Changez à tout moment. Annulez quand vous voulez.</p>
+          <p className="mt-4 text-base text-muted-foreground">Changez à tout moment. Payez uniquement les modules que vous utilisez.</p>
+          <p className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <Smartphone size={13} className="text-primary" /> Paiement par Mobile Money (MTN, Moov, Orange) — jamais de prélèvement automatique sans votre action.
+          </p>
         </div>
 
-        <div className="mt-14 grid gap-6 lg:grid-cols-3">
+        <div className="mt-14 grid gap-6 lg:grid-cols-4">
           {plans.map((plan) => (
-            <div key={plan.name} className={`relative flex flex-col rounded-2xl border p-8 ${plan.highlight ? "border-primary/40 bg-gradient-to-b from-primary/5 to-card shadow-xl shadow-primary/10" : "border-border bg-card"}`}>
+            <div key={plan.name} className={`relative flex flex-col rounded-2xl border p-6 sm:p-8 ${plan.highlight ? "border-primary/40 bg-gradient-to-b from-primary/5 to-card shadow-xl shadow-primary/10" : "border-border bg-card"}`}>
               {plan.highlight && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/40">Le plus choisi</span>
               )}
               <h3 className="font-display text-lg font-bold">{plan.name}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{plan.desc}</p>
               <div className="mt-6 flex items-baseline gap-2">
-                <span className="font-display text-4xl font-bold">{plan.price}</span>
+                <span className="font-display text-3xl sm:text-4xl font-bold">{plan.price}</span>
                 {plan.period && <span className="text-sm text-muted-foreground">{plan.period}</span>}
               </div>
               <ul className="mt-6 flex-1 space-y-3 text-sm text-foreground/90">
@@ -246,11 +290,35 @@ function LandingPage() {
                   </li>
                 ))}
               </ul>
+              {plan.addOns && (
+                <div className="mt-4 rounded-xl border border-dashed border-border p-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Modules à la carte</p>
+                  <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                    {addOnModules.map((m) => (
+                      <li key={m.label} className="flex items-center justify-between">
+                        <span>{m.label}</span>
+                        <span className="font-medium text-foreground">+{m.price} FCFA/mois</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <Link to="/inscription" className={`mt-8 inline-flex items-center justify-center gap-1.5 rounded-xl px-5 py-3 text-sm font-semibold transition ${plan.highlight ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90" : "border border-border bg-card text-foreground hover:bg-muted"}`}>
                 Commencer <ArrowRight size={14} />
               </Link>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary">Questions fréquentes</p>
+          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">Vous vous posez sûrement ces questions</h2>
+        </div>
+        <div className="mt-10 space-y-3">
+          {faqs.map((item, i) => <FaqItem key={item.q} q={item.q} a={item.a} defaultOpen={i === 0} />)}
         </div>
       </section>
 
@@ -266,9 +334,43 @@ function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} GestioPro · L'ERP des PME africaines
+      <footer className="border-t border-border py-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <div className="flex items-center gap-2.5">
+              <img src={logoIcon} alt="GestioPro" className="h-7 w-7 rounded-lg" />
+              <span className="font-display text-sm font-bold">GestioPro</span>
+            </div>
+            <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+              <Link to="/mentions-legales" className="hover:text-foreground">Mentions légales</Link>
+              <Link to="/politique-de-confidentialite" className="hover:text-foreground">Politique de confidentialité</Link>
+              <Link to="/conditions-generales" className="hover:text-foreground">CGU</Link>
+              <a href="#faq" className="hover:text-foreground">FAQ</a>
+            </nav>
+          </div>
+          <p className="mt-6 text-center text-xs text-muted-foreground/70 sm:text-left">
+            © {new Date().getFullYear()} GestioPro · L'ERP des PME automobiles africaines
+          </p>
+        </div>
       </footer>
+    </div>
+  );
+}
+
+function FaqItem({ q, a, defaultOpen }: { q: string; a: string; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  return (
+    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
+        aria-expanded={open}
+      >
+        <span className="font-medium text-sm">{q}</span>
+        <ChevronDown size={16} className={`shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <p className="px-5 pb-4 text-sm text-muted-foreground">{a}</p>}
     </div>
   );
 }

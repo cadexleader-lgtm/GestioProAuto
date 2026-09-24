@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import logoIcon from "@/assets/gestiopro-icon.png";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 export const Route = createFileRoute("/reinitialiser-mot-de-passe")({
   head: () => ({
@@ -61,6 +62,7 @@ function ResetPasswordPage() {
 
   return (
     <div className="relative min-h-screen font-sans text-foreground">
+      <AnimatedBackground variant="silk" />
       <div className="absolute right-4 top-4 sm:right-6 sm:top-6"><ThemeToggle /></div>
 
       <div className="relative mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-8 sm:px-6">

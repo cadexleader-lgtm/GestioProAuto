@@ -7,6 +7,7 @@ import logoIcon from "@/assets/gestiopro-icon.png";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 const searchSchema = z.object({
   redirect: z.string().optional(),
@@ -98,9 +99,11 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen font-sans text-foreground lg:grid lg:grid-cols-2">
+    <div className="relative min-h-screen font-sans text-foreground lg:grid lg:grid-cols-2">
+      <AnimatedBackground variant="silk" className="lg:hidden" />
       {/* Panneau gauche — desktop uniquement, chaleureux et concret */}
-      <div className="relative hidden overflow-hidden bg-gradient-to-br from-primary/[0.08] via-transparent to-blue-500/[0.06] lg:flex lg:flex-col lg:justify-between lg:p-12 lg:border-r lg:border-border">
+      <div className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-12 lg:border-r lg:border-border">
+        <AnimatedBackground variant="silk" />
         <div className="absolute -top-32 -left-20 h-96 w-96 rounded-full bg-primary/10 blur-[100px]" />
         <Link to="/" className="relative inline-flex items-center gap-2.5">
           <img src={logoIcon} alt="GestioPro" className="h-9 w-9 rounded-lg shadow-sm" />

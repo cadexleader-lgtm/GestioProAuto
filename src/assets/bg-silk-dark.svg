@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+  <style>
+    .f{transform-box:fill-box;transform-origin:center;animation:ease-in-out infinite alternate}
+    .light{animation-name:light;animation-duration:14s}
+    .w1{animation-name:w1;animation-duration:16s}
+    .w2{animation-name:w2;animation-duration:20s}
+    .w3{animation-name:w3;animation-duration:24s}
+    .edge{animation-name:edge;animation-duration:8s}
+    @keyframes light{to{transform:translate(120px,40px) scale(1.15);opacity:.7}}
+    @keyframes w1{to{transform:translate(-40px,-25px) scaleY(1.08)}}
+    @keyframes w2{to{transform:translate(50px,20px) scaleY(.94)}}
+    @keyframes w3{to{transform:translate(-60px,15px) scaleX(1.05)}}
+    @keyframes edge{from{opacity:.3}to{opacity:.75}}
+    @media (prefers-reduced-motion:reduce){.f{animation:none}}
+  </style>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#101A2E"/>
+      <stop offset="0.5" stop-color="#0B1424"/>
+      <stop offset="1" stop-color="#0D1826"/>
+    </linearGradient>
+    <linearGradient id="silk" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3D6FD6" stop-opacity="0.22"/>
+      <stop offset="0.6" stop-color="#2A4E9E" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#1C3266" stop-opacity="0.10"/>
+    </linearGradient>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4F7FE0" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#4F7FE0" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="blurL" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="50"/></filter>
+    <filter id="blurM" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="14"/></filter>
+    <filter id="blurS" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.5"/></filter>
+  </defs>
+
+  <rect width="1440" height="900" fill="url(#bg)"/>
+
+  <!-- lumière haut gauche -->
+  <ellipse class="f light" cx="200" cy="120" rx="520" ry="300" fill="#5A8FEF" opacity="0.18" filter="url(#blurL)"/>
+
+  <!-- ombre du grand pli -->
+  <path class="f w3" d="M120 900 C 60 640, 180 330, 560 260 C 900 200, 1180 330, 1440 280 L1440 520 C 1150 560, 900 470, 640 520 C 380 570, 260 720, 300 900 Z"
+        fill="url(#shade)" filter="url(#blurL)"/>
+
+  <!-- grand pli soyeux -->
+  <path class="f w1" d="M0 520 C 120 420, 300 520, 520 580 C 800 660, 1100 700, 1440 720 L1440 900 L0 900 Z"
+        fill="url(#silk)" filter="url(#blurM)"/>
+
+  <!-- second pli -->
+  <path class="f w2" d="M760 900 C 820 720, 1000 600, 1200 600 C 1320 600, 1400 620, 1440 640 L1440 900 Z"
+        fill="#4472DC" opacity="0.16" filter="url(#blurM)"/>
+
+  <!-- arêtes lumineuses -->
+  <path class="f w1 " d="M40 560 C 250 620, 600 700, 1440 770" fill="none" stroke="#7FA6F2" stroke-width="3" opacity="0.5" filter="url(#blurS)"/>
+  <path class="f w2" d="M780 820 C 900 660, 1150 600, 1440 650" fill="none" stroke="#7FA6F2" stroke-width="2.5" opacity="0.45" filter="url(#blurS)"/>
+  <path class="f edge" d="M0 330 C 80 250, 220 260, 300 330" fill="none" stroke="#7FA6F2" stroke-width="4" opacity="0.35" filter="url(#blurM)"/>
+</svg>

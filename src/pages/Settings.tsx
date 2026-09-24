@@ -24,7 +24,7 @@ import { TeamCard } from "@/components/settings/TeamCard";
 import { useState } from "react";
 import { setFeatureFlags } from "@/lib/demo-store";
 import { FEATURE_FLAGS, useFeatureFlags } from "@/lib/feature-flags";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, CreditCard, Smartphone, Check } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -162,13 +162,15 @@ export function Settings() {
 
       <FeatureFlagsCard />
 
+      <SubscriptionCard />
+
       <TeamCard />
 
       <CompanyBrandingCard />
 
 
 
-      <Card className="shadow-sm border-slate-200">
+      <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Database size={18}/> Données de l'entreprise</CardTitle>
         </CardHeader>
@@ -362,6 +364,66 @@ function FeatureFlagsCard() {
             </div>
           ))}
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+const PLAN_NAMES = { decouverte: "Découverte", starter: "Starter", business: "Business", enterprise: "Enterprise" } as const;
+
+/**
+ * Aucune facturation automatisée n'existe encore côté serveur (pas de table
+ * d'abonnement, pas d'intégration de paiement branchée). Ce module reste
+ * honnête là-dessus : il affiche l'offre et propose un contact direct,
+ * plutôt que de simuler un paiement qui ne débiterait rien réellement.
+ * Quand un prestataire (Mobile Money via agrégateur) sera intégré, ce
+ * bouton déclenchera un vrai lien de paiement — jamais de formulaire de
+ * carte bancaire stocké côté client, conforme à l'usage local (paiement
+ * volontaire répété, pas de prélèvement automatique silencieux).
+ */
+function SubscriptionCard() {
+  const role = useRole();
+  const canEdit = can(role, "manage.settings");
+  const currentPlan: keyof typeof PLAN_NAMES = "decouverte";
+
+  return (
+    <Card className="shadow-sm">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><CreditCard size={18}/> Abonnement & paiement</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between rounded-2xl border border-border p-4">
+          <div>
+            <p className="text-xs text-muted-foreground font-medium">Formule actuelle</p>
+            <p className="font-display font-bold text-lg mt-0.5">{PLAN_NAMES[currentPlan]}</p>
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400">Actif</span>
+        </div>
+
+        <div className="rounded-2xl border border-border p-4 space-y-2">
+          <p className="text-sm font-semibold flex items-center gap-1.5"><Smartphone size={14} className="text-primary" /> Paiement par Mobile Money</p>
+          <p className="text-xs text-muted-foreground">
+            Aucun prélèvement automatique : chaque mois, un lien de paiement Mobile Money (MTN, Moov, Orange Money) vous est
+            envoyé — vous payez vous-même, quand vous voulez, avant l'échéance.
+          </p>
+          <p className="text-xs text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-lg px-3 py-2">
+            Intégration du paiement en ligne pas encore activée sur cet espace. En attendant, contactez-nous pour changer de
+            formule ou régler manuellement.
+          </p>
+        </div>
+
+        {canEdit && (
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <a href="/#tarifs" target="_blank" rel="noreferrer"><Check size={14} /> Voir les formules</a>
+            </Button>
+          </div>
+        )}
+        {!canEdit && (
+          <p className="text-xs text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-lg px-3 py-2">
+            Réservé au rôle Patron.
+          </p>
+        )}
       </CardContent>
     </Card>
   );
