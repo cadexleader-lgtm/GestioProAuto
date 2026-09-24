@@ -1,4 +1,4 @@
-import { HelpCircle, Mail, MessageCircle, ShoppingCart, CreditCard, KeyRound, Wrench, Users2, FileText, Wallet } from "lucide-react";
+import { HelpCircle, Mail, MessageCircle, Phone, ShoppingCart, CreditCard, KeyRound, Wrench, Users2, FileText, Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -102,23 +102,28 @@ export function Aide() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 pt-1">
             <a
-              href="mailto:[email de support]"
+              href="mailto:cadexleader@gmail.com"
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted"
             >
-              <Mail size={16} /> [email de support]
+              <Mail size={16} /> cadexleader@gmail.com
             </a>
             <a
-              href="https://wa.me/[numéro WhatsApp support]"
+              href="https://wa.me/2290141822730"
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted"
             >
-              <MessageCircle size={16} /> [numéro WhatsApp support]
+              <MessageCircle size={16} /> +229 01 41 82 27 30
+            </a>
+            <a
+              href="tel:+2290141822730"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted"
+            >
+              <Phone size={16} /> Appeler
             </a>
           </div>
           <p className="text-xs text-muted-foreground/70 pt-1">
-            Coordonnées à renseigner par l'équipe GestioPro — placeholders en attendant une vraie adresse
-            et un vrai numéro de support.
+            Également joignable au +229 01 56 50 13 48 (appel ou WhatsApp).
           </p>
         </CardContent>
       </Card>
