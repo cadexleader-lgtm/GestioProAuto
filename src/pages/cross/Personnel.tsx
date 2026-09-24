@@ -149,8 +149,8 @@ export function Personnel() {
       )}
 
       <Card className="shadow-sm">
-        <CardContent className="p-0 overflow-x-auto">
-          <div className="flex items-center justify-between px-6 py-3 border-b">
+        <CardContent className="p-0">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b gap-3 flex-wrap">
             <p className="text-xs text-muted-foreground">{visibleEmployees.length} employé(s) affiché(s)</p>
             {inactiveEmployees.length > 0 && (
               <button
@@ -162,46 +162,48 @@ export function Personnel() {
               </button>
             )}
           </div>
-          <table className="w-full text-sm">
-            <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="text-left px-6 py-3 font-semibold">Employé</th>
-                <th className="text-left px-6 py-3 font-semibold">Poste</th>
-                <th className="text-left px-6 py-3 font-semibold">Département</th>
-                <th className="text-left px-6 py-3 font-semibold">Contact</th>
-                <th className="text-right px-6 py-3 font-semibold">Salaire</th>
-                <th className="text-left px-6 py-3 font-semibold">Statut</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {visibleEmployees.map(e => {
-                const st = STATUS[e.status] || STATUS.present;
-                return (
-                  <tr key={e.id} className={`hover:bg-muted/30 cursor-pointer ${e.status === "inactive" ? "opacity-60" : ""}`} onClick={() => setDetailId(e.id)}>
-                    <td className="px-6 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-primary/15 text-primary font-bold flex items-center justify-center text-xs">
-                          {e.firstName[0]}{e.lastName[0]}
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="text-left px-4 sm:px-6 py-3 font-semibold">Employé</th>
+                  <th className="text-left px-4 sm:px-6 py-3 font-semibold">Poste</th>
+                  <th className="text-left px-4 sm:px-6 py-3 font-semibold">Département</th>
+                  <th className="text-left px-4 sm:px-6 py-3 font-semibold">Contact</th>
+                  <th className="text-right px-4 sm:px-6 py-3 font-semibold">Salaire</th>
+                  <th className="text-left px-4 sm:px-6 py-3 font-semibold">Statut</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {visibleEmployees.map(e => {
+                  const st = STATUS[e.status] || STATUS.present;
+                  return (
+                    <tr key={e.id} className={`hover:bg-muted/30 cursor-pointer ${e.status === "inactive" ? "opacity-60" : ""}`} onClick={() => setDetailId(e.id)}>
+                      <td className="px-4 sm:px-6 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-primary/15 text-primary font-bold flex items-center justify-center text-xs shrink-0">
+                            {e.firstName[0]}{e.lastName[0]}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold truncate">{e.firstName} {e.lastName}</p>
+                            <p className="text-xs text-muted-foreground truncate">Embauché·e {new Date(e.hiredAt).toLocaleDateString("fr-FR")}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold">{e.firstName} {e.lastName}</p>
-                          <p className="text-xs text-muted-foreground">Embauché·e {new Date(e.hiredAt).toLocaleDateString("fr-FR")}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-3">{e.position}</td>
-                    <td className="px-6 py-3"><span className="text-xs bg-muted px-2 py-1 rounded-md">{e.department}</span></td>
-                    <td className="px-6 py-3 text-xs">
-                      <div className="flex items-center gap-1.5 text-muted-foreground"><Phone size={11} /> {e.phone}</div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground"><Mail size={11} /> {e.email}</div>
-                    </td>
-                    <td className="px-6 py-3 text-right font-semibold">{formatFCFA(e.salary)}</td>
-                    <td className="px-6 py-3"><span className={`text-[10px] font-bold px-2 py-1 rounded-md ${st.cls}`}>{st.label}</span></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="px-4 sm:px-6 py-3">{e.position}</td>
+                      <td className="px-4 sm:px-6 py-3"><span className="text-xs bg-muted px-2 py-1 rounded-md">{e.department}</span></td>
+                      <td className="px-4 sm:px-6 py-3 text-xs">
+                        <div className="flex items-center gap-1.5 text-muted-foreground"><Phone size={11} /> {e.phone}</div>
+                        <div className="flex items-center gap-1.5 text-muted-foreground"><Mail size={11} /> {e.email}</div>
+                      </td>
+                      <td className="px-4 sm:px-6 py-3 text-right font-semibold">{formatFCFA(e.salary)}</td>
+                      <td className="px-4 sm:px-6 py-3"><span className={`text-[10px] font-bold px-2 py-1 rounded-md ${st.cls}`}>{st.label}</span></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
 

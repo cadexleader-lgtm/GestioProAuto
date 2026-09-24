@@ -111,7 +111,7 @@ export function VehiculesList() {
             {stats.sold > 0 && <> Les véhicules vendus sont archivés dans <button onClick={() => setFilter("sold")} className="text-primary font-semibold underline">l'historique</button>.</>}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {legacyPhotoCount > 0 && (
             <Button
               variant="outline"

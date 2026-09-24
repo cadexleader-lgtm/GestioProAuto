@@ -411,7 +411,7 @@ export function SellVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`max-w-lg ${glass}`}>
+      <DialogContent className={`max-w-lg max-h-[90vh] overflow-y-auto ${glass}`}>
         <DialogHeader>
           <DialogTitle>Vendre — {vehicle.brand} {vehicle.model}</DialogTitle>
           <DialogDescription>Vente cash ou à crédit, le véhicule passera automatiquement en "Vendu".</DialogDescription>
@@ -503,7 +503,7 @@ export function MaintenanceVehicleDialog({ vehicle, open, onOpenChange }: { vehi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`max-w-xl ${glass}`}>
+      <DialogContent className={`max-w-xl max-h-[90vh] overflow-y-auto ${glass}`}>
         <DialogHeader>
           <DialogTitle>Maintenance — {vehicle.brand} {vehicle.model}</DialogTitle>
           <DialogDescription>Le véhicule sera marqué comme indisponible.</DialogDescription>

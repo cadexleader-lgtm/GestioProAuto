@@ -166,7 +166,7 @@ export function TeamCard() {
       </CardContent>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nouveau membre</DialogTitle>
             <DialogDescription>
