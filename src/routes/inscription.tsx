@@ -7,7 +7,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import logoIcon from "@/assets/gestiopro-icon.webp";
 import { createCompany } from "@/lib/tenant";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 
@@ -45,12 +44,12 @@ function SignupPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const handleGoogle = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/app",
+    // OAuth Google gere directement par Supabase Auth (pas de broker Lovable).
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/app" },
     });
-    if (result.error) { toast.error("Inscription Google impossible"); return; }
-    if (result.redirected) return;
-    navigate({ to: "/app" });
+    if (error) toast.error("Inscription Google impossible");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

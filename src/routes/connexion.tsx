@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { z } from "zod";
 import logoIcon from "@/assets/gestiopro-icon.webp";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 
@@ -86,16 +85,17 @@ function LoginPage() {
 
   const handleGoogle = async () => {
     setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/app",
+    // OAuth Google gere directement par Supabase Auth (pas de broker Lovable) :
+    // Google -> callback Supabase -> redirectTo ci-dessous. Le SDK effectue lui-meme
+    // la redirection navigateur, rien a faire apres un appel reussi.
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + (search.redirect ?? "/app") },
     });
-    if (result.error) {
+    if (error) {
       setLoading(false);
       toast.error("Connexion Google impossible");
-      return;
     }
-    if (result.redirected) return;
-    navigate({ to: search.redirect ?? "/app" });
   };
 
   return (
