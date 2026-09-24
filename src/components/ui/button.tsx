@@ -32,7 +32,12 @@ const buttonVariants = cva(
         default: "min-h-9 px-4 py-2",
         sm: "min-h-8 rounded-md px-3 text-xs",
         lg: "min-h-10 rounded-md px-8",
-        icon: "h-9 w-9",
+        // 36px de base (desktop, pointeur precis) ; 44px sous `sm:` pour
+        // respecter la cible tactile recommandee (44x44) sur mobile. Les
+        // rangees denses (ex. Documents.tsx) ont deja `flex-1 min-w-0` +
+        // `truncate` sur le texte a cote, donc elles absorbent la largeur
+        // supplementaire en tronquant le texte plutot qu'en debordant.
+        icon: "h-9 w-9 max-sm:h-11 max-sm:w-11",
       },
     },
     defaultVariants: {
