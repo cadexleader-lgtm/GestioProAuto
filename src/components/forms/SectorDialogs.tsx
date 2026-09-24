@@ -264,7 +264,7 @@ export function VehicleDialog({
                     active
                       ? "bg-primary text-primary-foreground border-primary"
                       : done
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40"
                         : "bg-muted text-muted-foreground border-transparent"
                   }`}
                 >

@@ -269,12 +269,12 @@ export function VehiculesMaintenance() {
 
 function Kpi({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone?: "amber" }) {
   const cls = tone === "amber"
-    ? "bg-gradient-to-br from-amber-50 to-amber-100/60 border-amber-200"
-    : "bg-white/70 border-slate-200/60";
+    ? "bg-gradient-to-br from-amber-50 to-amber-100/60 border-amber-200 dark:from-amber-950/40 dark:to-amber-950/20 dark:border-amber-800/40"
+    : "bg-white/70 border-slate-200/60 dark:bg-card dark:border-border";
   return (
     <div className={`rounded-2xl border p-4 backdrop-blur-xl ${cls}`}>
       <div className="flex items-center gap-2 mb-1.5">
-        <div className="w-7 h-7 rounded-lg bg-white/80 flex items-center justify-center shadow-sm">{icon}</div>
+        <div className="w-7 h-7 rounded-lg bg-white/80 dark:bg-background/60 flex items-center justify-center shadow-sm">{icon}</div>
         <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">{label}</p>
       </div>
       <p className="font-display font-bold text-xl tabular-nums">{value}</p>

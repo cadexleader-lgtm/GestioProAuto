@@ -21,9 +21,9 @@ const COLORS = [
 type Period = "day" | "month" | "year" | "all";
 
 const SOURCE_META: Record<string, { label: string; icon: React.ReactNode; cls: string }> = {
-  Automobile: { label: "Automobile", icon: <Car size={12} />, cls: "bg-indigo-50 text-indigo-700" },
-  RH:         { label: "Personnel",  icon: <Users size={12} />, cls: "bg-violet-50 text-violet-700" },
-  Manuel:     { label: "Saisie",     icon: <Receipt size={12} />, cls: "bg-slate-100 text-slate-600" },
+  Automobile: { label: "Automobile", icon: <Car size={12} />, cls: "bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400" },
+  RH:         { label: "Personnel",  icon: <Users size={12} />, cls: "bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400" },
+  Manuel:     { label: "Saisie",     icon: <Receipt size={12} />, cls: "bg-slate-100 dark:bg-slate-800/40 text-slate-600 dark:text-slate-300" },
 };
 
 function sourceOf(e: any): string {
@@ -133,9 +133,9 @@ export function Depenses() {
       </div>
 
       {pendingMaint.length > 0 && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 flex items-center gap-3">
-          <Wrench size={18} className="text-amber-600 shrink-0" />
-          <p className="text-sm text-amber-800">
+        <div className="rounded-2xl border border-amber-200 dark:border-amber-800/40 bg-amber-50/70 dark:bg-amber-950/30 p-4 flex items-center gap-3">
+          <Wrench size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
+          <p className="text-sm text-amber-800 dark:text-amber-300">
             <strong>{pendingMaint.length}</strong> maintenance(s) en cours — le coût sera automatiquement enregistré ici à la clôture.
           </p>
         </div>
@@ -236,7 +236,7 @@ export function Depenses() {
                   </div>
                   <Badge variant="secondary" className={`hidden sm:inline-flex gap-1 shrink-0 ${meta.cls}`}>{meta.icon}{meta.label}</Badge>
                   {e.hasReceipt && (
-                    <span className="hidden sm:inline-flex text-[10px] font-bold px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 items-center gap-1 shrink-0">
+                    <span className="hidden sm:inline-flex text-[10px] font-bold px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 items-center gap-1 shrink-0">
                       <ImageIcon size={10} /> Justif.
                     </span>
                   )}
@@ -255,10 +255,10 @@ export function Depenses() {
 
 function Stat({ label, value, tone, hint }: { label: string; value: string; tone: "blue"|"indigo"|"rose"|"amber"; hint?: string }) {
   const tones = {
-    blue: "from-white to-blue-50 border-blue-200/70",
-    indigo: "from-white to-indigo-50 border-indigo-200/70",
-    rose: "from-white to-rose-50 border-rose-200/70",
-    amber: "from-white to-amber-50 border-amber-200/70",
+    blue: "from-white to-blue-50 border-blue-200/70 dark:from-card dark:to-card dark:border-border",
+    indigo: "from-white to-indigo-50 border-indigo-200/70 dark:from-card dark:to-card dark:border-border",
+    rose: "from-white to-rose-50 border-rose-200/70 dark:from-card dark:to-card dark:border-border",
+    amber: "from-white to-amber-50 border-amber-200/70 dark:from-card dark:to-card dark:border-border",
   };
   return (
     <Card className={`rounded-2xl bg-gradient-to-br ${tones[tone]}`}>

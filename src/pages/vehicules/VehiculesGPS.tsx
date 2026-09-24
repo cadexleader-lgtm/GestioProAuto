@@ -202,7 +202,7 @@ export function VehiculesGPS() {
                   </div>
 
                   {rental && (
-                    <div className={`mt-3 rounded-xl p-2.5 text-[11px] ${late ? "bg-rose-50 text-rose-800" : "bg-indigo-50 text-indigo-800"}`}>
+                    <div className={`mt-3 rounded-xl p-2.5 text-[11px] ${late ? "bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-400" : "bg-indigo-50 dark:bg-indigo-950/30 text-indigo-800 dark:text-indigo-400"}`}>
                       <p className="font-semibold truncate">{rental.customer}</p>
                       <p>
                         Retour {new Date(rental.endDate).toLocaleDateString("fr-FR")} ·{" "}
@@ -278,11 +278,11 @@ export function VehiculesGPS() {
 }
 
 function Kpi({ label, value, icon, tone }: { label: string; value: number; icon: React.ReactNode; tone?: "rose" }) {
-  const cls = tone === "rose" ? "bg-gradient-to-br from-rose-50 to-rose-100/60 border-rose-200" : "bg-white/70 border-slate-200/60";
+  const cls = tone === "rose" ? "bg-gradient-to-br from-rose-50 to-rose-100/60 border-rose-200 dark:from-rose-950/40 dark:to-rose-950/20 dark:border-rose-800/40" : "bg-white/70 border-slate-200/60 dark:bg-card dark:border-border";
   return (
     <div className={`rounded-2xl border p-4 backdrop-blur-xl ${cls}`}>
       <div className="flex items-center gap-2 mb-1.5">
-        <div className="w-7 h-7 rounded-lg bg-white/80 flex items-center justify-center shadow-sm">{icon}</div>
+        <div className="w-7 h-7 rounded-lg bg-white/80 dark:bg-background/60 flex items-center justify-center shadow-sm">{icon}</div>
         <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">{label}</p>
       </div>
       <p className="font-display font-bold text-xl tabular-nums">{value}</p>

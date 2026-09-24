@@ -115,7 +115,7 @@ export function VehiculesList() {
           {legacyPhotoCount > 0 && (
             <Button
               variant="outline"
-              className="rounded-xl gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+              className="rounded-xl gap-1.5 border-amber-300 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/50"
               disabled={migratingPhotos}
               onClick={() => void migrateLegacyPhotos()}
             >
@@ -273,7 +273,7 @@ function Kpi({
 }) {
   const base = "rounded-2xl border p-3 sm:p-4 text-left transition-all duration-200 shadow-sm";
   const palette = tone === "violet"
-    ? "bg-violet-50/60 border-violet-200/60"
+    ? "bg-violet-50/60 dark:bg-violet-950/20 border-violet-200/60 dark:border-violet-800/40"
     : active
       ? "bg-primary/10 border-primary/40"
       : "bg-card border-border hover:bg-muted/40";

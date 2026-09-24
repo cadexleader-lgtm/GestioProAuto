@@ -110,7 +110,7 @@ export function SignaturePad({ label = "Signature", value, onChange, className, 
       <div
         className={cn(
           "relative rounded-xl border-2 border-dashed bg-muted/20 transition-colors",
-          hasInk ? "border-emerald-400/60 bg-emerald-50/40" : "border-border",
+          hasInk ? "border-emerald-400/60 bg-emerald-50/40 dark:bg-emerald-950/20" : "border-border",
         )}
         style={{ height }}
       >

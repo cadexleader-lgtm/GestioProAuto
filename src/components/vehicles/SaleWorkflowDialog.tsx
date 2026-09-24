@@ -369,7 +369,7 @@ export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Pro
                   </div>
                 </div>
               ) : (
-                <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4">
+                <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 p-4">
                   <p className="text-sm">Encaissement comptant : <span className="font-bold text-emerald-700">{formatFCFA(amount)}</span></p>
                 </div>
               )}

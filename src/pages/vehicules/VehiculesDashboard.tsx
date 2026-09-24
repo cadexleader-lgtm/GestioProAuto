@@ -125,14 +125,14 @@ export function VehiculesDashboard() {
             <div className="divide-y border-t">
               {vehicles.filter((v) => v.status === "maintenance" || v.mileageKm > 60_000).slice(0, 4).map((v) => (
                 <div key={v.id} className="flex items-center gap-4 p-4 hover:bg-muted/40">
-                  <div className="w-12 h-12 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center text-2xl shrink-0">
+                  <div className="w-12 h-12 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 flex items-center justify-center text-2xl shrink-0">
                     {v.image ? <img src={v.image} className="w-full h-full rounded object-cover" /> : v.photo}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm">{v.brand} {v.model}</p>
                     <p className="text-xs text-muted-foreground">{v.plate} · {v.mileageKm.toLocaleString("fr-FR")} km</p>
                   </div>
-                  <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md inline-flex items-center gap-1">
+                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-2.5 py-1 rounded-md inline-flex items-center gap-1">
                     <Wrench size={12} /> {v.status === "maintenance" ? VEHICLE_STATUS.maintenance.label : "Révision conseillée"}
                   </span>
                 </div>
@@ -236,7 +236,7 @@ export function VehiculesDashboard() {
               {topCustomers.map((c, i) => (
                 <div key={c.name} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/40">
                   <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center">{i + 1}</span>
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-700 font-bold flex items-center justify-center text-sm">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-950/50 dark:to-indigo-900/40 text-indigo-700 dark:text-indigo-400 font-bold flex items-center justify-center text-sm">
                     {c.name.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -262,14 +262,14 @@ export function VehiculesDashboard() {
           <div className="divide-y border-t">
             {vehicles.filter((v) => v.status === "maintenance" || v.mileageKm > 60_000).slice(0, 4).map((v) => (
               <div key={v.id} className="flex items-center gap-4 p-4 hover:bg-muted/40">
-                <div className="w-12 h-12 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center text-2xl shrink-0">
+                <div className="w-12 h-12 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 flex items-center justify-center text-2xl shrink-0">
                   {v.image ? <img src={v.image} className="w-full h-full rounded object-cover" /> : v.photo}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm">{v.brand} {v.model}</p>
                   <p className="text-xs text-muted-foreground">{v.plate} · {v.mileageKm.toLocaleString("fr-FR")} km</p>
                 </div>
-                <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md inline-flex items-center gap-1">
+                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-2.5 py-1 rounded-md inline-flex items-center gap-1">
                   <Wrench size={12} /> {v.status === "maintenance" ? VEHICLE_STATUS.maintenance.label : "Révision conseillée"}
                 </span>
               </div>
@@ -286,13 +286,13 @@ export function VehiculesDashboard() {
 
 function Kpi({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone: "emerald" | "indigo" | "blue" | "violet" | "amber" | "rose" | "cyan" }) {
   const tones = {
-    emerald: "from-white to-emerald-50 border-emerald-200/70",
-    indigo: "from-white to-indigo-50 border-indigo-200/70",
-    blue: "from-white to-blue-50 border-blue-200/70",
-    violet: "from-white to-violet-50 border-violet-200/70",
-    amber: "from-white to-amber-50 border-amber-200/70",
-    rose: "from-white to-rose-50 border-rose-200/70",
-    cyan: "from-white to-cyan-50 border-cyan-200/70",
+    emerald: "from-white to-emerald-50 border-emerald-200/70 dark:from-card dark:to-card dark:border-border",
+    indigo: "from-white to-indigo-50 border-indigo-200/70 dark:from-card dark:to-card dark:border-border",
+    blue: "from-white to-blue-50 border-blue-200/70 dark:from-card dark:to-card dark:border-border",
+    violet: "from-white to-violet-50 border-violet-200/70 dark:from-card dark:to-card dark:border-border",
+    amber: "from-white to-amber-50 border-amber-200/70 dark:from-card dark:to-card dark:border-border",
+    rose: "from-white to-rose-50 border-rose-200/70 dark:from-card dark:to-card dark:border-border",
+    cyan: "from-white to-cyan-50 border-cyan-200/70 dark:from-card dark:to-card dark:border-border",
   };
   return (
     <Card className={`bg-gradient-to-br ${tones[tone]} hover:-translate-y-0.5 transition-all`}>

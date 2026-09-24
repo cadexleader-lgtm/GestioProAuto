@@ -40,7 +40,7 @@ export function Fournisseurs() {
                   <p className="text-xs text-muted-foreground">{s.company}</p>
                 </div>
                 {s.outstandingDebt > 0 && (
-                  <span className="text-[10px] font-bold px-2 py-1 rounded-md bg-rose-50 text-rose-700 inline-flex items-center gap-1">
+                  <span className="text-[10px] font-bold px-2 py-1 rounded-md bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 inline-flex items-center gap-1">
                     <AlertCircle size={10} /> Dette
                   </span>
                 )}
@@ -58,7 +58,7 @@ export function Fournisseurs() {
                 </div>
                 <div>
                   <p className="text-[10px] uppercase font-bold text-muted-foreground">Dette</p>
-                  <p className={`font-semibold mt-0.5 ${s.outstandingDebt > 0 ? "text-rose-700" : ""}`}>{formatFCFA(s.outstandingDebt)}</p>
+                  <p className={`font-semibold mt-0.5 ${s.outstandingDebt > 0 ? "text-rose-700 dark:text-rose-400" : ""}`}>{formatFCFA(s.outstandingDebt)}</p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase font-bold text-muted-foreground">Cmdes</p>
@@ -77,10 +77,10 @@ export function Fournisseurs() {
 
 function Stat({ label, value, icon, tone }: { label: string; value: string; icon: React.ReactNode; tone: "blue"|"indigo"|"rose"|"amber" }) {
   const tones = {
-    blue: "from-white to-blue-50 border-blue-200/70 text-blue-700",
-    indigo: "from-white to-indigo-50 border-indigo-200/70 text-indigo-700",
-    rose: "from-white to-rose-50 border-rose-200/70 text-rose-700",
-    amber: "from-white to-amber-50 border-amber-200/70 text-amber-700",
+    blue: "from-white to-blue-50 border-blue-200/70 text-blue-700 dark:from-card dark:to-card dark:border-border dark:text-blue-400",
+    indigo: "from-white to-indigo-50 border-indigo-200/70 text-indigo-700 dark:from-card dark:to-card dark:border-border dark:text-indigo-400",
+    rose: "from-white to-rose-50 border-rose-200/70 text-rose-700 dark:from-card dark:to-card dark:border-border dark:text-rose-400",
+    amber: "from-white to-amber-50 border-amber-200/70 text-amber-700 dark:from-card dark:to-card dark:border-border dark:text-amber-400",
   };
   return (
     <Card className={`bg-gradient-to-br ${tones[tone]}`}>

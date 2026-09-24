@@ -96,7 +96,7 @@ export function CompanyBrandingCard() {
           {/* IDENTITÉ */}
           <TabsContent value="identity" className="mt-5 space-y-5">
             <div className="flex flex-col sm:flex-row gap-5 items-start">
-              <div className="w-32 h-32 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50 shrink-0">
+              <div className="w-32 h-32 rounded-2xl border-2 border-dashed border-slate-200 dark:border-border flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-muted shrink-0">
                 {p.logoDataUrl
                   ? <img src={p.logoDataUrl} alt="Logo de l'entreprise" className="w-full h-full object-contain p-2" />
                   : <Building2 size={28} className="text-slate-300" />}
@@ -172,7 +172,7 @@ export function CompanyBrandingCard() {
               />
               <div className="space-y-2">
                 <Label className="text-xs font-medium text-muted-foreground">Cachet / tampon (image)</Label>
-                <div className="h-[150px] rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden">
+                <div className="h-[150px] rounded-2xl border-2 border-dashed border-slate-200 dark:border-border bg-slate-50 dark:bg-muted flex items-center justify-center overflow-hidden">
                   {p.stampDataUrl
                     ? <img src={p.stampDataUrl} alt="Cachet de l'entreprise" className="max-h-full object-contain p-2" />
                     : <span className="text-xs text-muted-foreground">Aucun cachet</span>}

@@ -142,7 +142,7 @@ export function TeamCard() {
       </CardHeader>
       <CardContent className="space-y-4">
         {!canManageTeam && (
-          <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          <p className="text-xs text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-lg px-3 py-2">
             Ajouter un membre est réservé au rôle Patron.
           </p>
         )}
@@ -215,7 +215,7 @@ export function TeamCard() {
               </p>
             </div>
           ) : (
-            <div className="mt-2 space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
+            <div className="mt-2 space-y-2 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/60 dark:bg-emerald-950/30 p-4">
               <p className="text-sm text-emerald-900">
                 Compte créé pour <strong>{lastCreated.email}</strong>. Communiquez ce mot de passe temporaire :
               </p>

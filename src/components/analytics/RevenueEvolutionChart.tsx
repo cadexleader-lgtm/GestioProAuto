@@ -219,8 +219,8 @@ function Legend({ color, label, dashed }: { color: string; label: string; dashed
 
 function Stat({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone: "emerald" | "rose" | "primary" }) {
   const cls = {
-    emerald: "text-emerald-700 bg-emerald-50/70 border-emerald-200/60",
-    rose: "text-rose-700 bg-rose-50/70 border-rose-200/60",
+    emerald: "text-emerald-700 dark:text-emerald-400 bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200/60 dark:border-emerald-800/40",
+    rose: "text-rose-700 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/30 border-rose-200/60 dark:border-rose-800/40",
     primary: "text-primary bg-primary/5 border-primary/20",
   }[tone];
   return (

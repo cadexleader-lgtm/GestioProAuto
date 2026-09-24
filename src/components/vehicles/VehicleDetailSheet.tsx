@@ -193,9 +193,9 @@ export function VehicleDetailSheet({ vehicle, open, onOpenChange, onRent, onSell
                     <Stat label="Coût total" value={formatFCFA(prof.totalCost)} tone="slate" />
                     <Stat label="Coût maintenance" value={formatFCFA(prof.maintCost)} tone="amber" />
                   </div>
-                  <div className={`p-5 rounded-xl border ${prof.profit >= 0 ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"} mt-2`}>
+                  <div className={`p-5 rounded-xl border ${prof.profit >= 0 ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40" : "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800/40"} mt-2`}>
                     <p className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Profit net réalisé</p>
-                    <p className={`font-display font-bold text-2xl mt-1 ${prof.profit >= 0 ? "text-emerald-700" : "text-rose-700"}`}>{formatFCFA(prof.profit)}</p>
+                    <p className={`font-display font-bold text-2xl mt-1 ${prof.profit >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"}`}>{formatFCFA(prof.profit)}</p>
                   </div>
                 </>
               )}
@@ -235,7 +235,7 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-sm text-muted-foreground text-center py-4">{children}</p>;
 }
 function Stat({ label, value, tone }: { label: string; value: string; tone: "emerald" | "slate" | "amber" }) {
-  const cls = { emerald: "bg-emerald-50 text-emerald-800", slate: "bg-slate-100 text-slate-800", amber: "bg-amber-50 text-amber-800" }[tone];
+  const cls = { emerald: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400", slate: "bg-slate-100 dark:bg-slate-800/40 text-slate-800 dark:text-slate-300", amber: "bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-400" }[tone];
   return (
     <div className={`p-4 rounded-xl ${cls}`}>
       <p className="text-[10px] uppercase tracking-wider font-bold opacity-75">{label}</p>

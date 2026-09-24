@@ -164,7 +164,7 @@ function Kpi({ icon, label, value }: { icon: React.ReactNode; label: string; val
   return (
     <div className="rounded-2xl border p-4 backdrop-blur-xl bg-white/70 dark:bg-slate-900/60">
       <div className="flex items-center gap-2 mb-1.5">
-        <div className="w-7 h-7 rounded-lg bg-white/80 flex items-center justify-center shadow-sm">{icon}</div>
+        <div className="w-7 h-7 rounded-lg bg-white/80 dark:bg-background/60 flex items-center justify-center shadow-sm">{icon}</div>
         <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">{label}</p>
       </div>
       <p className="font-display font-bold text-lg tabular-nums truncate">{value}</p>

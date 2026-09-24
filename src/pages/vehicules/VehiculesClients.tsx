@@ -234,7 +234,7 @@ export function VehiculesClients() {
                 </Card>
 
                 {selectedClient.activeCredit && (
-                  <Card className="rounded-xl border-amber-200 bg-amber-50/50">
+                  <Card className="rounded-xl border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2">
                         <CreditCard size={16} /> Crédit en cours
@@ -366,10 +366,10 @@ export function VehiculesClients() {
 
 function KPI({ label, value, icon, color }: { label: string; value: any; icon: React.ReactNode; color: string }) {
   const map: Record<string, string> = {
-    blue: "bg-blue-50 text-blue-700",
-    amber: "bg-amber-50 text-amber-700",
-    rose: "bg-rose-50 text-rose-700",
-    emerald: "bg-emerald-50 text-emerald-700",
+    blue: "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400",
+    amber: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400",
+    rose: "bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400",
+    emerald: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400",
   };
   return (
     <Card className="rounded-2xl shadow-sm">

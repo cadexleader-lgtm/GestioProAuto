@@ -189,7 +189,7 @@ export function Tresorerie() {
               )}
               {journal.map(m => (
                 <div key={m.id} className="flex items-center gap-3 px-4 sm:px-6 py-3 hover:bg-muted/30">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${m.type === "in" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${m.type === "in" ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400" : "bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400"}`}>
                     {m.type === "in" ? <ArrowDownLeft size={17} /> : <ArrowUpRight size={17} />}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -223,9 +223,9 @@ export function Tresorerie() {
 
 function Kpi({ label, value, icon, tone }: { label: string; value: string; icon: React.ReactNode; tone: "primary"|"emerald"|"rose" }) {
   const cls = {
-    primary: "from-white to-blue-50 border-primary/30",
-    emerald: "from-white to-emerald-50 border-emerald-200/70",
-    rose: "from-white to-rose-50 border-rose-200/70",
+    primary: "from-white to-blue-50 border-primary/30 dark:from-card dark:to-card dark:border-primary/30",
+    emerald: "from-white to-emerald-50 border-emerald-200/70 dark:from-card dark:to-card dark:border-border",
+    rose: "from-white to-rose-50 border-rose-200/70 dark:from-card dark:to-card dark:border-border",
   }[tone];
   return (
     <Card className={`rounded-2xl bg-gradient-to-br ${cls}`}>

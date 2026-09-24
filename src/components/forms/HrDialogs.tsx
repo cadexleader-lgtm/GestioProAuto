@@ -258,12 +258,12 @@ export function PayrollDialog({ open, onOpenChange }: { open:boolean; onOpenChan
         <div><Label>Mois</Label><Input type="month" value={form.month} onChange={e=>setForm({...form,month:e.target.value})}/></div>
 
         {alreadySettled && (
-          <p className="text-sm text-emerald-700 bg-emerald-50 rounded-lg p-3">Ce mois est déjà payé intégralement pour cet employé.</p>
+          <p className="text-sm text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3">Ce mois est déjà payé intégralement pour cet employé.</p>
         )}
 
         {completingPartial && !alreadySettled && (
           <div className="space-y-3">
-            <div className="p-3 bg-amber-50 rounded-lg text-sm text-amber-800">
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg text-sm text-amber-800 dark:text-amber-400">
               Paiement partiel en cours — <strong>{formatFCFA((existingPayslip as any).paidAmount ?? 0)}</strong> déjà versé sur {formatFCFA((existingPayslip as any).netDue ?? 0)}, solde restant <strong>{formatFCFA((existingPayslip as any).remaining ?? 0)}</strong>.
             </div>
             <div><Label>Mode de paiement</Label>
@@ -485,7 +485,7 @@ export function BulkPayrollDialog({ open, onOpenChange }: { open: boolean; onOpe
                 {r.alreadyPaid ? (
                   <Badge variant="secondary" className="ml-auto">Déjà payé ce mois</Badge>
                 ) : r.partialInProgress ? (
-                  <Badge variant="outline" className="ml-auto border-amber-300 text-amber-700 bg-amber-50">Acompte en cours — à compléter depuis "Payer salaire"</Badge>
+                  <Badge variant="outline" className="ml-auto border-amber-300 dark:border-amber-800/40 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30">Acompte en cours — à compléter depuis "Payer salaire"</Badge>
                 ) : (
                   <>
                     <div className="w-28"><Label className="text-[10px]">Salaire base</Label><MoneyInput value={r.baseSalary} onChange={(v) => patchRow(r.employeeId, { baseSalary: v })} className="h-8 text-xs" /></div>
@@ -556,16 +556,16 @@ export function EmployeeDetailDialog({
               <DialogTitle className="flex items-center gap-2 flex-wrap">
                 {emp.firstName} {emp.lastName}
                 {emp.status === "inactive" ? (
-                  <Badge variant="secondary" className="bg-slate-100 text-slate-600">Inactif</Badge>
+                  <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-800/40 text-slate-600 dark:text-slate-300">Inactif</Badge>
                 ) : (
-                  <Badge variant="secondary" className="bg-emerald-50 text-emerald-700">Actif</Badge>
+                  <Badge variant="secondary" className="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400">Actif</Badge>
                 )}
               </DialogTitle>
               <DialogDescription>{emp.position} · {emp.department}</DialogDescription>
             </DialogHeader>
 
             {emp.status === "inactive" && (
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+              <div className="rounded-xl border border-slate-200 dark:border-border bg-slate-50 dark:bg-slate-800/30 p-3 text-sm text-slate-700 dark:text-slate-300">
                 Sortie le {emp.terminatedAt ? new Date(emp.terminatedAt).toLocaleDateString("fr-FR") : "—"}
                 {emp.terminationReason ? <> — {emp.terminationReason}</> : null}
               </div>
@@ -614,7 +614,7 @@ export function EmployeeDetailDialog({
                       <span>{new Date(a.grantedAt).toLocaleDateString("fr-FR")}{a.note ? ` — ${a.note}` : ""}</span>
                       <span className="flex items-center gap-2">
                         <strong>{formatFCFA(a.amount)}</strong>
-                        <Badge variant="secondary" className={a.status === "outstanding" ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}>
+                        <Badge variant="secondary" className={a.status === "outstanding" ? "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400" : "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"}>
                           {a.status === "outstanding" ? "En cours" : "Rattachée"}
                         </Badge>
                       </span>
@@ -638,9 +638,9 @@ export function EmployeeDetailDialog({
                       <span className="flex items-center gap-2">
                         <strong className={status === "cancelled" ? "line-through text-muted-foreground" : ""}>{formatFCFA(p.net)}</strong>
                         <Badge variant="secondary" className={
-                          status === "cancelled" ? "bg-rose-50 text-rose-700"
-                          : status === "partial" ? "bg-amber-50 text-amber-700"
-                          : "bg-emerald-50 text-emerald-700"
+                          status === "cancelled" ? "bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400"
+                          : status === "partial" ? "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"
+                          : "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
                         }>
                           {status === "cancelled" ? "Annulé" : status === "partial" ? "Partiel" : "Payé"}
                         </Badge>

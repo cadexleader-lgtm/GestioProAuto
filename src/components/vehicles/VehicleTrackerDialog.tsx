@@ -111,7 +111,7 @@ export function VehicleTrackerDialog({ vehicle, open, onOpenChange }: { vehicle:
                   <p className="text-sm font-semibold">{vehicle.tracker.deviceId}</p>
                   <p className="text-xs text-muted-foreground">{vehicle.tracker.provider || "Fournisseur non précisé"} · associé le {new Date(vehicle.tracker.addedAt).toLocaleDateString("fr-FR")}</p>
                 </div>
-                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700">Actif</Badge>
+                <Badge variant="secondary" className="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400">Actif</Badge>
               </div>
 
               <div>

@@ -96,7 +96,7 @@ export function VehiculesCredits() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-display font-bold">{v.brand} {v.model}</h3>
                       {c.status === "late" && (
-                        <span className="text-[10px] font-bold px-2 py-1 rounded-md bg-rose-50 text-rose-700 inline-flex items-center gap-1">
+                        <span className="text-[10px] font-bold px-2 py-1 rounded-md bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 inline-flex items-center gap-1">
                           <AlertTriangle size={10} /> EN RETARD
                         </span>
                       )}
@@ -134,7 +134,7 @@ export function VehiculesCredits() {
 
       {/* Historique — contrats soldés */}
       {settledCredits.length > 0 && (
-        <div className="rounded-2xl border bg-white/60 backdrop-blur-xl overflow-hidden">
+        <div className="rounded-2xl border bg-white/60 dark:bg-card backdrop-blur-xl overflow-hidden">
           <button onClick={() => setShowHistory(v => !v)} className="w-full flex items-center justify-between px-4 sm:px-6 py-4 hover:bg-muted/40 transition">
             <span className="inline-flex items-center gap-2 font-display font-semibold text-sm">
               <Archive size={16} className="text-muted-foreground" /> Contrats soldés ({settledCredits.length})
@@ -147,7 +147,7 @@ export function VehiculesCredits() {
                 const v = vehicles.find(x => x.id === c.vehicleId);
                 return (
                   <div key={c.id} className="flex items-center gap-3 px-4 sm:px-6 py-3 cursor-pointer hover:bg-muted/30" onClick={() => setOpenDetail(c)}>
-                    <span className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0"><CheckCircle2 size={16} /></span>
+                    <span className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0"><CheckCircle2 size={16} /></span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{c.customer} · {v ? `${v.brand} ${v.model}` : "Véhicule"}</p>
                       <p className="text-xs text-muted-foreground">Contrat terminé · {c.totalMonths} mensualités</p>
@@ -186,7 +186,7 @@ export function VehiculesCredits() {
                 <Separator className="my-4" />
 
                 {remaining === 0 && (
-                  <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm inline-flex items-center gap-2 w-full">
+                  <div className="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-400 text-sm inline-flex items-center gap-2 w-full">
                     <CheckCircle2 size={16} /> Contrat soldé — plus aucun paiement requis.
                   </div>
                 )}
@@ -200,7 +200,7 @@ export function VehiculesCredits() {
 
                 <div className="space-y-2">
                   {openDetail.downPayment > 0 && (
-                    <div className="flex items-center justify-between p-3 rounded-lg border bg-emerald-50/50">
+                    <div className="flex items-center justify-between p-3 rounded-lg border bg-emerald-50/50 dark:bg-emerald-950/20">
                       <div>
                         <p className="text-sm font-medium">Apport initial</p>
                         <p className="text-xs text-muted-foreground">Au contrat</p>
@@ -257,11 +257,11 @@ export function VehiculesCredits() {
 }
 
 function Kpi({ label, value, icon, tone }: { label: string; value: string; icon: React.ReactNode; tone?: "rose" }) {
-  const cls = tone === "rose" ? "bg-gradient-to-br from-rose-50 to-rose-100/60 border-rose-200" : "bg-white/70 border-slate-200/60";
+  const cls = tone === "rose" ? "bg-gradient-to-br from-rose-50 to-rose-100/60 border-rose-200 dark:from-rose-950/40 dark:to-rose-950/20 dark:border-rose-800/40" : "bg-white/70 border-slate-200/60 dark:bg-card dark:border-border";
   return (
     <div className={`rounded-2xl border p-4 backdrop-blur-xl ${cls}`}>
       <div className="flex items-center gap-2 mb-1.5">
-        <div className="w-7 h-7 rounded-lg bg-white/80 flex items-center justify-center shadow-sm">{icon}</div>
+        <div className="w-7 h-7 rounded-lg bg-white/80 dark:bg-background/60 flex items-center justify-center shadow-sm">{icon}</div>
         <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">{label}</p>
       </div>
       <p className="font-display font-bold text-lg sm:text-xl tabular-nums truncate">{value}</p>
@@ -270,7 +270,7 @@ function Kpi({ label, value, icon, tone }: { label: string; value: string; icon:
 }
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: "emerald" | "rose" }) {
-  const cls = tone === "emerald" ? "bg-emerald-50 text-emerald-800" : tone === "rose" ? "bg-rose-50 text-rose-800" : "bg-muted";
+  const cls = tone === "emerald" ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400" : tone === "rose" ? "bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-400" : "bg-muted";
   return (
     <div className={`p-3 rounded-xl ${cls}`}>
       <p className="text-[10px] uppercase tracking-wider font-bold opacity-75">{label}</p>

@@ -42,18 +42,18 @@ type DocKind = "facture" | "proforma" | "recu";
 const PAYMENT_METHODS = ["Cash", "Wave", "Orange Money", "Virement", "Chèque"] as const;
 
 const TYPES: { id: DocKind; label: string; description: string; icon: any; prefix: string; tint: string }[] = [
-  { id: "facture",  label: "Facture",          description: "Prestation ou service facturé à un client", icon: FileSpreadsheet, prefix: "FAC", tint: "bg-blue-50 text-blue-700" },
-  { id: "proforma", label: "Proforma / Devis",  description: "Estimation avant vente ou intervention",     icon: FileText,        prefix: "PRO", tint: "bg-indigo-50 text-indigo-700" },
-  { id: "recu",     label: "Reçu",              description: "Justificatif d'un encaissement",             icon: Receipt,         prefix: "REC", tint: "bg-emerald-50 text-emerald-700" },
+  { id: "facture",  label: "Facture",          description: "Prestation ou service facturé à un client", icon: FileSpreadsheet, prefix: "FAC", tint: "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400" },
+  { id: "proforma", label: "Proforma / Devis",  description: "Estimation avant vente ou intervention",     icon: FileText,        prefix: "PRO", tint: "bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400" },
+  { id: "recu",     label: "Reçu",              description: "Justificatif d'un encaissement",             icon: Receipt,         prefix: "REC", tint: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400" },
 ];
 
 /** Types archivés automatiquement par les modules métier (non générables depuis cette page). */
 const AUTO_TYPES = [
-  { id: "contrat-vente",    label: "Contrat de vente",    icon: FileSignature, prefix: "VTE", tint: "bg-rose-50 text-rose-700" },
-  { id: "contrat-location", label: "Contrat de location", icon: ScrollText,    prefix: "LOC", tint: "bg-cyan-50 text-cyan-700" },
-  { id: "contrat-credit",   label: "Échéancier crédit",   icon: ScrollText,    prefix: "CRE", tint: "bg-orange-50 text-orange-700" },
-  { id: "bulletin",         label: "Bulletin de paie",    icon: Receipt,       prefix: "PAI", tint: "bg-teal-50 text-teal-700" },
-  { id: "piece",            label: "Pièce jointe",        icon: FileText,      prefix: "PJ",  tint: "bg-slate-100 text-slate-700" },
+  { id: "contrat-vente",    label: "Contrat de vente",    icon: FileSignature, prefix: "VTE", tint: "bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400" },
+  { id: "contrat-location", label: "Contrat de location", icon: ScrollText,    prefix: "LOC", tint: "bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-400" },
+  { id: "contrat-credit",   label: "Échéancier crédit",   icon: ScrollText,    prefix: "CRE", tint: "bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400" },
+  { id: "bulletin",         label: "Bulletin de paie",    icon: Receipt,       prefix: "PAI", tint: "bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-400" },
+  { id: "piece",            label: "Pièce jointe",        icon: FileText,      prefix: "PJ",  tint: "bg-slate-100 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300" },
 ] as const;
 
 const ALL_TYPES: { id: string; label: string; icon: any; prefix: string; tint: string }[] = [
@@ -447,7 +447,7 @@ export function Documents() {
     const isPayroll = isPayrollDocument(d);
     return (
       <div key={d.id} className="flex items-center gap-3 px-4 sm:px-6 py-4 hover:bg-muted/30 transition-colors">
-        <div className={`w-10 h-10 rounded-xl ${t?.tint ?? "bg-slate-100 text-slate-600"} flex items-center justify-center shrink-0`}>
+        <div className={`w-10 h-10 rounded-xl ${t?.tint ?? "bg-slate-100 dark:bg-slate-800/40 text-slate-600 dark:text-slate-300"} flex items-center justify-center shrink-0`}>
           <Icon size={17} />
         </div>
         <div className="flex-1 min-w-0">
@@ -459,7 +459,7 @@ export function Documents() {
         </div>
         {n !== null && (
           <Badge variant="outline"
-            className={`hidden sm:inline-flex rounded-lg text-[11px] ${n < 0 ? "border-rose-300 bg-rose-50 text-rose-700" : n <= 30 ? "border-amber-300 bg-amber-50 text-amber-800" : "border-slate-200"}`}>
+            className={`hidden sm:inline-flex rounded-lg text-[11px] ${n < 0 ? "border-rose-300 dark:border-rose-800/40 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400" : n <= 30 ? "border-amber-300 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-400" : "border-slate-200 dark:border-border"}`}>
             {n < 0 ? `Expiré (${-n} j)` : `Expire dans ${n} j`}
           </Badge>
         )}
@@ -521,7 +521,7 @@ export function Documents() {
           </p>
         </div>
         {!profile.name && (
-          <Badge variant="outline" className="rounded-xl border-amber-300 bg-amber-50 text-amber-800">
+          <Badge variant="outline" className="rounded-xl border-amber-300 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-400">
             Complétez l'identité de l'entreprise dans Paramètres
           </Badge>
         )}
@@ -596,7 +596,7 @@ export function Documents() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="rounded-xl gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                  className="rounded-xl gap-1.5 border-amber-300 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/50"
                   disabled={migratingLegacy}
                   onClick={() => void migrateLegacyBase64Documents()}
                 >
@@ -655,13 +655,13 @@ export function Documents() {
 
       {/* Archives RH — séparées, jamais mélangées aux documents généraux */}
       {filteredPayroll.length > 0 && (
-        <Card className="shadow-sm border-amber-200">
+        <Card className="shadow-sm border-amber-200 dark:border-amber-800/40">
           <CardContent className="p-0">
-            <div className="p-5 border-b bg-amber-50/40 rounded-t-xl">
-              <h3 className="font-display font-semibold inline-flex items-center gap-2 text-amber-900">
+            <div className="p-5 border-b bg-amber-50/40 dark:bg-amber-950/20 rounded-t-xl">
+              <h3 className="font-display font-semibold inline-flex items-center gap-2 text-amber-900 dark:text-amber-300">
                 <ShieldAlert size={16} /> Bulletins de paie (RH — sensible)
               </h3>
-              <p className="text-xs text-amber-800/80 mt-0.5">
+              <p className="text-xs text-amber-800/80 dark:text-amber-400/80 mt-0.5">
                 {filteredPayroll.length} document(s) · visibles uniquement par patron/manager, non modifiables, non supprimables.
               </p>
             </div>
@@ -839,16 +839,16 @@ function StatCard({ icon: Icon, label, value, tone }: {
   icon: any; label: string; value: string; tone: "blue" | "indigo" | "emerald" | "amber" | "slate";
 }) {
   const tones: Record<typeof tone, string> = {
-    blue: "from-white to-blue-50 border-blue-200/70 text-blue-700",
-    indigo: "from-white to-indigo-50 border-indigo-200/70 text-indigo-700",
-    emerald: "from-white to-emerald-50 border-emerald-200/70 text-emerald-700",
-    amber: "from-white to-amber-50 border-amber-200/70 text-amber-700",
-    slate: "from-white to-slate-50 border-slate-200/70 text-slate-600",
+    blue: "from-white to-blue-50 border-blue-200/70 text-blue-700 dark:from-card dark:to-card dark:border-border dark:text-blue-400",
+    indigo: "from-white to-indigo-50 border-indigo-200/70 text-indigo-700 dark:from-card dark:to-card dark:border-border dark:text-indigo-400",
+    emerald: "from-white to-emerald-50 border-emerald-200/70 text-emerald-700 dark:from-card dark:to-card dark:border-border dark:text-emerald-400",
+    amber: "from-white to-amber-50 border-amber-200/70 text-amber-700 dark:from-card dark:to-card dark:border-border dark:text-amber-400",
+    slate: "from-white to-slate-50 border-slate-200/70 text-slate-600 dark:from-card dark:to-card dark:border-border dark:text-muted-foreground",
   };
   return (
     <Card className={`bg-gradient-to-br ${tones[tone]}`}>
       <CardContent className="p-4 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-white/70 flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-white/70 dark:bg-background/60 flex items-center justify-center shrink-0">
           <Icon size={16} />
         </div>
         <div className="min-w-0">
