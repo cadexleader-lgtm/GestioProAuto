@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -370,21 +371,47 @@ function FeatureFlagsCard() {
 }
 
 const PLAN_NAMES = { decouverte: "Découverte", starter: "Starter", business: "Business", enterprise: "Enterprise" } as const;
+type PlanId = keyof typeof PLAN_NAMES;
+
+const PLANS: { id: PlanId; name: string; price: string; period: string; features: string[] }[] = [
+  { id: "decouverte", name: "Découverte", price: "Gratuit", period: "sans engagement", features: ["1 utilisateur", "Jusqu'à 5 véhicules", "Ventes cash & fiche véhicule"] },
+  { id: "starter", name: "Starter", price: "9 000", period: "FCFA / mois", features: ["2 utilisateurs", "Jusqu'à 20 véhicules", "Ventes cash, maintenance"] },
+  { id: "business", name: "Business", price: "24 000", period: "FCFA / mois", features: ["5 utilisateurs", "Jusqu'à 60 véhicules", "Modules à la carte (Location, Crédit, RH, GPS)"] },
+  { id: "enterprise", name: "Enterprise", price: "Sur devis", period: "", features: ["Utilisateurs illimités", "Multi-succursale", "API, SLA, formation"] },
+];
+
+const PLAN_STORAGE_KEY = "gestiopro.plan";
 
 /**
  * Aucune facturation automatisée n'existe encore côté serveur (pas de table
- * d'abonnement, pas d'intégration de paiement branchée). Ce module reste
- * honnête là-dessus : il affiche l'offre et propose un contact direct,
- * plutôt que de simuler un paiement qui ne débiterait rien réellement.
- * Quand un prestataire (Mobile Money via agrégateur) sera intégré, ce
- * bouton déclenchera un vrai lien de paiement — jamais de formulaire de
- * carte bancaire stocké côté client, conforme à l'usage local (paiement
- * volontaire répété, pas de prélèvement automatique silencieux).
+ * d'abonnement, pas d'intégration de paiement branchée) — le choix de
+ * formule est donc mémorisé localement (localStorage), pas synchronisé
+ * entre appareils/membres de l'équipe pour l'instant. Reste honnête là-dessus
+ * (bandeau explicite) plutôt que de simuler un paiement qui ne débiterait
+ * rien réellement. Le changement de formule se fait entièrement DANS
+ * l'espace connecté (dialogue), sans jamais naviguer vers le site public ni
+ * déconnecter l'utilisateur. Quand un prestataire (Mobile Money via
+ * agrégateur, CinetPay recommandé) sera intégré, ce dialogue déclenchera un
+ * vrai lien de paiement — jamais de formulaire de carte bancaire stocké
+ * côté client, conforme à l'usage local (paiement volontaire répété, pas de
+ * prélèvement automatique silencieux).
  */
 function SubscriptionCard() {
   const role = useRole();
   const canEdit = can(role, "manage.settings");
-  const currentPlan: keyof typeof PLAN_NAMES = "decouverte";
+  const [currentPlan, setCurrentPlan] = useState<PlanId>(() => {
+    try { return (localStorage.getItem(PLAN_STORAGE_KEY) as PlanId) || "decouverte"; } catch { return "decouverte"; }
+  });
+  const [openSwitch, setOpenSwitch] = useState(false);
+
+  const choosePlan = (id: PlanId) => {
+    setCurrentPlan(id);
+    try { localStorage.setItem(PLAN_STORAGE_KEY, id); } catch {}
+    toast.success(`Formule ${PLAN_NAMES[id]} sélectionnée`, {
+      description: "Aucun paiement n'a été prélevé — l'intégration Mobile Money n'est pas encore activée.",
+    });
+    setOpenSwitch(false);
+  };
 
   return (
     <Card className="shadow-sm">
@@ -407,16 +434,14 @@ function SubscriptionCard() {
             envoyé — vous payez vous-même, quand vous voulez, avant l'échéance.
           </p>
           <p className="text-xs text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-lg px-3 py-2">
-            Intégration du paiement en ligne pas encore activée sur cet espace. En attendant, contactez-nous pour changer de
-            formule ou régler manuellement.
+            Intégration du paiement en ligne pas encore activée sur cet espace — changer de formule ci-dessous ne déclenche
+            aucun débit réel pour l'instant.
           </p>
         </div>
 
         {canEdit && (
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <a href="/#tarifs" target="_blank" rel="noreferrer"><Check size={14} /> Voir les formules</a>
-            </Button>
+            <Button variant="outline" size="sm" onClick={() => setOpenSwitch(true)}><CreditCard size={14} /> Changer de formule</Button>
           </div>
         )}
         {!canEdit && (
@@ -424,6 +449,39 @@ function SubscriptionCard() {
             Réservé au rôle Patron.
           </p>
         )}
+
+        <Dialog open={openSwitch} onOpenChange={setOpenSwitch}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Choisir une formule</DialogTitle>
+              <DialogDescription>Le changement est immédiat, sans quitter votre espace. Aucun paiement n'est prélevé automatiquement.</DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+              {PLANS.map((plan) => {
+                const active = plan.id === currentPlan;
+                return (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    onClick={() => choosePlan(plan.id)}
+                    className={`text-left rounded-2xl border-2 p-4 transition-all ${active ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="font-display font-bold">{plan.name}</p>
+                      {active && <Check size={16} className="text-primary" />}
+                    </div>
+                    <p className="mt-2 font-display font-bold text-xl">{plan.price}{plan.period && <span className="text-xs font-normal text-muted-foreground"> {plan.period}</span>}</p>
+                    <ul className="mt-3 space-y-1">
+                      {plan.features.map((f) => (
+                        <li key={f} className="text-xs text-muted-foreground flex items-start gap-1.5"><Check size={11} className="mt-0.5 shrink-0 text-primary" /> {f}</li>
+                      ))}
+                    </ul>
+                  </button>
+                );
+              })}
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

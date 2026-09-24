@@ -1,7 +1,7 @@
 import { unbindCompany } from "@/lib/demo-store";
 import { resetTenant } from "@/lib/tenant";
 import { useState, useEffect } from "react";
-import { Menu, Search, User, Settings, LogOut, HelpCircle, Maximize2, FileText, ChevronDown } from "lucide-react";
+import { Menu, User, Settings, LogOut, HelpCircle, Maximize2, FileText, ChevronDown } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import { useGetCompany } from "@workspace/api-client-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { NotificationsBell } from "./NotificationsBell";
+import { TopbarSearch } from "./TopbarSearch";
 import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 import {
   DropdownMenu,
@@ -71,10 +72,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         >
           <Menu size={20} />
         </button>
-        <div className="h-9 items-center px-3 bg-card rounded-lg border border-border shadow-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all max-w-md w-full sm:w-64 group hidden sm:flex cursor-pointer hover:border-primary/50">
-          <Search size={18} className="text-muted-foreground group-focus-within:text-primary transition-colors" />
-          <span className="text-sm px-2 text-muted-foreground select-none">Rechercher... (Bientôt)</span>
-        </div>
+        <TopbarSearch />
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
@@ -127,7 +125,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
               Thème
               <ThemeToggle className="p-1.5" />
             </div>
-            <DropdownMenuItem onClick={() => toast.info("Centre d'aide bientôt disponible")}>
+            <DropdownMenuItem onClick={() => navigate({ to: "/app/aide" })}>
               <HelpCircle size={16} /> Aide & Support
             </DropdownMenuItem>
             <DropdownMenuSeparator />

@@ -18,6 +18,7 @@ import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as PolitiqueDeConfidentialiteRouteImport } from './routes/politique-de-confidentialite'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppAideRouteImport } from './routes/app.aide'
 import { Route as AppDepensesRouteImport } from './routes/app.depenses'
 import { Route as AppDocumentsRouteImport } from './routes/app.documents'
 import { Route as AppFournisseursRouteImport } from './routes/app.fournisseurs'
@@ -78,6 +79,11 @@ const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAideRoute = AppAideRouteImport.update({
+  id: '/aide',
+  path: '/aide',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDepensesRoute = AppDepensesRouteImport.update({
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/app/aide': typeof AppAideRoute
   '/app/depenses': typeof AppDepensesRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/fournisseurs': typeof AppFournisseursRoute
@@ -190,6 +197,7 @@ export interface FileRoutesByTo {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/app/aide': typeof AppAideRoute
   '/app/depenses': typeof AppDepensesRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/fournisseurs': typeof AppFournisseursRoute
@@ -217,6 +225,7 @@ export interface FileRoutesById {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/app/aide': typeof AppAideRoute
   '/app/depenses': typeof AppDepensesRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/fournisseurs': typeof AppFournisseursRoute
@@ -245,6 +254,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/politique-de-confidentialite'
     | '/reinitialiser-mot-de-passe'
+    | '/app/aide'
     | '/app/depenses'
     | '/app/documents'
     | '/app/fournisseurs'
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/politique-de-confidentialite'
     | '/reinitialiser-mot-de-passe'
+    | '/app/aide'
     | '/app/depenses'
     | '/app/documents'
     | '/app/fournisseurs'
@@ -296,6 +307,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/politique-de-confidentialite'
     | '/reinitialiser-mot-de-passe'
+    | '/app/aide'
     | '/app/depenses'
     | '/app/documents'
     | '/app/fournisseurs'
@@ -388,6 +400,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/aide': {
+      id: '/app/aide'
+      path: '/aide'
+      fullPath: '/app/aide'
+      preLoaderRoute: typeof AppAideRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/depenses': {
@@ -499,6 +518,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAideRoute: typeof AppAideRoute
   AppDepensesRoute: typeof AppDepensesRoute
   AppDocumentsRoute: typeof AppDocumentsRoute
   AppFournisseursRoute: typeof AppFournisseursRoute
@@ -518,6 +538,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAideRoute: AppAideRoute,
   AppDepensesRoute: AppDepensesRoute,
   AppDocumentsRoute: AppDocumentsRoute,
   AppFournisseursRoute: AppFournisseursRoute,
