@@ -25,6 +25,8 @@ export function VehicleDetailSheet({ vehicle, open, onOpenChange, onRent, onSell
   const role = useRole();
   const canRent = can(role, "manage.rental");
   const canSell = can(role, "create.sale");
+  const canEditVehicle = can(role, "edit.vehicle");
+  const canViewCost = can(role, "view.vehicleCost");
   const [activePhoto, setActivePhoto] = useState<string | null>(null);
   const [showVideo, setShowVideo] = useState(false);
 
@@ -100,23 +102,23 @@ export function VehicleDetailSheet({ vehicle, open, onOpenChange, onRent, onSell
         </SheetHeader>
 
         {/* Actions rapides — évite d'avoir à refermer la fiche pour agir */}
-        {(canRentThis || canSellThis || canMaintainThis || onEdit || onShare) && (
+        {(canRentThis || canSellThis || canMaintainThis || (canEditVehicle && onEdit) || onShare) && (
           <div className="px-4 sm:px-6 pt-4 flex flex-wrap gap-2">
             {canRentThis && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={act(onRent)}><KeyRound size={14} /> Louer</Button>}
             {canSellThis && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={act(onSell)}><ShoppingCart size={14} /> Vendre</Button>}
             {canMaintainThis && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={act(onMaintenance)}><Wrench size={14} /> Maintenance</Button>}
-            {onEdit && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={act(onEdit)}><Pencil size={14} /> Modifier</Button>}
+            {canEditVehicle && onEdit && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={act(onEdit)}><Pencil size={14} /> Modifier</Button>}
             {onShare && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={act(onShare)}><Send size={14} /> Partager</Button>}
           </div>
         )}
 
         <div className="px-4 sm:px-6 pt-4">
           <Tabs defaultValue="info">
-            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto gap-1 p-1">
+            <TabsList className={`grid grid-cols-2 ${canViewCost ? "sm:grid-cols-4" : "sm:grid-cols-3"} w-full h-auto gap-1 p-1`}>
               <TabsTrigger value="info" className="text-xs sm:text-sm py-2 px-1">Infos</TabsTrigger>
               <TabsTrigger value="history" className="text-xs sm:text-sm py-2 px-1">Historique</TabsTrigger>
               <TabsTrigger value="maint" className="text-xs sm:text-sm py-2 px-1">Maintenance</TabsTrigger>
-              <TabsTrigger value="prof" className="text-xs sm:text-sm py-2 px-1">Rentabilité</TabsTrigger>
+              {canViewCost && <TabsTrigger value="prof" className="text-xs sm:text-sm py-2 px-1">Rentabilité</TabsTrigger>}
             </TabsList>
 
 
@@ -130,7 +132,7 @@ export function VehicleDetailSheet({ vehicle, open, onOpenChange, onRent, onSell
                 <Info label="Année" value={String(vehicle.year)} />
               </div>
               <div className="grid grid-cols-2 gap-3 pt-2">
-                <Info label="Prix d'achat" value={formatFCFA(vehicle.purchasePrice)} />
+                {canViewCost && <Info label="Prix d'achat" value={formatFCFA(vehicle.purchasePrice)} />}
                 <Info label="Prix affiché" value={formatFCFA(vehicle.sellingPrice)} />
                 {!!vehicle.wholesalePrice && <Info label="Prix marchand" value={formatFCFA(vehicle.wholesalePrice)} />}
                 {!!vehicle.minPrice && <Info label="Prix plancher" value={formatFCFA(vehicle.minPrice)} />}
@@ -184,7 +186,7 @@ export function VehicleDetailSheet({ vehicle, open, onOpenChange, onRent, onSell
               })}
             </TabsContent>
 
-            <TabsContent value="prof" className="space-y-3 mt-4">
+            {canViewCost && <TabsContent value="prof" className="space-y-3 mt-4">
               {prof && (
                 <>
                   <div className="grid grid-cols-2 gap-3">
@@ -199,7 +201,7 @@ export function VehicleDetailSheet({ vehicle, open, onOpenChange, onRent, onSell
                   </div>
                 </>
               )}
-            </TabsContent>
+            </TabsContent>}
           </Tabs>
         </div>
         <div className="h-6" />

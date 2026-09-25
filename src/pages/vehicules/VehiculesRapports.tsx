@@ -16,6 +16,7 @@ import { TrendingUp, TrendingDown, Minus, Car, KeyRound, Users, Wallet, Download
 import { toast } from "sonner";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
 import { useFeatureFlags } from "@/lib/feature-flags";
+import { useRole, can } from "@/lib/roles";
 
 /**
  * Palette — validée colorblind-safe (skill dataviz), source unique partagée
@@ -36,6 +37,7 @@ type Period = keyof typeof PERIODS;
 
 export function VehiculesRapports() {
   const flags = useFeatureFlags();
+  const role = useRole();
   const vehicles = useCollection("vehicles");
   const sales = useCollection("vehicleSales");
   const credits = useCollection("vehicleCredits");
@@ -194,6 +196,9 @@ export function VehiculesRapports() {
 
   if (!flags.reports) {
     return <RestrictedAccess title="Rapports" message="Ce module est désactivé pour votre entreprise. Un patron peut le réactiver dans Paramètres." />;
+  }
+  if (role === "terrain") {
+    return <RestrictedAccess title="Rapports" message="Accès aux rapports restreint à votre rôle." />;
   }
 
   return (

@@ -10,6 +10,10 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { useCollection, isRentalOverdue } from "./demo-store";
 import { formatFCFA } from "./format";
+import { useRole } from "./roles";
+
+/** Notifications à ne jamais montrer au rôle terrain (aucun accès finances). */
+const FINANCIAL_KINDS = new Set<NotifKind>(["sale", "credit", "expense"]);
 
 /** Échéance rapprochant une alerte "warning" (au-delà de N jours restants, pas d'alerte). */
 const EXPIRY_WARNING_DAYS = 30;
@@ -106,6 +110,7 @@ type Candidate = Omit<AppNotification, "read"> & { toast?: { text: string; freq:
 const d = (iso?: string) => (iso ? new Date(iso).toLocaleDateString("fr-FR") : "");
 
 export function NotificationCenter() {
+  const role = useRole();
   const cash = useCollection("cash");
   const credits = useCollection("vehicleCredits");
   const payments = useCollection("vehiclePayments");
@@ -366,10 +371,17 @@ export function NotificationCenter() {
       });
     });
 
+    // Rôle terrain : aucun accès finances (cf. roles.ts) — les notifications
+    // de vente/crédit/dépense ne doivent ni apparaître dans la cloche, ni
+    // déclencher de toast/bip. Filtré ici (génération, mounted une seule
+    // fois par session) plutôt que côté affichage, pour que ça s'applique
+    // aussi aux toasts.
+    const visible = role === "terrain" ? list.filter((c) => !FINANCIAL_KINDS.has(c.kind)) : list;
+
     // Publication : les plus anciens d'abord pour un ordre cohérent.
-    list.sort((a, b) => +new Date(a.at) - +new Date(b.at));
+    visible.sort((a, b) => +new Date(a.at) - +new Date(b.at));
     let toasted = 0;
-    list.forEach((c) => {
+    visible.forEach((c) => {
       const added = pushNotification({
         key: c.key, kind: c.kind, title: c.title,
         description: c.description, severity: c.severity, at: c.at, href: c.href,
@@ -381,7 +393,7 @@ export function NotificationCenter() {
         beep(c.toast.freq, 120);
       }
     });
-  }, [cash, credits, payments, rentals, vehicles, vehicleSales, maintenances, expenses, documents, tick]);
+  }, [cash, credits, payments, rentals, vehicles, vehicleSales, maintenances, expenses, documents, tick, role]);
 
   return null;
 }

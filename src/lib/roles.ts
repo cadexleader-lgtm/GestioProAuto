@@ -36,6 +36,9 @@ export function can(role: Role, action:
   | "manage.rental"
   | "create.sale"
   | "cancel.payroll"
+  | "edit.vehicle"
+  | "create.vehicle"
+  | "view.vehicleCost"
 ): boolean {
   if (role === "patron") return true;
   if (role === "manager") return action !== "wipe.data" && action !== "manage.settings" && action !== "manage.team" && action !== "cancel.payroll";

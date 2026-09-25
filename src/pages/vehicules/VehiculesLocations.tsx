@@ -14,12 +14,46 @@ import { VehicleDetailSheet } from "@/components/vehicles/VehicleDetailSheet";
 import { generateRentalContract, sendWhatsApp } from "@/lib/vehicle-pdf";
 import type { Rental } from "@/lib/demo-data";
 import { useRole, can } from "@/lib/roles";
+import { useCompanyProfile } from "@/lib/company-profile";
 import { RENTAL_STATUS as STATUS } from "@/lib/vehicle-status";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
 import { useFeatureFlags } from "@/lib/feature-flags";
 
+/** Message WhatsApp de rappel de retour — humanisé et signé du nom réel de
+ * l'entreprise (pas "GestioPro", qui est l'éditeur du logiciel, pas le
+ * loueur) ; ton plus ferme si le retour est déjà en retard. */
+function buildReturnReminderMessage(opts: {
+  customerFirstName: string;
+  vehicleLabel: string;
+  endDate: string;
+  overdue: boolean;
+  daysLate: number;
+  companyName: string;
+  companyPhone?: string;
+}) {
+  const { customerFirstName, vehicleLabel, endDate, overdue, daysLate, companyName, companyPhone } = opts;
+  const dateStr = new Date(endDate).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+  const signature = companyPhone ? `${companyName} — ${companyPhone}` : companyName;
+  if (overdue) {
+    return (
+      `Bonjour ${customerFirstName}, j'espère que vous allez bien. 🙏\n\n` +
+      `Je me permets de vous contacter au sujet du véhicule ${vehicleLabel} : le retour était prévu le ${dateStr}` +
+      (daysLate > 0 ? ` (il y a ${daysLate} jour${daysLate > 1 ? "s" : ""})` : "") +
+      `, et nous ne l'avons pas encore récupéré.\n\n` +
+      `Pourriez-vous nous indiquer quand vous pourrez le ramener ? N'hésitez pas à nous appeler si vous avez besoin d'un délai.\n\n` +
+      `Merci et à bientôt,\n${signature}`
+    );
+  }
+  return (
+    `Bonjour ${customerFirstName}, petit rappel amical 😊\n\n` +
+    `Le retour du véhicule ${vehicleLabel} est prévu le ${dateStr}. N'hésitez pas à nous contacter si vous avez une question ou besoin d'ajuster l'horaire.\n\n` +
+    `Merci,\n${signature}`
+  );
+}
+
 export function VehiculesLocations() {
   const role = useRole();
+  const profile = useCompanyProfile();
   const canManageRental = can(role, "manage.rental");
   const flags = useFeatureFlags();
   const rentals = useCollection("rentals");
@@ -92,11 +126,11 @@ export function VehiculesLocations() {
       </div>
 
       {/* KPI */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className={`grid grid-cols-2 ${role === "terrain" ? "md:grid-cols-3" : "md:grid-cols-4"} gap-3`}>
         <Kpi label="En cours" value={today.length} icon={<KeyRound className="text-indigo-600" size={18} />} />
         <Kpi label="En retard" value={overdueCount} icon={<AlertTriangle className="text-rose-600" size={18} />} tone={overdueCount > 0 ? "rose" : undefined} />
         <Kpi label="Dispo" value={vehicles.filter((v) => v.status === "available").length} icon={<CheckCircle2 className="text-emerald-600" size={18} />} />
-        <Kpi label="Revenus du mois" valueText={formatFCFA(revenueMonth)} icon={<Calendar className="text-violet-600" size={18} />} />
+        {role !== "terrain" && <Kpi label="Revenus du mois" valueText={formatFCFA(revenueMonth)} icon={<Calendar className="text-violet-600" size={18} />} />}
       </div>
 
       {/* Contrats en cours */}
@@ -147,7 +181,20 @@ export function VehiculesLocations() {
                     <FileText size={14} /> PDF
                   </Button>
                   {r.phone && (
-                    <Button size="sm" variant="outline" onClick={() => sendWhatsApp(r.phone!, `Bonjour ${r.customer}, rappel : retour du ${v.brand} ${v.model} prévu le ${new Date(r.endDate).toLocaleDateString("fr-FR")}. — GestioPro`)}>
+                    <Button size="sm" variant="outline" onClick={() => {
+                      const overdue = r.displayStatus === "overdue";
+                      const daysLate = overdue ? Math.max(0, Math.floor((Date.now() - +new Date(r.endDate)) / 86400000)) : 0;
+                      const message = buildReturnReminderMessage({
+                        customerFirstName: r.customer.split(" ")[0] || r.customer,
+                        vehicleLabel: `${v.brand} ${v.model}`,
+                        endDate: r.endDate,
+                        overdue,
+                        daysLate,
+                        companyName: profile.name || "notre équipe",
+                        companyPhone: profile.phone,
+                      });
+                      sendWhatsApp(r.phone!, message);
+                    }}>
                       <MessageCircle size={14} /> WA
                     </Button>
                   )}

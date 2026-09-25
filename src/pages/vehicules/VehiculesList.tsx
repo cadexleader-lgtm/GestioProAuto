@@ -34,6 +34,9 @@ export function VehiculesList() {
   const role = useRole();
   const canSell = can(role, "create.sale");
   const canRent = can(role, "manage.rental");
+  const canEditVehicle = can(role, "edit.vehicle");
+  const canCreateVehicle = can(role, "create.vehicle");
+  const canViewCost = can(role, "view.vehicleCost");
   const vehicles = useCollection("vehicles");
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
@@ -134,7 +137,9 @@ export function VehiculesList() {
               {migratingPhotos ? "Migration..." : `Migrer photos (${legacyPhotoCount})`}
             </Button>
           )}
-          <Button onClick={() => setOpenAdd(true)} className="shadow-lg shadow-primary/20"><Plus size={16} /> Ajouter</Button>
+          {canCreateVehicle && (
+            <Button onClick={() => setOpenAdd(true)} className="shadow-lg shadow-primary/20"><Plus size={16} /> Ajouter</Button>
+          )}
         </div>
       </div>
 
@@ -145,13 +150,15 @@ export function VehiculesList() {
         <Kpi icon={<KeyRound className="text-indigo-600" size={18} />} label="Loués" value={stats.rented} active={filter === "rented"} onClick={() => setFilter("rented")} />
         <Kpi icon={<ShoppingCart className="text-slate-600" size={18} />} label="Vendus (hist.)" value={stats.sold} active={filter === "sold"} onClick={() => setFilter("sold")} />
         <Kpi icon={<Wrench className="text-amber-600" size={18} />} label="Maintenance" value={stats.maintenance} active={filter === "maintenance"} onClick={() => setFilter("maintenance")} />
-        <Kpi
-          icon={<TrendingUp className="text-violet-600" size={18} />}
-          label="Valeur stock (revient)"
-          valueText={formatFCFA(stats.stockValue)}
-          hint={`Revente est. ${formatFCFA(stats.resaleValue)} · Marge ${formatFCFA(stats.resaleValue - stats.stockValue)}`}
-          tone="violet"
-        />
+        {canViewCost && (
+          <Kpi
+            icon={<TrendingUp className="text-violet-600" size={18} />}
+            label="Valeur stock (revient)"
+            valueText={formatFCFA(stats.stockValue)}
+            hint={`Revente est. ${formatFCFA(stats.resaleValue)} · Marge ${formatFCFA(stats.resaleValue - stats.stockValue)}`}
+            tone="violet"
+          />
+        )}
       </div>
 
       {/* Search */}
@@ -204,7 +211,7 @@ export function VehiculesList() {
                       {canRentThis && <DropdownMenuItem onClick={() => setRentFor(v)}><KeyRound size={14} className="mr-2" /> Louer</DropdownMenuItem>}
                       {canSellThis && <DropdownMenuItem onClick={() => setSaleVehicle(v)}><ShoppingCart size={14} className="mr-2" /> Vendre</DropdownMenuItem>}
                       {canMaintainThis && <DropdownMenuItem onClick={() => setMaintFor(v)}><Wrench size={14} className="mr-2" /> Envoyer en maintenance</DropdownMenuItem>}
-                      <DropdownMenuItem onClick={() => setEditFor(v)}><Pencil size={14} className="mr-2" /> Modifier</DropdownMenuItem>
+                      {canEditVehicle && <DropdownMenuItem onClick={() => setEditFor(v)}><Pencil size={14} className="mr-2" /> Modifier</DropdownMenuItem>}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => setShareFor(v)}><Send size={14} className="mr-2" /> Partager avec un client</DropdownMenuItem>
                     </DropdownMenuContent>
@@ -228,9 +235,11 @@ export function VehiculesList() {
                     <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">Prix</p>
                     <p className="font-display font-bold text-primary text-sm sm:text-base truncate">{formatFCFA(v.sellingPrice)}</p>
                   </div>
-                  <Badge variant="secondary" className="text-[9px] hidden sm:inline-flex">
-                    Coût {formatFCFA(vehicleCost(v))}
-                  </Badge>
+                  {canViewCost && (
+                    <Badge variant="secondary" className="text-[9px] hidden sm:inline-flex">
+                      Coût {formatFCFA(vehicleCost(v))}
+                    </Badge>
+                  )}
                 </div>
               </CardContent>
             </Card>
