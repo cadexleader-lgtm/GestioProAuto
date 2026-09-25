@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Check, Send, Video as VideoIcon } from "lucide-react";
+import { Check, Send } from "lucide-react";
 import { toast } from "sonner";
 import type { Vehicle } from "@/lib/demo-data";
 import { useCompanyProfile } from "@/lib/company-profile";
-import { buildVehicleShareMessage, shareVehicleToClient } from "@/lib/vehicle-share";
+import { buildVehicleShareMessage, shareVehicleToClient, type ShareProgress } from "@/lib/vehicle-share";
+import { Progress } from "@/components/ui/progress";
 
 export function VehicleShareDialog({ vehicle, open, onOpenChange }: {
   vehicle: Vehicle | null; open: boolean; onOpenChange: (v: boolean) => void;
@@ -18,6 +19,7 @@ export function VehicleShareDialog({ vehicle, open, onOpenChange }: {
   const [phone, setPhone] = useState("");
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
+  const [progress, setProgress] = useState<ShareProgress | null>(null);
 
   const media = useMemo(() => {
     if (!vehicle) return [] as string[];
@@ -31,6 +33,7 @@ export function VehicleShareDialog({ vehicle, open, onOpenChange }: {
     setPhone("");
     setExcluded(new Set());
     setSending(false);
+    setProgress(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, vehicle?.id]);
 
@@ -47,18 +50,19 @@ export function VehicleShareDialog({ vehicle, open, onOpenChange }: {
 
   const send = async () => {
     if (sending) return;
-    if (selectedPhotos.length === 0 && !vehicle.video) {
+    if (selectedPhotos.length === 0) {
       toast.error("Sélectionnez au moins une photo à envoyer.");
       return;
     }
     setSending(true);
+    setProgress({ stage: "processing", done: 0, total: selectedPhotos.length });
     try {
       const result = await shareVehicleToClient({
         vehicle,
         message,
         photoUrls: selectedPhotos,
-        videoUrl: vehicle.video,
         clientPhone: phone,
+        onProgress: setProgress,
       });
       if (result.method === "share") {
         toast.success("Partagé — sélectionnez WhatsApp dans la fenêtre qui s'est ouverte.");
@@ -72,6 +76,7 @@ export function VehicleShareDialog({ vehicle, open, onOpenChange }: {
       toast.error(error instanceof Error ? error.message : "Le partage a échoué.");
     } finally {
       setSending(false);
+      setProgress(null);
     }
   };
 
@@ -107,12 +112,6 @@ export function VehicleShareDialog({ vehicle, open, onOpenChange }: {
                     </button>
                   );
                 })}
-                {vehicle.video && (
-                  <div className="w-16 h-16 rounded-lg border-2 border-primary bg-muted flex flex-col items-center justify-center text-muted-foreground">
-                    <VideoIcon size={18} />
-                    <span className="text-[9px] mt-0.5">Vidéo</span>
-                  </div>
-                )}
               </div>
               <p className="text-[11px] text-muted-foreground mt-1.5">Un badge GestioPro discret est ajouté aux photos envoyées.</p>
             </div>
@@ -128,12 +127,25 @@ export function VehicleShareDialog({ vehicle, open, onOpenChange }: {
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+229 ..." className="rounded-xl mt-1.5" />
             <p className="text-[11px] text-muted-foreground mt-1">Laissez vide pour choisir le contact directement dans WhatsApp.</p>
           </div>
+
+          {progress && (
+            <div className="space-y-1.5">
+              <Progress
+                value={progress.stage === "sending" ? 100 : (progress.done / Math.max(1, progress.total)) * 100}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                {progress.stage === "sending"
+                  ? "Envoi vers WhatsApp…"
+                  : `Préparation des photos… ${progress.done}/${progress.total}`}
+              </p>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>Annuler</Button>
           <Button onClick={() => void send()} disabled={sending} className="gap-1.5">
-            <Send size={15} /> {sending ? "Préparation..." : "Partager sur WhatsApp"}
+            <Send size={15} /> {sending ? "Envoi..." : "Partager sur WhatsApp"}
           </Button>
         </DialogFooter>
       </DialogContent>

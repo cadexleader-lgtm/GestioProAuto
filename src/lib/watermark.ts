@@ -27,17 +27,35 @@ async function getLogo(): Promise<HTMLImageElement> {
  * En cas d'échec (CORS, image inaccessible…), retourne l'image d'origine
  * inchangée plutôt que de bloquer le partage.
  */
+// Redimensionne au partage (1600px sur le plus grand côté — largement
+// suffisant pour l'affichage WhatsApp, qui recompresse de toute façon) et
+// baisse légèrement la qualité JPEG : les photos d'origine, prises en plein
+// résolution par l'appareil photo du téléphone, rendaient l'envoi WhatsApp
+// lent et parfois refusé par l'API de partage native (taille totale trop
+// grande). Aucun impact sur la photo stockée en base, uniquement sur la
+// copie envoyée au client.
+const SHARE_MAX_DIM = 1600;
+const SHARE_JPEG_QUALITY = 0.82;
+
 export async function watermarkImage(url: string): Promise<Blob> {
   try {
     const [photo, logo] = await Promise.all([loadImage(url, "anonymous"), getLogo()]);
 
+    let w = photo.naturalWidth;
+    let h = photo.naturalHeight;
+    if (w > SHARE_MAX_DIM || h > SHARE_MAX_DIM) {
+      const scale = SHARE_MAX_DIM / Math.max(w, h);
+      w = Math.round(w * scale);
+      h = Math.round(h * scale);
+    }
+
     const canvas = document.createElement("canvas");
-    canvas.width = photo.naturalWidth;
-    canvas.height = photo.naturalHeight;
+    canvas.width = w;
+    canvas.height = h;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas indisponible");
 
-    ctx.drawImage(photo, 0, 0);
+    ctx.drawImage(photo, 0, 0, w, h);
 
     // Badge : icône + "GestioPro" sur un fond clair semi-transparent,
     // dimensionné proportionnellement à l'image pour rester lisible sur
@@ -73,7 +91,7 @@ export async function watermarkImage(url: string): Promise<Blob> {
     ctx.fillText(label, x + pad + logoSize + 10, y + badgeH / 2);
 
     return await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Export impossible"))), "image/jpeg", 0.92);
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Export impossible"))), "image/jpeg", SHARE_JPEG_QUALITY);
     });
   } catch {
     // Filigrane indisponible (CORS, réseau…) : on part sur l'original plutôt

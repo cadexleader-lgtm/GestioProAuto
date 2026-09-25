@@ -13,17 +13,18 @@ import {
   uploadPrivateDocument,
   uploadVehiclePhoto,
   uploadVehicleGalleryPhoto,
-  uploadVehicleVideo,
   type PendingPrivateDocument,
 } from "@/lib/demo-store";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, Upload, FileText, Download, Trash2, Plus, Video as VideoIcon, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Upload, FileText, Download, Trash2, Plus, X } from "lucide-react";
 import type { Vehicle } from "@/lib/demo-data";
 import { VEHICLE_STATUS } from "@/lib/vehicle-status";
 import { formatFCFA } from "@/lib/format";
 import { saveDraft, loadDraft, clearDraft } from "@/lib/form-draft";
+import { withWakeLock } from "@/lib/wake-lock";
+import { Progress } from "@/components/ui/progress";
 
-const MAX_GALLERY_PHOTOS = 8;
+const MAX_GALLERY_PHOTOS = 12;
 const VEHICLE_DRAFT_KEY = "gestiopro.draft.newVehicle";
 
 interface GalleryItem { key: string; url: string; file?: File }
@@ -51,15 +52,14 @@ export function VehicleDialog({
   const [form, setForm] = useState<any>({});
   const [pendingDocs, setPendingDocs] = useState<PendingPrivateDocument[]>([]);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
-  const [pendingVideo, setPendingVideo] = useState<File | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setPendingDocs([]);
-    setPendingVideo(null);
     setSubmitting(false);
+    setUploadProgress(null);
 
     const blank = {
       id: crypto.randomUUID(),
@@ -97,7 +97,6 @@ export function VehicleDialog({
       ? [vehicle.image, ...(vehicle.photos ?? [])].filter((u): u is string => !!u)
       : [];
     setGallery(existing.map((url) => ({ key: url, url })));
-    setVideoPreview(vehicle?.video ?? "");
   }, [open, vehicle]);
 
   // Sauvegarde automatique du brouillon (texte uniquement — les fichiers ne
@@ -132,15 +131,6 @@ export function VehicleDialog({
   };
 
   const removeGalleryItem = (key: string) => setGallery((g) => g.filter((item) => item.key !== key));
-
-  const handleVideoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    if (file.size > 50_000_000) return toast.error("Vidéo trop volumineuse (max 50 Mo)");
-    setPendingVideo(file);
-    setVideoPreview(URL.createObjectURL(file));
-  };
 
   const handleDocs = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -188,88 +178,86 @@ export function VehicleDialog({
     setSubmitting(true);
     const vehicleId = vehicle?.id ?? form.id ?? crypto.randomUUID();
     const vehicleLabel = `${form.brand} ${form.model}${form.plate ? ` (${form.plate})` : ""}`;
-
-    // Les aperçus posés par handleGalleryAdd()/handleVideoPick() sont des
-    // URL objet locales (blob:), invalides hors de cet onglet — jamais
-    // persistées telles quelles. On envoie les fichiers réels au stockage
-    // et on remplace par les URL publiques avant d'écrire le véhicule.
-    // gallery[0] fait toujours office de couverture (form.image) ; le reste
-    // (jusqu'à 7 de plus, 8 au total) va dans form.photos.
-    const uploadedUrls: string[] = [];
-    let mediaFailed = false;
-    for (const item of gallery) {
-      if (!item.file) { uploadedUrls.push(item.url); continue; }
-      try {
-        const isCover = uploadedUrls.length === 0;
-        const url = isCover
-          ? await uploadVehiclePhoto({ vehicleId, file: item.file })
-          : await uploadVehicleGalleryPhoto({ vehicleId, file: item.file });
-        uploadedUrls.push(url);
-      } catch (error) {
-        mediaFailed = true;
-        console.error("[gestiopro] vehicle photo upload failed", error);
-      }
-    }
-    if (mediaFailed) toast.error("Véhicule enregistré, certaines photos n'ont pas pu être envoyées.");
-
-    let videoUrl = form.video as string;
-    if (pendingVideo) {
-      try {
-        videoUrl = await uploadVehicleVideo({ vehicleId, file: pendingVideo });
-      } catch (error) {
-        toast.error(error instanceof Error ? `Véhicule enregistré, vidéo non envoyée : ${error.message}` : "Véhicule enregistré, vidéo non envoyée.");
-        videoUrl = vehicle?.video || "";
-      }
-    }
-
-    const cleanForm = {
-      ...form,
-      id: vehicleId,
-      image: uploadedUrls[0] || "",
-      photos: uploadedUrls.slice(1),
-      video: videoUrl,
-      documents: (form.documents || []).filter((d: any) => d.dataUrl),
-    };
+    const mediaCount = gallery.filter((item) => item.file).length;
+    if (mediaCount > 0) setUploadProgress({ done: 0, total: mediaCount });
 
     try {
-      if (isEdit && vehicle) {
-        db.update("vehicles", vehicle.id, cleanForm);
-      } else {
-        db.add("vehicles", cleanForm);
-      }
-
-      if (pendingDocs.length > 0) {
-        try {
-          await Promise.all(pendingDocs.map((doc) => uploadPrivateDocument({
-            file: doc.file,
-            documentId: doc.id,
-            type: "piece",
-            title: doc.name,
-            reference: doc.name,
-            relatedTo: form.plate,
-            entityType: "vehicle",
-            entityId: vehicleId,
-            entityLabel: vehicleLabel,
-            relationType: "vehicle_attachment",
-            expiresAt: form.insuranceExpiry || form.techControlExpiry || undefined,
-            metadata: {
-              vehicleId,
-              vehiclePlate: form.plate,
-              source: "vehicle_dialog",
-              summary: privateDocumentSummary(doc),
-            },
-          })));
-          setPendingDocs([]);
-        } catch (error) {
-          toast.error(error instanceof Error ? `Véhicule enregistré, document non archivé : ${error.message}` : "Véhicule enregistré, document non archivé.");
+      await withWakeLock(async () => {
+        // Les aperçus posés par handleGalleryAdd() sont des URL objet
+        // locales (blob:), invalides hors de cet onglet — jamais persistées
+        // telles quelles. On envoie les fichiers réels au stockage et on
+        // remplace par les URL publiques avant d'écrire le véhicule.
+        // gallery[0] fait toujours office de couverture (form.image) ; le
+        // reste (jusqu'à 11 de plus, 12 au total) va dans form.photos.
+        const uploadedUrls: string[] = [];
+        let mediaFailed = false;
+        let uploaded = 0;
+        for (const item of gallery) {
+          if (!item.file) { uploadedUrls.push(item.url); continue; }
+          try {
+            const isCover = uploadedUrls.length === 0;
+            const url = isCover
+              ? await uploadVehiclePhoto({ vehicleId, file: item.file })
+              : await uploadVehicleGalleryPhoto({ vehicleId, file: item.file });
+            uploadedUrls.push(url);
+          } catch (error) {
+            mediaFailed = true;
+            console.error("[gestiopro] vehicle photo upload failed", error);
+          } finally {
+            uploaded += 1;
+            setUploadProgress({ done: uploaded, total: mediaCount });
+          }
         }
-      }
+        if (mediaFailed) toast.error("Véhicule enregistré, certaines photos n'ont pas pu être envoyées.");
 
-      if (!isEdit) clearDraft(VEHICLE_DRAFT_KEY);
-      toast.success(isEdit ? "Véhicule mis à jour" : "Véhicule ajouté");
-      onOpenChange(false);
+        const cleanForm = {
+          ...form,
+          id: vehicleId,
+          image: uploadedUrls[0] || "",
+          photos: uploadedUrls.slice(1),
+          documents: (form.documents || []).filter((d: any) => d.dataUrl),
+        };
+
+        if (isEdit && vehicle) {
+          db.update("vehicles", vehicle.id, cleanForm);
+        } else {
+          db.add("vehicles", cleanForm);
+        }
+
+        if (pendingDocs.length > 0) {
+          try {
+            await Promise.all(pendingDocs.map((doc) => uploadPrivateDocument({
+              file: doc.file,
+              documentId: doc.id,
+              type: "piece",
+              title: doc.name,
+              reference: doc.name,
+              relatedTo: form.plate,
+              entityType: "vehicle",
+              entityId: vehicleId,
+              entityLabel: vehicleLabel,
+              relationType: "vehicle_attachment",
+              expiresAt: form.insuranceExpiry || form.techControlExpiry || undefined,
+              metadata: {
+                vehicleId,
+                vehiclePlate: form.plate,
+                source: "vehicle_dialog",
+                summary: privateDocumentSummary(doc),
+              },
+            })));
+            setPendingDocs([]);
+          } catch (error) {
+            toast.error(error instanceof Error ? `Véhicule enregistré, document non archivé : ${error.message}` : "Véhicule enregistré, document non archivé.");
+          }
+        }
+
+        if (!isEdit) clearDraft(VEHICLE_DRAFT_KEY);
+        toast.success(isEdit ? "Véhicule mis à jour" : "Véhicule ajouté");
+        onOpenChange(false);
+      });
     } finally {
       setSubmitting(false);
+      setUploadProgress(null);
     }
   };
 
@@ -340,25 +328,6 @@ export function VehicleDialog({
                 </div>
               </div>
 
-              <div>
-                <Label>Vidéo de présentation (optionnelle)</Label>
-                {videoPreview ? (
-                  <div className="flex items-center gap-3 mt-1.5">
-                    <div className="w-20 h-14 rounded-lg overflow-hidden border bg-slate-900 shrink-0">
-                      <video src={videoPreview} className="w-full h-full object-cover" />
-                    </div>
-                    <Button type="button" variant="outline" size="sm"
-                      onClick={() => { setPendingVideo(null); setVideoPreview(""); setForm({ ...form, video: "" }); }}>
-                      <Trash2 size={14} /> Retirer
-                    </Button>
-                  </div>
-                ) : (
-                  <Label htmlFor="video-upload" className="mt-1.5 inline-flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition w-fit">
-                    <VideoIcon size={16} /> Ajouter une vidéo (max 50 Mo)
-                    <input id="video-upload" type="file" accept="video/*" className="hidden" onChange={handleVideoPick} />
-                  </Label>
-                )}
-              </div>
             </div>
             <div><Label>Marque *</Label><Input value={form.brand || ""} onChange={(e) => setForm({ ...form, brand: e.target.value })} /></div>
             <div><Label>Modèle *</Label><Input value={form.model || ""} onChange={(e) => setForm({ ...form, model: e.target.value })} /></div>
@@ -486,20 +455,29 @@ export function VehicleDialog({
           </div>
         )}
 
+        {uploadProgress && (
+          <div className="space-y-1.5 mt-3">
+            <Progress value={(uploadProgress.done / Math.max(1, uploadProgress.total)) * 100} />
+            <p className="text-[11px] text-muted-foreground">Envoi des photos… {uploadProgress.done}/{uploadProgress.total}</p>
+          </div>
+        )}
+
         <DialogFooter className="mt-4 flex-row justify-between sm:justify-between gap-2">
           <div>
             {step > 0 && (
-              <Button variant="outline" onClick={() => setStep((s) => s - 1)}>
+              <Button variant="outline" onClick={() => setStep((s) => s - 1)} disabled={submitting}>
                 <ChevronLeft size={14} /> Précédent
               </Button>
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => onOpenChange(false)}>Annuler</Button>
+            <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>Annuler</Button>
             {step < STEPS.length - 1 ? (
-              <Button onClick={next}>Suivant <ChevronRight size={14} /></Button>
+              <Button onClick={next} disabled={submitting}>Suivant <ChevronRight size={14} /></Button>
             ) : (
-              <Button onClick={submitVehicle} disabled={submitting}><Check size={14} /> {isEdit ? "Enregistrer les modifications" : "Créer le véhicule"}</Button>
+              <Button onClick={submitVehicle} disabled={submitting}>
+                <Check size={14} /> {submitting ? "Enregistrement..." : isEdit ? "Enregistrer les modifications" : "Créer le véhicule"}
+              </Button>
             )}
           </div>
         </DialogFooter>
