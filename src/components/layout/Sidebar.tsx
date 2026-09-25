@@ -6,6 +6,7 @@ import {
   ShoppingBag, Building2, Stethoscope, Smartphone,
   Truck, Users2, Receipt, Wallet, BarChart3,
   Car, KeyRound, MapPin, CreditCard, ShieldCheck, FileSpreadsheet, Tv, Tags, Wrench,
+  Sparkles, ArrowRight,
   type LucideIcon,
 } from "lucide-react";
 
@@ -13,6 +14,8 @@ import { useGetCompany } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import { getSubSectorConfig, getCrossModules } from "@/lib/sectors";
 import { useFeatureFlags, filterModulesByFlags } from "@/lib/feature-flags";
+import { useCompanyProfile } from "@/lib/company-profile";
+import { getCurrentPlan } from "@/lib/subscription";
 import logoIcon from "@/assets/gestiopro-icon.webp";
 
 interface SidebarProps {
@@ -31,9 +34,11 @@ const ICON_MAP: Record<string, LucideIcon> = {
 export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const location = useLocation({ select: (s) => s.pathname });
   const { data: company } = useGetCompany();
+  const profile = useCompanyProfile();
   const sub = getSubSectorConfig(company?.subSectorId);
   const flags = useFeatureFlags();
   const [hovered, setHovered] = useState(false);
+  const plan = getCurrentPlan();
 
   // Mobile: expanded when isOpen. Desktop: expanded on hover.
   const expanded = isOpen || hovered;
@@ -49,22 +54,16 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         title={!expanded ? item.label : undefined}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "group relative flex items-center gap-3 rounded-xl h-10 px-2 transition-colors duration-200",
+          "group relative flex items-center gap-3 rounded-xl h-10 px-2 transition-all duration-200",
           active
-            ? "bg-primary/10 text-primary"
+            ? "bg-gradient-to-r from-primary to-primary/85 text-primary-foreground shadow-[0_4px_14px_-4px_rgba(37,99,235,0.55)]"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         )}
       >
         <span
           className={cn(
-            "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-primary transition-all duration-200",
-            active ? "h-5 opacity-100" : "h-0 opacity-0",
-          )}
-        />
-        <span
-          className={cn(
             "grid place-items-center h-8 w-8 shrink-0 rounded-lg transition-colors",
-            active ? "bg-primary/15 text-primary" : "text-current group-hover:bg-sidebar-accent",
+            active ? "text-primary-foreground" : "text-current group-hover:bg-sidebar-accent",
           )}
         >
           <Icon size={17} strokeWidth={active ? 2.4 : 1.9} />
@@ -151,6 +150,27 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           {renderItem({ href: "/app/parametres", iconName: "Settings", label: "Paramètres" })}
         </nav>
 
+        {/* Incitation à l'abonnement — uniquement en formule gratuite, et
+            uniquement quand le rail est déployé (pas de place au repos). */}
+        {expanded && plan === "decouverte" && (
+          <Link
+            to="/app/parametres"
+            search={{ section: "abonnement" }}
+            onClick={() => setIsOpen(false)}
+            className="mx-2.5 mb-2 shrink-0 flex flex-col gap-1.5 rounded-xl border border-primary/25 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-3 transition hover:border-primary/45 hover:shadow-md"
+          >
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary">
+              <Sparkles size={13} /> Passez au forfait payant
+            </span>
+            <span className="text-[11px] leading-snug text-sidebar-foreground/70">
+              Plus de véhicules, d'utilisateurs et de modules (location, crédit, GPS…).
+            </span>
+            <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
+              Voir les formules <ArrowRight size={11} />
+            </span>
+          </Link>
+        )}
+
         {/* User */}
         <div className="shrink-0 border-t border-sidebar-border p-2.5">
           <div
@@ -159,8 +179,10 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               expanded ? "bg-sidebar-accent/60" : "md:justify-center",
             )}
           >
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-              {company?.ownerName?.charAt(0)?.toUpperCase() || "G"}
+            <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-sm font-bold text-primary-foreground">
+              {profile.logoDataUrl
+                ? <img src={profile.logoDataUrl} alt="" className="h-full w-full object-cover" />
+                : company?.ownerName?.charAt(0)?.toUpperCase() || "G"}
             </div>
             <div
               className={cn(

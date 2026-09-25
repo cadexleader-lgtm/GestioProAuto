@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { NotificationsBell } from "./NotificationsBell";
 import { TopbarSearch } from "./TopbarSearch";
+import { useCompanyProfile } from "@/lib/company-profile";
 import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 import {
   DropdownMenu,
@@ -28,6 +29,7 @@ interface TopbarProps {
 export function Topbar({ onMenuClick }: TopbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const { data: company } = useGetCompany();
+  const profile = useCompanyProfile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -98,8 +100,10 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 h-9 pl-1 pr-2 rounded-full border border-border bg-card hover:border-primary/50 transition">
-              <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center text-xs">
-                {initial}
+              <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center text-xs overflow-hidden shrink-0">
+                {profile.logoDataUrl
+                  ? <img src={profile.logoDataUrl} alt="" className="w-full h-full object-cover" />
+                  : initial}
               </div>
               <ChevronDown size={14} className="text-muted-foreground hidden sm:block" />
             </button>

@@ -1,3 +1,4 @@
+import { useSearch } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,6 +28,7 @@ import { setFeatureFlags } from "@/lib/demo-store";
 import { FEATURE_FLAGS, useFeatureFlags } from "@/lib/feature-flags";
 import { SlidersHorizontal, CreditCard, Smartphone, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PLAN_NAMES, type PlanId, getCurrentPlan, setCurrentPlanStorage } from "@/lib/subscription";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -65,7 +67,8 @@ export function Settings() {
   const [wipeConfirm, setWipeConfirm] = useState("");
   const [wiping, setWiping] = useState(false);
   const [wipeOpen, setWipeOpen] = useState(false);
-  const [active, setActive] = useState<SectionId>("entreprise");
+  const search = useSearch({ from: "/app/parametres" });
+  const [active, setActive] = useState<SectionId>(search.section ?? "entreprise");
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -468,17 +471,12 @@ function FeatureFlagsCard() {
   );
 }
 
-const PLAN_NAMES = { decouverte: "Découverte", starter: "Starter", business: "Business", enterprise: "Enterprise" } as const;
-type PlanId = keyof typeof PLAN_NAMES;
-
 const PLANS: { id: PlanId; name: string; price: string; period: string; features: string[] }[] = [
   { id: "decouverte", name: "Découverte", price: "Gratuit", period: "sans engagement", features: ["1 utilisateur", "Jusqu'à 5 véhicules", "Ventes cash & fiche véhicule"] },
   { id: "starter", name: "Starter", price: "9 000", period: "FCFA / mois", features: ["2 utilisateurs", "Jusqu'à 20 véhicules", "Ventes cash, maintenance"] },
   { id: "business", name: "Business", price: "24 000", period: "FCFA / mois", features: ["5 utilisateurs", "Jusqu'à 60 véhicules", "Modules à la carte (Location, Crédit, RH, GPS)"] },
   { id: "enterprise", name: "Enterprise", price: "Sur devis", period: "", features: ["Utilisateurs illimités", "Multi-succursale", "API, SLA, formation"] },
 ];
-
-const PLAN_STORAGE_KEY = "gestiopro.plan";
 
 /**
  * Aucune facturation automatisée n'existe encore côté serveur (pas de table
@@ -497,14 +495,12 @@ const PLAN_STORAGE_KEY = "gestiopro.plan";
 function SubscriptionCard() {
   const role = useRole();
   const canEdit = can(role, "manage.settings");
-  const [currentPlan, setCurrentPlan] = useState<PlanId>(() => {
-    try { return (localStorage.getItem(PLAN_STORAGE_KEY) as PlanId) || "decouverte"; } catch { return "decouverte"; }
-  });
+  const [currentPlan, setCurrentPlan] = useState<PlanId>(getCurrentPlan);
   const [openSwitch, setOpenSwitch] = useState(false);
 
   const choosePlan = (id: PlanId) => {
     setCurrentPlan(id);
-    try { localStorage.setItem(PLAN_STORAGE_KEY, id); } catch {}
+    setCurrentPlanStorage(id);
     toast.success(`Formule ${PLAN_NAMES[id]} sélectionnée`, {
       description: "Aucun paiement n'a été prélevé — l'intégration Mobile Money n'est pas encore activée.",
     });
