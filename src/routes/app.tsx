@@ -13,8 +13,15 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/app")({
   ssr: false,
   beforeLoad: async ({ location }) => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
+    // `getSession()` lit la session deja persistee localement (pas d'aller-
+    // retour reseau, contrairement a `getUser()` qui revalide le JWT aupres
+    // du serveur Supabase a chaque navigation) — ce garde est deja documente
+    // comme purement client (UX), la vraie barriere reste RLS/JWT cote
+    // serveur sur chaque requete/RPC. Gagner cet aller-retour reseau compte
+    // reellement sur un reseau mobile a latence elevee, a chaque ouverture
+    // de l'app.
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session) {
       throw redirect({ to: "/connexion", search: { redirect: location.href } });
     }
   },

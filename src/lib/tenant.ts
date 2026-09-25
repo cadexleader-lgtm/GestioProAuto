@@ -56,8 +56,12 @@ export function useTenant(): TenantState {
 
 /** Loads the current user, their membership and company. Safe to call repeatedly. */
 export async function loadTenant(): Promise<TenantState> {
-  const { data: userRes } = await supabase.auth.getUser();
-  const user = userRes.user;
+  // `getSession()` (lecture locale) plutot que `getUser()` (revalidation
+  // reseau) — le layout /app/* (route.tsx) a deja verifie la presence d'une
+  // session juste avant d'arriver ici ; refaire le meme aller-retour reseau
+  // ici serait redondant. Meme raisonnement que dans app.tsx.
+  const { data: sessionRes } = await supabase.auth.getSession();
+  const user = sessionRes.session?.user ?? null;
   if (!user) {
     set({ loading: false, userId: null, email: null, company: null, role: null });
     return state;
