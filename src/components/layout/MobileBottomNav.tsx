@@ -10,6 +10,19 @@ import { useGetCompany } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import { getSubSectorConfig } from "@/lib/sectors";
 import { useFeatureFlags, filterModulesByFlags } from "@/lib/feature-flags";
+import { useRole } from "@/lib/roles";
+
+/** Même liste que Sidebar.tsx — pages bloquées pour le rôle terrain,
+ * retirées avant de choisir les 4 raccourcis affichés (sinon "Ventes"/
+ * "Ventes à crédit" prenaient 2 des 4 places pour un rôle qui n'y a pas
+ * accès, cachant des raccourcis réellement utilisables). */
+const TERRAIN_HIDDEN_HREFS = new Set([
+  "/app/auto/ventes",
+  "/app/auto/credits",
+  "/app/auto/rapports",
+  "/app/depenses",
+  "/app/tresorerie",
+]);
 
 const ICON_MAP: Record<string, LucideIcon> = {
   LayoutDashboard, ShoppingCart, Package, Users, Settings,
@@ -35,10 +48,13 @@ function shortLabel(label: string) {
 export function MobileBottomNav() {
   const location = useLocation({ select: (s) => s.pathname });
   const { data: company } = useGetCompany();
+  const role = useRole();
   const sub = getSubSectorConfig(company?.subSectorId);
   const flags = useFeatureFlags();
 
-  const primary = filterModulesByFlags(sub.metierModules, flags).slice(0, 4);
+  let modules = filterModulesByFlags(sub.metierModules, flags);
+  if (role === "terrain") modules = modules.filter((m) => !TERRAIN_HIDDEN_HREFS.has(m.href));
+  const primary = modules.slice(0, 4);
   const items = [
     ...primary,
     { href: "/app/parametres", iconName: "Settings", label: "Réglages" },

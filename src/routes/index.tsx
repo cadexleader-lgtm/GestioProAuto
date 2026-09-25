@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import {
   ArrowRight, Check, Car, KeyRound, CreditCard, Wrench,
-  BarChart3, Wallet, Boxes, Users, Truck, Receipt, Sparkles, ShieldCheck, ChevronDown, Smartphone, Menu, X,
+  BarChart3, Wallet, Boxes, Users, Truck, Receipt, Sparkles, ShieldCheck, ChevronDown, Smartphone, Menu, X, MapPin,
 } from "lucide-react";
 import logoIcon from "@/assets/gestiopro-icon.webp";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -46,10 +46,30 @@ const trustPoints = [
 ];
 
 const plans = [
-  { name: "Découverte", price: "Gratuit", period: "sans engagement", desc: "Pour essayer sans risque.", features: ["1 utilisateur", "Jusqu'à 5 véhicules", "Ventes cash & fiche véhicule", "Documents de base"], highlight: false, addOns: false },
-  { name: "Starter", price: "9 000", period: "FCFA / mois", desc: "Pour démarrer une activité.", features: ["2 utilisateurs", "Jusqu'à 20 véhicules", "Ventes cash, maintenance", "Documents & rapports", "Support WhatsApp"], highlight: false, addOns: false },
-  { name: "Business", price: "24 000", period: "FCFA / mois", desc: "PME en croissance, multi-équipes.", features: ["5 utilisateurs", "Jusqu'à 60 véhicules", "Fournisseurs & documents Pro", "Support prioritaire"], highlight: true, addOns: true },
-  { name: "Enterprise", price: "Sur devis", period: "", desc: "Multi-sites, multi-pays.", features: ["Utilisateurs illimités", "Parc illimité, multi-succursale", "API & intégrations", "SLA dédié, account manager", "Formation sur site"], highlight: false, addOns: false },
+  {
+    name: "Découverte", price: "Gratuit", period: "sans engagement", desc: "Pour essayer sans risque.",
+    features: ["1 utilisateur", "Jusqu'à 5 véhicules", "Ventes cash & fiche véhicule", "Documents de base"],
+    highlight: false, addOns: false,
+    unlocks: "Passez à Starter pour 20 véhicules, la maintenance et les rapports",
+  },
+  {
+    name: "Starter", price: "15 000", period: "FCFA / mois", desc: "Pour démarrer une activité.",
+    features: ["Tout Découverte, plus :", "2 utilisateurs", "Jusqu'à 20 véhicules", "Ventes cash, maintenance", "Documents & rapports", "Support WhatsApp"],
+    highlight: false, addOns: false,
+    unlocks: "Passez à Business pour les fournisseurs, les documents Pro et les modules à la carte",
+  },
+  {
+    name: "Business", price: "25 000", period: "FCFA / mois", desc: "PME en croissance, multi-équipes.",
+    features: ["Tout Starter, plus :", "5 utilisateurs", "Jusqu'à 60 véhicules", "Fournisseurs & documents Pro", "Support prioritaire"],
+    highlight: true, addOns: true,
+    unlocks: null,
+  },
+  {
+    name: "Enterprise", price: "Sur devis", period: "", desc: "Multi-sites, multi-pays.",
+    features: ["Tout Business, plus :", "Utilisateurs illimités", "Parc illimité, multi-succursale", "API & intégrations", "SLA dédié, account manager", "Formation sur site"],
+    highlight: false, addOns: false,
+    unlocks: null,
+  },
 ];
 
 const addOnModules = [
@@ -213,7 +233,10 @@ function LandingPage() {
           </div>
         </motion.div>
 
-        {/* HERO MOCKUP — floating dashboard preview */}
+        {/* HERO MOCKUP — floating dashboard preview, badges métier auto et
+            mockup téléphone superposé (rien avant ne signalait au premier
+            coup d'œil "réservé au parc auto", ni ne montrait explicitement
+            que l'app tourne aussi bien sur mobile que sur ordinateur). */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -221,6 +244,95 @@ function LandingPage() {
           className="relative mx-auto mt-16 max-w-5xl [perspective:2000px]"
         >
           <div className="absolute inset-x-4 -bottom-8 h-24 rounded-[50%] bg-primary/25 blur-3xl" />
+
+          {/* Badge flottant — vente véhicule */}
+          <motion.div
+            initial={{ opacity: 0, y: 10, x: -10 }}
+            whileInView={{ opacity: 1, y: 0, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="absolute -left-3 top-8 z-20 hidden items-center gap-2.5 rounded-2xl border border-border bg-card/95 px-3.5 py-2.5 shadow-xl backdrop-blur-xl sm:flex sm:-left-8 lg:-left-14"
+          >
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+              <Car size={17} />
+            </span>
+            <span className="leading-tight">
+              <span className="block text-[11px] font-bold text-foreground">Toyota Corolla vendue</span>
+              <span className="block text-[10px] text-muted-foreground">Crédit · 6 mensualités</span>
+            </span>
+          </motion.div>
+
+          {/* Badge flottant — maintenance */}
+          <motion.div
+            initial={{ opacity: 0, y: -10, x: 10 }}
+            whileInView={{ opacity: 1, y: 0, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.7 }}
+            className="absolute -right-3 top-1/3 z-20 hidden items-center gap-2.5 rounded-2xl border border-border bg-card/95 px-3.5 py-2.5 shadow-xl backdrop-blur-xl sm:flex sm:-right-8 lg:-right-16"
+          >
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+              <Wrench size={16} />
+            </span>
+            <span className="leading-tight">
+              <span className="block text-[11px] font-bold text-foreground">Vidange planifiée</span>
+              <span className="block text-[10px] text-muted-foreground">Rappel automatique</span>
+            </span>
+          </motion.div>
+
+          {/* Badge flottant — GPS */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.9 }}
+            className="absolute -left-3 bottom-6 z-20 hidden items-center gap-2.5 rounded-2xl border border-border bg-card/95 px-3.5 py-2.5 shadow-xl backdrop-blur-xl md:flex md:-left-6 lg:-left-10"
+          >
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+              <MapPin size={16} />
+            </span>
+            <span className="leading-tight">
+              <span className="block text-[11px] font-bold text-foreground">Position en direct</span>
+              <span className="block text-[10px] text-muted-foreground">Suivi GPS du parc</span>
+            </span>
+          </motion.div>
+
+          {/* Mockup téléphone superposé — même app, vue mobile */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.4 }}
+            className="absolute -bottom-12 -right-3 z-20 hidden w-[152px] sm:block sm:-right-5 sm:w-[168px] lg:-right-9 lg:w-[188px]"
+            style={{ transform: "rotate(-6deg)" }}
+          >
+            <div className="overflow-hidden rounded-[1.9rem] border-[6px] border-slate-900 bg-slate-900 shadow-[0_25px_60px_-15px_rgba(15,23,42,0.5)] dark:border-slate-700">
+              <div className="relative bg-background">
+                <div className="absolute left-1/2 top-0 z-10 h-3.5 w-14 -translate-x-1/2 rounded-b-lg bg-slate-900 dark:bg-slate-700" />
+                <div className="flex flex-col gap-2 px-2.5 pb-2.5 pt-5">
+                  <div className="flex items-center justify-between px-0.5">
+                    <span className="text-[8px] font-bold text-foreground">GestioAuto</span>
+                    <span className="h-3 w-3 rounded-full bg-primary/20" />
+                  </div>
+                  <div className="rounded-lg border border-border bg-card p-2">
+                    <div className="mb-1.5 h-9 w-full rounded-md bg-gradient-to-br from-primary/20 to-primary/5" />
+                    <p className="text-[8px] font-bold text-foreground">Toyota Corolla 2019</p>
+                    <p className="text-[7px] text-muted-foreground">4 500 000 FCFA</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-card p-2">
+                    <div className="mb-1.5 h-9 w-full rounded-md bg-gradient-to-br from-emerald-500/20 to-emerald-500/5" />
+                    <p className="text-[8px] font-bold text-foreground">Hyundai Tucson</p>
+                    <p className="text-[7px] text-muted-foreground">Disponible</p>
+                  </div>
+                  <div className="mt-0.5 flex items-center justify-around rounded-xl bg-muted/70 py-1.5">
+                    <Car size={11} className="text-primary" />
+                    <KeyRound size={11} className="text-muted-foreground/50" />
+                    <Wrench size={11} className="text-muted-foreground/50" />
+                    <Smartphone size={11} className="text-muted-foreground/50" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
           <div
             className="relative rounded-3xl border border-border bg-card/90 p-3 shadow-[0_30px_80px_-20px_rgba(15,23,42,0.35)] backdrop-blur-xl"
             style={{ transform: "rotateX(8deg)" }}
@@ -360,6 +472,11 @@ function LandingPage() {
                     ))}
                   </ul>
                 </div>
+              )}
+              {plan.unlocks && (
+                <p className="mt-4 flex items-start gap-1.5 text-xs font-medium leading-snug text-primary">
+                  <Sparkles size={13} className="mt-0.5 shrink-0" /> {plan.unlocks}
+                </p>
               )}
               <Link to="/inscription" className={`mt-8 inline-flex items-center justify-center gap-1.5 rounded-xl px-5 py-3 text-sm font-semibold transition ${plan.highlight ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90" : "border border-border bg-card text-foreground hover:bg-muted"}`}>
                 Commencer <ArrowRight size={14} />

@@ -495,8 +495,8 @@ function FeatureFlagsCard() {
 
 const PLANS: { id: PlanId; name: string; price: string; period: string; features: string[] }[] = [
   { id: "decouverte", name: "Découverte", price: "Gratuit", period: "sans engagement", features: ["1 utilisateur", "Jusqu'à 5 véhicules", "Ventes cash & fiche véhicule"] },
-  { id: "starter", name: "Starter", price: "9 000", period: "FCFA / mois", features: ["2 utilisateurs", "Jusqu'à 20 véhicules", "Ventes cash, maintenance"] },
-  { id: "business", name: "Business", price: "24 000", period: "FCFA / mois", features: ["5 utilisateurs", "Jusqu'à 60 véhicules", "Modules à la carte (Location, Crédit, RH, GPS)"] },
+  { id: "starter", name: "Starter", price: "15 000", period: "FCFA / mois", features: ["Tout Découverte, plus :", "2 utilisateurs", "Jusqu'à 20 véhicules", "Ventes cash, maintenance"] },
+  { id: "business", name: "Business", price: "25 000", period: "FCFA / mois", features: ["Tout Starter, plus :", "5 utilisateurs", "Jusqu'à 60 véhicules", "Modules à la carte (Location, Crédit, RH, GPS)"] },
   { id: "enterprise", name: "Enterprise", price: "Sur devis", period: "", features: ["Utilisateurs illimités", "Multi-succursale", "API, SLA, formation"] },
 ];
 

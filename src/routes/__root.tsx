@@ -237,13 +237,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "GestioAuto : la plateforme tout-en-un pour gérer ventes, crédits, locations, maintenance, clients, fournisseurs, personnel et finances de votre parc automobile." },
       { property: "og:site_name", content: "GestioAuto" },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:title", content: "GestioAuto — L'ERP des concessionnaires et loueurs de véhicules africains" },
       { name: "twitter:title", content: "GestioAuto — L'ERP des concessionnaires et loueurs de véhicules africains" },
       { property: "og:description", content: "GestioAuto : la plateforme tout-en-un pour gérer ventes, crédits, locations, maintenance, clients, fournisseurs, personnel et finances de votre parc automobile." },
       { name: "twitter:description", content: "GestioAuto : la plateforme tout-en-un pour gérer ventes, crédits, locations, maintenance, clients, fournisseurs, personnel et finances de votre parc automobile." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/d7194376-cf82-4375-ac46-eb12ccae0eb8" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/d7194376-cf82-4375-ac46-eb12ccae0eb8" },
+      { property: "og:image", content: "https://gestioauto.com/og-image.png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { name: "twitter:image", content: "https://gestioauto.com/og-image.png" },
     ],
     links: [
       // Poids de police critiques pour le premier rendu (texte + titres) —

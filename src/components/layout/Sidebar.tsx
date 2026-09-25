@@ -16,6 +16,19 @@ import { getSubSectorConfig, getCrossModules } from "@/lib/sectors";
 import { useFeatureFlags, filterModulesByFlags } from "@/lib/feature-flags";
 import { useCompanyProfile } from "@/lib/company-profile";
 import { getCurrentPlan } from "@/lib/subscription";
+import { useRole } from "@/lib/roles";
+
+/** Pages bloquees pour le role terrain (RestrictedAccess cote page, gate
+ * can(role,"view.finance")/role==="terrain" direct) — cache aussi le lien
+ * du menu plutot que de laisser cliquer vers un ecran "Acces restreint"
+ * (pattern "cacher, pas juste desactiver" deja etabli ailleurs). */
+const TERRAIN_HIDDEN_HREFS = new Set([
+  "/app/auto/ventes",
+  "/app/auto/credits",
+  "/app/auto/rapports",
+  "/app/depenses",
+  "/app/tresorerie",
+]);
 import logoIcon from "@/assets/gestiopro-icon.webp";
 
 interface SidebarProps {
@@ -35,10 +48,14 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const location = useLocation({ select: (s) => s.pathname });
   const { data: company } = useGetCompany();
   const profile = useCompanyProfile();
+  const role = useRole();
   const sub = getSubSectorConfig(company?.subSectorId);
   const flags = useFeatureFlags();
   const [hovered, setHovered] = useState(false);
   const plan = getCurrentPlan();
+
+  const visibleFor = <T extends { href: string }>(items: T[]) =>
+    role === "terrain" ? items.filter((item) => !TERRAIN_HIDDEN_HREFS.has(item.href)) : items;
 
   // Mobile: expanded when isOpen. Desktop: expanded on hover.
   const expanded = isOpen || hovered;
@@ -142,10 +159,10 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         {/* Navigation */}
         <nav data-tour="sidebar-nav" className="flex-1 overflow-y-auto overflow-x-hidden px-2.5 py-2 custom-scrollbar space-y-0.5">
           {sectionLabel("Métier")}
-          {filterModulesByFlags(sub.metierModules, flags).map(renderItem)}
+          {visibleFor(filterModulesByFlags(sub.metierModules, flags)).map(renderItem)}
 
           {sectionLabel("Transversal")}
-          {filterModulesByFlags(getCrossModules(company?.subSectorId), flags).map(renderItem)}
+          {visibleFor(filterModulesByFlags(getCrossModules(company?.subSectorId), flags)).map(renderItem)}
 
           {sectionLabel("Entreprise")}
           {renderItem({ href: "/app/parametres", iconName: "Settings", label: "Paramètres", tourId: "sidebar-settings" })}
