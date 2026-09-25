@@ -175,57 +175,56 @@ export function VehiculesMaintenance() {
           const days = Math.round((Date.now() - +new Date(m.dateIn)) / 86400000);
           return (
             <Card key={m.id} className={`shadow-sm border-l-4 ${m.status === "done" ? "border-l-emerald-500" : "border-l-amber-500"}`}>
-              <CardContent className="p-4 sm:p-5">
-                <div className="flex items-start gap-4 flex-wrap">
-                  <div className="text-3xl">{v.image ? <img src={v.image} alt="" className="w-12 h-12 rounded-lg object-cover" /> : v.photo}</div>
+              <CardContent className="p-3 sm:p-5">
+                <div className="flex items-start gap-2.5 sm:gap-4">
+                  <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-lg overflow-hidden shrink-0 grid place-items-center text-xl sm:text-3xl bg-muted/40">
+                    {v.image ? <img src={v.image} alt="" className="w-full h-full object-cover" /> : v.photo}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-display font-bold">{v.brand} {v.model}</h3>
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded-md border ${st.cls}`}>{st.label}</span>
-                      {m.priority === "high" && <Badge variant="destructive" className="text-[10px]">Prioritaire</Badge>}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h3 className="font-display font-bold text-sm sm:text-base truncate">{v.brand} {v.model}</h3>
+                      <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md border shrink-0 ${st.cls}`}>{st.label}</span>
+                      {m.priority === "high" && <Badge variant="destructive" className="text-[9px] shrink-0">Prioritaire</Badge>}
                     </div>
-                    <p className="text-sm font-medium mt-1">{m.motif}</p>
-                    <p className="text-xs text-muted-foreground">{m.type} · {m.garage || "—"} · Entrée {new Date(m.dateIn).toLocaleDateString("fr-FR")}
-                      {m.status !== "done" && ` · ${days}j immobilisé`}
+                    <p className="text-xs sm:text-sm font-medium mt-0.5 sm:mt-1 truncate">{m.motif}</p>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
+                      {m.type} · {m.garage || "—"}
+                      {m.status !== "done" && ` · ${days}j`}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Coût</p>
-                    <p className="font-display font-bold text-lg">{formatFCFA(cost)}</p>
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold hidden sm:block">Coût</p>
+                    <p className="font-display font-bold text-sm sm:text-lg whitespace-nowrap">{formatFCFA(cost)}</p>
                   </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-2 items-center">
-                  {m.status !== "done" && (
-                    <>
-                      <Select value={m.status} disabled={updatingId === m.id} onValueChange={(v) => void handleUpdateStatus(m.id, v as VehicleMaintenance["status"])}>
-                        <SelectTrigger className="w-44 h-8 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">En attente</SelectItem>
-                          <SelectItem value="diagnostic">Diagnostic</SelectItem>
-                          <SelectItem value="repair">Réparation</SelectItem>
-                          <SelectItem value="parts_wait">Attente pièces</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button size="sm" variant="outline" disabled={updatingId === m.id || completingId === m.id} onClick={() => openEdit(m)}>
-                        <Pencil size={14} /> Coûts
-                      </Button>
-                      <Button size="sm" disabled={completingId === m.id} onClick={() => void handleComplete(m.id)}>
-                        <CheckCircle2 size={14} /> {completingId === m.id ? "Clôture..." : "Terminer"}
-                      </Button>
-                    </>
-                  )}
-                  {m.status === "done" && m.dateOut && (
-                    <span className="text-xs text-emerald-700 inline-flex items-center gap-1">
+                {m.status !== "done" ? (
+                  <div className="mt-2.5 sm:mt-3 grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+                    <Select value={m.status} disabled={updatingId === m.id} onValueChange={(v) => void handleUpdateStatus(m.id, v as VehicleMaintenance["status"])}>
+                      <SelectTrigger className="col-span-2 sm:w-44 h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">En attente</SelectItem>
+                        <SelectItem value="diagnostic">Diagnostic</SelectItem>
+                        <SelectItem value="repair">Réparation</SelectItem>
+                        <SelectItem value="parts_wait">Attente pièces</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button size="sm" variant="outline" className="h-8 text-xs" disabled={updatingId === m.id || completingId === m.id} onClick={() => openEdit(m)}>
+                      <Pencil size={13} /> Coûts
+                    </Button>
+                    <Button size="sm" className="h-8 text-xs" disabled={completingId === m.id} onClick={() => void handleComplete(m.id)}>
+                      <CheckCircle2 size={13} /> {completingId === m.id ? "Clôture..." : "Terminer"}
+                    </Button>
+                  </div>
+                ) : (
+                  m.dateOut && (
+                    <p className="mt-2 text-xs text-emerald-700 inline-flex items-center gap-1">
                       <CheckCircle2 size={12} /> Sortie {new Date(m.dateOut).toLocaleDateString("fr-FR")}
-                    </span>
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    Pièces {formatFCFA(m.partsCost || 0)} · Main d'œuvre {formatFCFA(m.laborCost || 0)}
-                  </span>
-                </div>
+                    </p>
+                  )
+                )}
 
-                {m.notes && <p className="mt-2 text-xs text-muted-foreground italic">"{m.notes}"</p>}
+                {m.notes && <p className="mt-2 text-[11px] sm:text-xs text-muted-foreground italic truncate">"{m.notes}"</p>}
               </CardContent>
             </Card>
           );
