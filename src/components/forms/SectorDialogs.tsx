@@ -21,8 +21,10 @@ import { Check, ChevronLeft, ChevronRight, Upload, FileText, Download, Trash2, P
 import type { Vehicle } from "@/lib/demo-data";
 import { VEHICLE_STATUS } from "@/lib/vehicle-status";
 import { formatFCFA } from "@/lib/format";
+import { saveDraft, loadDraft, clearDraft } from "@/lib/form-draft";
 
 const MAX_GALLERY_PHOTOS = 8;
+const VEHICLE_DRAFT_KEY = "gestiopro.draft.newVehicle";
 
 interface GalleryItem { key: string; url: string; file?: File }
 
@@ -55,29 +57,56 @@ export function VehicleDialog({
 
   useEffect(() => {
     if (!open) return;
-    setStep(0);
     setPendingDocs([]);
     setPendingVideo(null);
     setSubmitting(false);
-    setForm(
-      vehicle
-        ? { ...vehicle, documents: vehicle.documents || [] }
-        : {
-            id: crypto.randomUUID(),
-            brand: "", model: "", year: new Date().getFullYear(), color: "Blanc",
-            vin: "", plate: "", mileageKm: 0, fuel: "Essence", transmission: "Manuelle",
-            purchasePrice: 0, importFees: 0, customsFees: 0, repairFees: 0, maintenanceFees: 0,
-            sellingPrice: 0, minPrice: 0, wholesalePrice: 0, status: "available", photo: "🚗",
-            insuranceExpiry: "", techControlExpiry: "", carteGrise: "",
-            image: "", photos: [], video: "", notes: "", documents: [],
-          },
-    );
+
+    const blank = {
+      id: crypto.randomUUID(),
+      brand: "", model: "", year: new Date().getFullYear(), color: "Blanc",
+      vin: "", plate: "", mileageKm: 0, fuel: "Essence", transmission: "Manuelle",
+      purchasePrice: 0, importFees: 0, customsFees: 0, repairFees: 0, maintenanceFees: 0,
+      sellingPrice: 0, minPrice: 0, wholesalePrice: 0, status: "available", photo: "🚗",
+      insuranceExpiry: "", techControlExpiry: "", carteGrise: "",
+      image: "", photos: [], video: "", notes: "", documents: [],
+    };
+
+    if (vehicle) {
+      // Édition d'un véhicule existant : le serveur reste la source de
+      // vérité, pas de brouillon (éviterait une confusion entre une ancienne
+      // édition interrompue et les données réelles actuelles).
+      setStep(0);
+      setForm({ ...vehicle, documents: vehicle.documents || [] });
+    } else {
+      // Nouveau véhicule : un brouillon peut exister si la saisie a été
+      // interrompue (ex. le navigateur a rechargé la page en arrière-plan
+      // pendant l'ouverture du sélecteur de fichiers natif sur mobile — les
+      // fichiers déjà choisis ne survivent pas, mais le texte déjà saisi oui).
+      const draft = loadDraft<{ step: number; form: any }>(VEHICLE_DRAFT_KEY);
+      if (draft?.form?.brand || draft?.form?.model) {
+        setStep(draft.step || 0);
+        setForm({ ...blank, ...draft.form, documents: [] });
+        toast.info("Brouillon repris", { description: "Votre saisie précédente a été restaurée. Photos/documents à rechoisir." });
+      } else {
+        setStep(0);
+        setForm(blank);
+      }
+    }
+
     const existing = vehicle
       ? [vehicle.image, ...(vehicle.photos ?? [])].filter((u): u is string => !!u)
       : [];
     setGallery(existing.map((url) => ({ key: url, url })));
     setVideoPreview(vehicle?.video ?? "");
   }, [open, vehicle]);
+
+  // Sauvegarde automatique du brouillon (texte uniquement — les fichiers ne
+  // sont pas sérialisables) pendant la création d'un nouveau véhicule.
+  useEffect(() => {
+    if (!open || isEdit || !form?.brand && !form?.model) return;
+    const t = setTimeout(() => saveDraft(VEHICLE_DRAFT_KEY, { step, form }), 400);
+    return () => clearTimeout(t);
+  }, [open, isEdit, step, form]);
 
   const total = (form.purchasePrice || 0) + (form.importFees || 0) + (form.customsFees || 0) + (form.repairFees || 0) + (form.maintenanceFees || 0);
   const margin = (form.sellingPrice || 0) - total;
@@ -236,6 +265,7 @@ export function VehicleDialog({
         }
       }
 
+      if (!isEdit) clearDraft(VEHICLE_DRAFT_KEY);
       toast.success(isEdit ? "Véhicule mis à jour" : "Véhicule ajouté");
       onOpenChange(false);
     } finally {
@@ -440,8 +470,13 @@ export function VehicleDialog({
                   <li key={d.id} className="flex items-center gap-3 p-3 rounded-lg border bg-white/60 dark:bg-slate-900/40">
                     <FileText size={18} className="text-primary shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{d.name}</p>
-                      <p className="text-[11px] text-muted-foreground">{(d.size / 1024).toFixed(0)} Ko · En attente d'archivage privé</p>
+                      <Input
+                        value={d.name}
+                        onChange={(e) => setPendingDocs((items) => items.map((item) => item.id === d.id ? { ...item, name: e.target.value } : item))}
+                        placeholder="Nom du document"
+                        className="h-7 text-sm font-medium px-1.5 border-transparent bg-transparent hover:border-input focus:border-input rounded-md"
+                      />
+                      <p className="text-[11px] text-muted-foreground px-1.5">{(d.size / 1024).toFixed(0)} Ko · En attente d'archivage privé — renommez pour faciliter la recherche plus tard</p>
                     </div>
                     <Button type="button" size="icon" variant="ghost" onClick={() => setPendingDocs((items) => items.filter((item) => item.id !== d.id))}><Trash2 size={14} className="text-rose-600" /></Button>
                   </li>
