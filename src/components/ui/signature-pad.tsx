@@ -19,6 +19,7 @@ export function SignaturePad({ label = "Signature", value, onChange, className, 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const dirty = useRef(false);
+  const points = useRef<{ x: number; y: number }[]>([]);
   const [hasInk, setHasInk] = useState(!!value);
 
   const setup = useCallback(() => {
@@ -63,31 +64,64 @@ export function SignaturePad({ label = "Signature", value, onChange, className, 
     return () => ro.disconnect();
   }, []);
 
-  const pos = (e: React.PointerEvent) => {
-    const c = canvasRef.current!;
-    const r = c.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  const posOf = (c: HTMLCanvasElement, r: DOMRect, ev: { clientX: number; clientY: number }) => ({
+    x: ev.clientX - r.left,
+    y: ev.clientY - r.top,
+  });
+
+  // Trait lisse plutôt que des segments droits entre points bruts : on trace
+  // une courbe quadratique passant par le milieu de chaque paire de points
+  // consécutifs (technique standard des pads de signature — cf. lib
+  // signature_pad). Sans ça, le tracé est anguleux/polygonal et ne ressemble
+  // pas à une vraie signature manuscrite, surtout au tactile où les points
+  // captés sont plus espacés qu'à la souris.
+  const drawSmoothed = (ctx: CanvasRenderingContext2D) => {
+    const pts = points.current;
+    const n = pts.length;
+    if (n < 3) return;
+    const [p0, p1, p2] = pts.slice(n - 3);
+    const mid1 = { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
+    const mid2 = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+    ctx.beginPath();
+    ctx.moveTo(mid1.x, mid1.y);
+    ctx.quadraticCurveTo(p1.x, p1.y, mid2.x, mid2.y);
+    ctx.stroke();
   };
 
   const start = (e: React.PointerEvent) => {
     e.preventDefault();
-    const ctx = canvasRef.current?.getContext("2d");
-    if (!ctx) return;
+    const c = canvasRef.current;
+    const ctx = c?.getContext("2d");
+    if (!c || !ctx) return;
     drawing.current = true;
-    canvasRef.current?.setPointerCapture(e.pointerId);
-    const { x, y } = pos(e);
+    c.setPointerCapture(e.pointerId);
+    const r = c.getBoundingClientRect();
+    const p = posOf(c, r, e);
+    points.current = [p];
+    // Point isolé (tap) visible même sans mouvement ensuite.
     ctx.beginPath();
-    ctx.moveTo(x, y);
+    ctx.arc(p.x, p.y, ctx.lineWidth / 2, 0, Math.PI * 2);
+    ctx.fillStyle = ctx.strokeStyle as string;
+    ctx.fill();
   };
 
   const move = (e: React.PointerEvent) => {
     if (!drawing.current) return;
     e.preventDefault();
-    const ctx = canvasRef.current?.getContext("2d");
-    if (!ctx) return;
-    const { x, y } = pos(e);
-    ctx.lineTo(x, y);
-    ctx.stroke();
+    const c = canvasRef.current;
+    const ctx = c?.getContext("2d");
+    if (!c || !ctx) return;
+    const r = c.getBoundingClientRect();
+    // getCoalescedEvents() restitue les positions intermédiaires capturées
+    // par le système entre deux frames (mouvements rapides au doigt/stylet) —
+    // sans ça, un tracé rapide perd des points et devient visiblement anguleux.
+    const native = e.nativeEvent as PointerEvent & { getCoalescedEvents?: () => PointerEvent[] };
+    const coalesced = native.getCoalescedEvents?.() ?? [];
+    const events = coalesced.length ? coalesced : [native];
+    for (const ev of events) {
+      points.current.push(posOf(c, r, ev));
+      drawSmoothed(ctx);
+    }
     dirty.current = true;
     if (!hasInk) setHasInk(true);
   };
@@ -95,6 +129,7 @@ export function SignaturePad({ label = "Signature", value, onChange, className, 
   const end = () => {
     if (!drawing.current) return;
     drawing.current = false;
+    points.current = [];
     if (dirty.current) onChange(canvasRef.current?.toDataURL("image/png"));
   };
 
