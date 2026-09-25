@@ -43,6 +43,14 @@ function vehicleLines(v: Vehicle) {
   ];
 }
 
+/** Formate les articles d'un type de contrat en texte numéroté pour `notice()`,
+ * ou retombe sur le texte par défaut du modèle si aucun article n'est renseigné. */
+function articlesText(articles: string[] | undefined, fallback: string): string {
+  const list = (articles ?? []).map((a) => a.trim()).filter(Boolean);
+  if (list.length === 0) return fallback;
+  return list.map((a, i) => `Article ${i + 1}. ${a}`).join("\n\n");
+}
+
 function sigSlots(
   clientName: string,
   signatures?: { client?: string; vendor?: string },
@@ -116,7 +124,7 @@ export function pdfSaleContract(sale: VehicleSale, vehicle: Vehicle) {
     ]);
   }
 
-  d.notice("Conditions générales", p.terms || "Le véhicule est vendu en l'état. Aucune réclamation ne sera acceptée après la remise des clés, sauf vice caché avéré au sens de la loi applicable.");
+  d.notice("Conditions générales", articlesText(p.contractArticles?.vente, p.terms || "Le véhicule est vendu en l'état. Aucune réclamation ne sera acceptée après la remise des clés, sauf vice caché avéré au sens de la loi applicable."));
   d.signatures(sigSlots(sale.customer, sale.signatures));
   d.stamp();
   d.save(`contrat-vente-${slug(sale.customer)}-${sale.date}`);
@@ -173,10 +181,13 @@ export function pdfRentalContract(rental: Rental, vehicle: Vehicle) {
 
   d.notice(
     "Conditions générales de location",
-    p.terms ||
-      "Le locataire s'engage à restituer le véhicule à la date convenue, dans l'état où il l'a reçu, carburant au même niveau. " +
-      "Tout retard entraîne la facturation d'une journée supplémentaire. Les amendes et contraventions durant la période de location restent à la charge du locataire. " +
-      "La caution est restituée après vérification de l'état du véhicule.",
+    articlesText(
+      p.contractArticles?.location,
+      p.terms ||
+        "Le locataire s'engage à restituer le véhicule à la date convenue, dans l'état où il l'a reçu, carburant au même niveau. " +
+        "Tout retard entraîne la facturation d'une journée supplémentaire. Les amendes et contraventions durant la période de location restent à la charge du locataire. " +
+        "La caution est restituée après vérification de l'état du véhicule.",
+    ),
   );
   d.signatures(sigSlots(rental.customer, rental.signatures));
   d.stamp();
@@ -242,7 +253,10 @@ export function pdfCreditContract(credit: VehicleCredit, vehicle: Vehicle, payme
 
   d.notice(
     "Clause de réserve de propriété",
-    p.terms || "Le véhicule demeure la propriété du vendeur jusqu'au paiement intégral du prix. Tout retard de paiement supérieur à 30 jours peut entraîner la reprise du véhicule.",
+    articlesText(
+      p.contractArticles?.credit,
+      p.terms || "Le véhicule demeure la propriété du vendeur jusqu'au paiement intégral du prix. Tout retard de paiement supérieur à 30 jours peut entraîner la reprise du véhicule.",
+    ),
   );
   d.signatures(sigSlots(credit.customer, credit.signatures));
   d.stamp();

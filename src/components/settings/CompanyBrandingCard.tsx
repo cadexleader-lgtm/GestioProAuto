@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { SignaturePad } from "@/components/ui/signature-pad";
-import { Building2, Upload, Trash2, Save, FileText } from "lucide-react";
+import { Building2, Upload, Trash2, Save, FileText, Plus, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import {
   useCompanyProfile,
@@ -22,6 +22,41 @@ function readImage(file: File): Promise<string> {
     r.onerror = reject;
     r.readAsDataURL(file);
   });
+}
+
+/** Éditeur d'articles numérotés pour un type de contrat (vente/location/crédit). */
+function ArticlesEditor({ articles, onChange }: { articles: string[]; onChange: (next: string[]) => void }) {
+  const add = () => onChange([...articles, ""]);
+  const update = (i: number, v: string) => onChange(articles.map((a, idx) => (idx === i ? v : a)));
+  const remove = (i: number) => onChange(articles.filter((_, idx) => idx !== i));
+
+  return (
+    <div className="space-y-3">
+      {articles.map((a, i) => (
+        <div key={i} className="flex gap-2 items-start">
+          <span className="mt-2.5 shrink-0 w-20 text-xs font-bold text-muted-foreground">Article {i + 1}</span>
+          <Textarea
+            rows={2}
+            className="rounded-xl flex-1"
+            value={a}
+            onChange={(e) => update(i, e.target.value)}
+            placeholder="Texte de l'article…"
+          />
+          <Button type="button" variant="ghost" size="icon" className="shrink-0 mt-0.5 text-destructive" onClick={() => remove(i)}>
+            <Trash2 size={14} />
+          </Button>
+        </div>
+      ))}
+      <Button type="button" variant="outline" size="sm" className="rounded-xl gap-1.5" onClick={add}>
+        <Plus size={14} /> Ajouter un article
+      </Button>
+      {articles.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          Aucun article renseigné — le texte par défaut du modèle sera imprimé sur ce contrat.
+        </p>
+      )}
+    </div>
+  );
 }
 
 function Field({
@@ -85,12 +120,13 @@ export function CompanyBrandingCard() {
 
       <CardContent>
         <Tabs defaultValue="identity">
-          <TabsList className="grid grid-cols-2 sm:grid-cols-5 h-auto gap-1 rounded-xl">
+          <TabsList className="grid grid-cols-3 sm:grid-cols-6 h-auto gap-1 rounded-xl">
             <TabsTrigger value="identity" className="rounded-lg text-xs">Identité</TabsTrigger>
             <TabsTrigger value="contact" className="rounded-lg text-xs">Contact</TabsTrigger>
             <TabsTrigger value="legal" className="rounded-lg text-xs">Légal</TabsTrigger>
             <TabsTrigger value="bank" className="rounded-lg text-xs">Paiement</TabsTrigger>
             <TabsTrigger value="docs" className="rounded-lg text-xs">Documents</TabsTrigger>
+            <TabsTrigger value="contracts" className="rounded-lg text-xs">Contrats</TabsTrigger>
           </TabsList>
 
           {/* IDENTITÉ */}
@@ -200,7 +236,7 @@ export function CompanyBrandingCard() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">Conditions générales (imprimées sur les documents)</Label>
+              <Label className="text-xs font-medium text-muted-foreground">Conditions générales (factures/reçus, et repli des contrats sans articles)</Label>
               <Textarea rows={4} className="rounded-xl" value={p.terms} onChange={(e) => set({ terms: e.target.value })}
                 placeholder="Marchandises vendues ne sont ni reprises ni échangées. Paiement à réception de facture…" />
             </div>
@@ -214,6 +250,40 @@ export function CompanyBrandingCard() {
                 onClick={() => { setP({ ...EMPTY_PROFILE }); setDirty(true); }}>
                 Réinitialiser l'identité
               </Button>
+            </div>
+          </TabsContent>
+
+          {/* CONTRATS — articles numerotes distincts par type de contrat */}
+          <TabsContent value="contracts" className="mt-5 space-y-6">
+            <p className="text-xs text-muted-foreground flex items-start gap-1.5">
+              <ScrollText size={14} className="shrink-0 mt-0.5 text-primary" />
+              Chaque type de contrat a ses propres clauses, imprimées sous forme d'articles numérotés
+              (« Article 1. », « Article 2. »…). Un contrat sans article utilise le texte générique
+              de l'onglet Documents.
+            </p>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Contrat de vente (comptant)</Label>
+              <ArticlesEditor
+                articles={p.contractArticles.vente}
+                onChange={(next) => set({ contractArticles: { ...p.contractArticles, vente: next } })}
+              />
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-border">
+              <Label className="text-xs font-semibold">Contrat de location</Label>
+              <ArticlesEditor
+                articles={p.contractArticles.location}
+                onChange={(next) => set({ contractArticles: { ...p.contractArticles, location: next } })}
+              />
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-border">
+              <Label className="text-xs font-semibold">Contrat de vente à crédit</Label>
+              <ArticlesEditor
+                articles={p.contractArticles.credit}
+                onChange={(next) => set({ contractArticles: { ...p.contractArticles, credit: next } })}
+              />
             </div>
           </TabsContent>
         </Tabs>

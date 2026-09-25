@@ -30,6 +30,14 @@ export interface CompanyProfile {
   stampDataUrl: string;
   terms: string;
   documentFooter: string;
+  /** Conditions générales par type de contrat (articles numérotés), imprimées
+   * sur le contrat correspondant à la place du texte générique par défaut du
+   * modèle dès qu'au moins un article est renseigné. */
+  contractArticles: {
+    vente: string[];
+    location: string[];
+    credit: string[];
+  };
   /** Banque */
   bankName: string;
   bankAccount: string;
@@ -50,6 +58,7 @@ export const EMPTY_PROFILE: CompanyProfile = {
   address: "", city: "", country: "", phone: "", phone2: "", email: "", website: "",
   rccm: "", ifu: "", taxNumber: "", currency: "FCFA",
   signatureDataUrl: "", stampDataUrl: "", terms: "", documentFooter: "",
+  contractArticles: { vente: [], location: [], credit: [] },
   bankName: "", bankAccount: "", bankIban: "", bankSwift: "", mobileMoney: "",
   facebook: "", instagram: "", linkedin: "", whatsapp: "",
   accentColor: "#2563eb",
