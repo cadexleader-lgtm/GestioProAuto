@@ -21,6 +21,66 @@ import { THEME_INIT_SCRIPT } from "../lib/theme";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 
+/**
+ * TanStack Start/Router découpe automatiquement chaque route en son propre
+ * chunk JS hashé (`app.auto.ventes-XXXX.js`, etc., servis avec
+ * `cache-control: immutable` — voir `.output/public/_headers`). Le worker
+ * Cloudflare (preset `cloudflare-module`) ne garde que les fichiers du DERNIER
+ * déploiement : un onglet resté ouvert pendant qu'un nouveau déploiement a eu
+ * lieu référence encore les anciens hash, qui n'existent plus côté serveur —
+ * tout `import()` vers un de ces chunks (navigation vers une route pas encore
+ * visitée dans l'onglet, ou un `await import("./pdf/templates")` déclenché au
+ * clic) échoue alors avec "Failed to fetch dynamically imported module" (ou
+ * équivalent). Un vrai réseau mobile capricieux (cible Bénin/Afrique) peut
+ * produire la même erreur sans déploiement entre-temps. Dans les deux cas,
+ * un `router.invalidate()` rejoue le même import() vers le même fichier
+ * absent/injoignable — ça re-échoue à l'identique. Seul un vrai
+ * `window.location.reload()` récupère un `index.html` et des références de
+ * chunks à jour.
+ */
+const CHUNK_LOAD_ERROR_RE =
+  /failed to fetch dynamically imported module|error loading dynamically imported module|importing a module script failed|loading chunk [\w.-]+ failed|unable to preload css/i;
+
+function isChunkLoadError(error: unknown): boolean {
+  const message =
+    error instanceof Error
+      ? `${error.name} ${error.message}`
+      : typeof error === "string"
+        ? error
+        : "";
+  return CHUNK_LOAD_ERROR_RE.test(message);
+}
+
+/** Anti-boucle : au plus un rechargement forcé toutes les 10 s (sessionStorage
+ * survit à un reload, contrairement à une simple variable en mémoire). */
+const CHUNK_RELOAD_KEY = "gestiopro.chunk-reload-at";
+function reloadOnceForChunkError(): boolean {
+  try {
+    const last = Number(window.sessionStorage.getItem(CHUNK_RELOAD_KEY) ?? 0);
+    if (Date.now() - last < 10_000) return false;
+    window.sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+  } catch {
+    // sessionStorage indisponible (navigation privée…) — on retente quand
+    // même le reload une fois, tant pis pour la garde anti-boucle.
+  }
+  window.location.reload();
+  return true;
+}
+
+// Filet de sécurité au niveau le plus bas : Vite dispatch cet évènement dès
+// qu'un de ses `import()` compilés échoue, que l'erreur remonte ensuite ou
+// non jusqu'à un composant React — donc même pour un import() déclenché hors
+// rendu (ex. dans un handler de clic, cf. vehicle-pdf.ts/Documents.tsx/
+// HrDialogs.tsx) qu'un error boundary React ne peut de toute façon pas
+// attraper. `__root.tsx` n'est lui-même jamais splitté (route racine), donc
+// ce listener est actif dès le tout premier rendu, avant toute navigation.
+if (typeof window !== "undefined") {
+  window.addEventListener("vite:preloadError", (event) => {
+    reportLovableError(event.payload ?? event, { boundary: "vite_preload_error" });
+    if (reloadOnceForChunkError()) event.preventDefault();
+  });
+}
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -50,15 +110,28 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
 
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
-    // Auto-recovery: a single silent retry fixes most transient chunk/network failures.
-    if (!retried.current) {
-      retried.current = true;
-      const t = setTimeout(() => {
-        router.invalidate();
-        reset();
-      }, 400);
-      return () => clearTimeout(t);
+    if (retried.current) return;
+    retried.current = true;
+
+    if (isChunkLoadError(error)) {
+      // Chunk de route obsolète ou coupure réseau pendant le téléchargement
+      // (voir commentaire détaillé plus haut) : router.invalidate() rejouerait
+      // le même import() voué au même échec. Un vrai rechargement complet est
+      // le seul geste qui répare — anti-boucle intégré à reloadOnceForChunkError.
+      reloadOnceForChunkError();
+      return;
     }
+
+    // Reprise automatique silencieuse à usage limité : un unique essai, pour
+    // les vrais accidents transitoires (ex. un `loader`/une requête réseau
+    // ponctuelle qui échoue une fois). Ne masque pas l'erreur : elle est déjà
+    // journalisée ci-dessus (console.error + reportLovableError) avant toute
+    // tentative de reprise.
+    const t = setTimeout(() => {
+      router.invalidate();
+      reset();
+    }, 400);
+    return () => clearTimeout(t);
   }, [error, router, reset]);
 
   return (
@@ -73,6 +146,14 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
+              // Un clic manuel après l'échec de la reprise auto (ex. anti-boucle
+              // des 10 s pour une erreur de chunk) doit quand même pouvoir forcer
+              // un vrai rechargement plutôt que rejouer indéfiniment le même
+              // import() cassé.
+              if (isChunkLoadError(error)) {
+                window.location.reload();
+                return;
+              }
               router.invalidate();
               reset();
             }}
