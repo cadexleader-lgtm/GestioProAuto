@@ -16,7 +16,7 @@ import {
   ScrollText, FileSignature, RefreshCw, CalendarClock, ShieldAlert, FolderOpen,
   Wallet, Sparkles, Eye, ChevronLeft, ChevronRight, ExternalLink,
 } from "lucide-react";
-import { useCollection, db, getPrivateDocumentUrl, uploadPrivateDocument } from "@/lib/demo-store";
+import { useCollection, db, getPrivateDocumentUrl, uploadPrivateDocument, attachSaleDocuments } from "@/lib/demo-store";
 import { useRole } from "@/lib/roles";
 import { useTenant } from "@/lib/tenant";
 import { formatFCFA } from "@/lib/format";
@@ -361,7 +361,12 @@ export function Documents() {
           }
         }
 
-        db.update("vehicleSales", sale.id, { documents: nextDocs } as any);
+        try {
+          await attachSaleDocuments(sale.id, nextDocs);
+        } catch (error) {
+          console.error("[gestiopro] failed to persist migrated sale documents", error);
+          toast.error(`Documents migrés mais non enregistrés pour ${sale.customer} — réessayez.`);
+        }
       }
 
       if (migrated > 0) toast.success(`${migrated} ancien(s) fichier(s) Base64 migré(s) vers le coffre privé.`);

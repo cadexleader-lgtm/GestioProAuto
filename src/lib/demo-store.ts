@@ -1365,6 +1365,26 @@ export function getActiveCompanyId(): string | null {
   return companyId;
 }
 
+/** Rattache la liste de documents d'une vente via une RPC dediee -- vehicle_sales
+ * est ecriture-RPC-only (durci des sa creation), voir
+ * 20260925110000_add_attach_sale_documents_rpc.sql. Utilise par la migration
+ * des anciens documents Base64 (Documents.tsx). */
+export async function attachSaleDocuments(saleId: string, documents: unknown[]) {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data: row, error } = await sb.rpc("attach_sale_documents", {
+    p_company_id: companyId,
+    p_sale_id: saleId,
+    p_documents: documents,
+  });
+
+  if (error) throw new Error(rpcErrorMessage(error, "Les documents de la vente n'ont pas pu être mis à jour."));
+
+  const sale = { id: row.id, ...(row.data ?? {}) };
+  db.upsertLocal("vehicleSales", sale as any);
+  return sale;
+}
+
 export async function startRental(
   payload: Omit<Rental, "id"> & { rentalId: string; idempotencyKey: string; currency: string; method: string },
 ) {
