@@ -16,8 +16,8 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/connexion")({
   head: () => ({
     meta: [
-      { title: "Connexion — GestioPro" },
-      { name: "description", content: "Connectez-vous à votre espace GestioPro." },
+      { title: "Connexion — GestioAuto" },
+      { name: "description", content: "Connectez-vous à votre espace GestioAuto." },
     ],
   }),
   validateSearch: searchSchema,
@@ -107,8 +107,8 @@ function LoginPage() {
         <AnimatedBackground variant="silk" />
         <div className="absolute -top-32 -left-20 h-96 w-96 rounded-full bg-primary/10 blur-[100px]" />
         <Link to="/" className="relative inline-flex items-center gap-2.5">
-          <img src={logoIcon} alt="GestioPro" className="h-9 w-9 rounded-lg shadow-sm" />
-          <span className="font-display text-xl font-bold">GestioPro</span>
+          <img src={logoIcon} alt="GestioAuto" className="h-9 w-9 rounded-lg shadow-sm" />
+          <span className="font-display text-xl font-bold">GestioAuto</span>
         </Link>
 
         <div className="relative max-w-sm">
@@ -127,7 +127,7 @@ function LoginPage() {
           </ul>
         </div>
 
-        <p className="relative text-xs text-muted-foreground/70">© {new Date().getFullYear()} GestioPro · L'ERP des PME automobiles africaines</p>
+        <p className="relative text-xs text-muted-foreground/70">© {new Date().getFullYear()} GestioAuto · L'ERP des PME automobiles africaines</p>
       </div>
 
       {/* Formulaire */}
@@ -136,14 +136,14 @@ function LoginPage() {
 
         <div className="mx-auto w-full max-w-sm">
           <Link to="/" className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <img src={logoIcon} alt="GestioPro" className="h-9 w-9 rounded-lg" />
-            <span className="font-display text-xl font-bold">GestioPro</span>
+            <img src={logoIcon} alt="GestioAuto" className="h-9 w-9 rounded-lg" />
+            <span className="font-display text-xl font-bold">GestioAuto</span>
           </Link>
 
           {mode === "login" ? (
             <>
               <h1 className="font-display text-2xl font-bold tracking-tight">Bon retour 👋</h1>
-              <p className="mt-2 text-sm text-muted-foreground">Connectez-vous à votre espace GestioPro.</p>
+              <p className="mt-2 text-sm text-muted-foreground">Connectez-vous à votre espace GestioAuto.</p>
 
               <button
                 type="button"

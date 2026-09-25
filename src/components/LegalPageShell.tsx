@@ -12,8 +12,8 @@ export function LegalPageShell({ title, updatedAt, children }: { title: string; 
       <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2.5">
-            <img src={logoIcon} alt="GestioPro" className="h-8 w-8 rounded-lg shadow-sm" />
-            <span className="font-display text-lg font-bold text-foreground">GestioPro</span>
+            <img src={logoIcon} alt="GestioAuto" className="h-8 w-8 rounded-lg shadow-sm" />
+            <span className="font-display text-lg font-bold text-foreground">GestioAuto</span>
           </Link>
           <div className="flex items-center gap-1">
             <ThemeToggle />
@@ -35,7 +35,7 @@ export function LegalPageShell({ title, updatedAt, children }: { title: string; 
       </main>
 
       <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} GestioPro · L'ERP des PME africaines
+        © {new Date().getFullYear()} GestioAuto · L'ERP des PME africaines
       </footer>
     </div>
   );

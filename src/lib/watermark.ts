@@ -66,7 +66,7 @@ export async function watermarkImage(url: string): Promise<Blob> {
     const logoSize = Math.max(20, Math.round(canvas.width * 0.045));
     const fontSize = Math.max(12, Math.round(logoSize * 0.62));
     ctx.font = `600 ${fontSize}px system-ui, -apple-system, sans-serif`;
-    const label = "GestioPro";
+    const label = "GestioAuto";
     const textWidth = ctx.measureText(label).width;
 
     const badgeW = logoSize + 10 + textWidth + pad * 2;

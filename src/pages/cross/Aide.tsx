@@ -65,7 +65,7 @@ export function Aide() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Aide & Support</h1>
         <p className="text-muted-foreground mt-1">
-          Questions fréquentes sur les modules de GestioPro Auto et comment nous contacter.
+          Questions fréquentes sur les modules de GestioAuto et comment nous contacter.
         </p>
       </div>
 
@@ -98,7 +98,7 @@ export function Aide() {
           </h2>
           <p className="text-sm text-muted-foreground">
             Notre équipe n'est pas encore joignable directement depuis l'application. En attendant,
-            contactez votre référent GestioPro :
+            contactez votre référent GestioAuto :
           </p>
           <div className="flex flex-col sm:flex-row gap-3 pt-1">
             <a

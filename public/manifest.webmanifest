@@ -1,7 +1,7 @@
 {
-  "name": "GestioPro — Gestion d'entreprise",
-  "short_name": "GestioPro",
-  "description": "Plateforme SaaS de gestion commerciale : ventes, stock, véhicules, restaurant, trésorerie et documents.",
+  "name": "GestioAuto — Gestion de parc automobile",
+  "short_name": "GestioAuto",
+  "description": "L'ERP pour concessionnaires et loueurs de véhicules : ventes, crédits, locations, maintenance, trésorerie et documents.",
   "start_url": "/app",
   "id": "/app",
   "scope": "/",

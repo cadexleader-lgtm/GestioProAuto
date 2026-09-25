@@ -113,7 +113,7 @@ export function VehicleShareDialog({ vehicle, open, onOpenChange }: {
                   );
                 })}
               </div>
-              <p className="text-[11px] text-muted-foreground mt-1.5">Un badge GestioPro discret est ajouté aux photos envoyées.</p>
+              <p className="text-[11px] text-muted-foreground mt-1.5">Un badge GestioAuto discret est ajouté aux photos envoyées.</p>
             </div>
           )}
 

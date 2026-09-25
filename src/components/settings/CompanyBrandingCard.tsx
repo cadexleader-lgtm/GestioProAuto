@@ -176,7 +176,7 @@ export function CompanyBrandingCard() {
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Raison sociale" value={p.name} onChange={(v) => set({ name: v })} placeholder="GestioPro SARL" />
+              <Field label="Raison sociale" value={p.name} onChange={(v) => set({ name: v })} placeholder="GestioAuto SARL" />
               <Field label="Forme juridique" value={p.legalForm} onChange={(v) => set({ legalForm: v })} placeholder="SARL, SA, EI…" />
               <Field label="Slogan" value={p.slogan} onChange={(v) => set({ slogan: v })} placeholder="Votre partenaire de confiance" />
               <div className="space-y-1.5">
@@ -265,7 +265,7 @@ export function CompanyBrandingCard() {
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Pied de page des documents</Label>
               <Input className="rounded-xl" value={p.documentFooter} onChange={(e) => set({ documentFooter: e.target.value })}
-                placeholder="Merci de votre confiance — GestioPro" />
+                placeholder="Merci de votre confiance — GestioAuto" />
             </div>
             <div className="flex justify-between items-center pt-1">
               <Button type="button" variant="ghost" size="sm" className="text-destructive rounded-xl"

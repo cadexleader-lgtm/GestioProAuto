@@ -3,6 +3,6 @@ import { AppShell } from "@/components/layout/AppShell";
 import { VehiculesLocations } from "@/pages/vehicules/VehiculesLocations";
 
 export const Route = createFileRoute("/app/auto/locations")({
-  head: () => ({ meta: [{ title: "Locations véhicules — GestioPro" }] }),
+  head: () => ({ meta: [{ title: "Locations véhicules — GestioAuto" }] }),
   component: () => (<AppShell><VehiculesLocations /></AppShell>),
 });

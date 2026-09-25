@@ -15,8 +15,8 @@ import { PasswordInput, PasswordStrengthMeter } from "@/components/PasswordInput
 export const Route = createFileRoute("/inscription")({
   head: () => ({
     meta: [
-      { title: "Créer un compte — GestioPro" },
-      { name: "description", content: "Créez votre compte GestioPro Auto : les infos de votre entreprise." },
+      { title: "Créer un compte — GestioAuto" },
+      { name: "description", content: "Créez votre compte GestioAuto : les infos de votre entreprise." },
     ],
   }),
   component: SignupPage,
@@ -106,7 +106,7 @@ function SignupPage() {
     }
     await queryClient.invalidateQueries();
     setSubmitting(false);
-    toast.success("Compte créé ! Bienvenue sur GestioPro.");
+    toast.success("Compte créé ! Bienvenue sur GestioAuto.");
     navigate({ to: "/app" });
 
   };
@@ -119,8 +119,8 @@ function SignupPage() {
         <AnimatedBackground variant="silk" />
         <div className="absolute -bottom-32 -right-20 h-96 w-96 rounded-full bg-primary/10 blur-[100px]" />
         <Link to="/" className="relative inline-flex items-center gap-2.5">
-          <img src={logoIcon} alt="GestioPro" className="h-9 w-9 rounded-lg shadow-sm" />
-          <span className="font-display text-xl font-bold">GestioPro</span>
+          <img src={logoIcon} alt="GestioAuto" className="h-9 w-9 rounded-lg shadow-sm" />
+          <span className="font-display text-xl font-bold">GestioAuto</span>
         </Link>
 
         <div className="relative max-w-sm">
@@ -139,7 +139,7 @@ function SignupPage() {
           </ul>
         </div>
 
-        <p className="relative text-xs text-muted-foreground/70">© {new Date().getFullYear()} GestioPro · L'ERP des PME automobiles africaines</p>
+        <p className="relative text-xs text-muted-foreground/70">© {new Date().getFullYear()} GestioAuto · L'ERP des PME automobiles africaines</p>
       </div>
 
       {/* Formulaire */}
@@ -147,8 +147,8 @@ function SignupPage() {
         <div className="absolute right-4 top-4 sm:right-6 sm:top-6"><ThemeToggle /></div>
 
         <Link to="/" className="inline-flex items-center gap-2.5 self-start lg:hidden">
-          <img src={logoIcon} alt="GestioPro" className="h-9 w-9 rounded-lg shadow-sm" />
-          <span className="font-display text-lg font-bold">GestioPro</span>
+          <img src={logoIcon} alt="GestioAuto" className="h-9 w-9 rounded-lg shadow-sm" />
+          <span className="font-display text-lg font-bold">GestioAuto</span>
         </Link>
 
         <motion.div
@@ -160,7 +160,7 @@ function SignupPage() {
             <form onSubmit={handleSubmit}>
               <div>
                 <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Votre entreprise</h1>
-                <p className="mt-2 text-sm text-muted-foreground">Quelques infos pour configurer votre espace GestioPro Auto.</p>
+                <p className="mt-2 text-sm text-muted-foreground">Quelques infos pour configurer votre espace GestioAuto.</p>
               </div>
 
               <div className="mt-8 space-y-4">

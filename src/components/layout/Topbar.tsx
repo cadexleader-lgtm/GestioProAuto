@@ -112,7 +112,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
             <DropdownMenuLabel>
               <div className="flex flex-col">
                 <span className="text-sm font-semibold truncate">{company?.ownerName || "Utilisateur"}</span>
-                <span className="text-xs text-muted-foreground font-normal truncate">{company?.name || "GestioPro"}</span>
+                <span className="text-xs text-muted-foreground font-normal truncate">{company?.name || "GestioAuto"}</span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

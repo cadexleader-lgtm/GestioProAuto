@@ -117,7 +117,7 @@ export class PdfDoc {
     d.setFontSize(8);
     d.setTextColor(...GREY);
     d.setFont("helvetica", "bold");
-    d.text((this.profile.name || "GestioPro").toUpperCase(), PAGE.ml, 9);
+    d.text((this.profile.name || "GestioAuto").toUpperCase(), PAGE.ml, 9);
     this.y = 16;
   }
 

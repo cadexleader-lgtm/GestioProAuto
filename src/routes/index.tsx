@@ -12,10 +12,10 @@ import { AnimatedBackground } from "@/components/AnimatedBackground";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "GestioPro Auto — L'ERP des concessionnaires et loueurs de véhicules africains" },
-      { name: "description", content: "GestioPro Auto : la plateforme tout-en-un pour gérer ventes, crédits, locations, maintenance, clients, fournisseurs, personnel et finances de votre parc automobile." },
-      { property: "og:title", content: "GestioPro Auto — L'ERP des concessionnaires et loueurs de véhicules africains" },
-      { property: "og:description", content: "GestioPro Auto : la plateforme tout-en-un pour gérer ventes, crédits, locations, maintenance, clients, fournisseurs, personnel et finances de votre parc automobile." },
+      { title: "GestioAuto — L'ERP des concessionnaires et loueurs de véhicules africains" },
+      { name: "description", content: "GestioAuto : la plateforme tout-en-un pour gérer ventes, crédits, locations, maintenance, clients, fournisseurs, personnel et finances de votre parc automobile." },
+      { property: "og:title", content: "GestioAuto — L'ERP des concessionnaires et loueurs de véhicules africains" },
+      { property: "og:description", content: "GestioAuto : la plateforme tout-en-un pour gérer ventes, crédits, locations, maintenance, clients, fournisseurs, personnel et finances de votre parc automobile." },
       { property: "og:type", content: "website" },
     ],
     links: [{ rel: "canonical", href: "/" }],
@@ -78,7 +78,7 @@ const faqs = [
   },
   {
     q: "L'application fonctionne-t-elle hors connexion ?",
-    a: "GestioPro Auto est une PWA installable sur téléphone ou ordinateur comme une application native, mais nécessite une connexion internet pour synchroniser les données en temps réel entre les membres de votre équipe.",
+    a: "GestioAuto est une PWA installable sur téléphone ou ordinateur comme une application native, mais nécessite une connexion internet pour synchroniser les données en temps réel entre les membres de votre équipe.",
   },
   {
     q: "Puis-je changer de formule à tout moment ?",
@@ -99,8 +99,8 @@ function Nav() {
     <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <img src={logoIcon} alt="GestioPro" className="h-8 w-8 rounded-lg shadow-sm" />
-          <span className="font-display text-lg font-bold text-foreground">GestioPro</span>
+          <img src={logoIcon} alt="GestioAuto" className="h-8 w-8 rounded-lg shadow-sm" />
+          <span className="font-display text-lg font-bold text-foreground">GestioAuto</span>
         </Link>
         <nav className="hidden items-center gap-8 md:flex">
           {NAV_LINKS.map((l) => (
@@ -192,7 +192,7 @@ function LandingPage() {
             <span className="bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">depuis un seul logiciel</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            Vente, crédit, location, maintenance, clients, fournisseurs, personnel, dépenses, trésorerie — GestioPro Auto est l'ERP moderne pour les concessionnaires et loueurs de véhicules.
+            Vente, crédit, location, maintenance, clients, fournisseurs, personnel, dépenses, trésorerie — GestioAuto est l'ERP moderne pour les concessionnaires et loueurs de véhicules.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link to="/inscription" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-xl shadow-primary/30 transition hover:bg-primary/90 sm:w-auto">
@@ -230,7 +230,7 @@ function LandingPage() {
               <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
               <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-              <span className="ml-3 text-[11px] font-medium text-muted-foreground">app.gestiopro.com/tableau-de-bord</span>
+              <span className="ml-3 text-[11px] font-medium text-muted-foreground">app.gestioauto.com/tableau-de-bord</span>
             </div>
             <div className="grid gap-3 p-4 sm:grid-cols-12 sm:p-6">
               {/* sidebar */}
@@ -385,7 +385,7 @@ function LandingPage() {
         <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/15 via-blue-500/10 to-primary/5 p-10 text-center sm:p-16">
           <ShieldCheck className="mx-auto mb-4 h-12 w-12 text-primary" />
           <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Prêt à digitaliser votre entreprise ?</h2>
-          <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">Rejoignez les PME africaines qui pilotent leur activité automobile avec GestioPro.</p>
+          <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">Rejoignez les PME africaines qui pilotent leur activité automobile avec GestioAuto.</p>
           <Link to="/inscription" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-xl shadow-primary/30 transition hover:bg-primary/90">
             Démarrer gratuitement <ArrowRight size={16} />
           </Link>
@@ -396,8 +396,8 @@ function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex items-center gap-2.5">
-              <img src={logoIcon} alt="GestioPro" className="h-7 w-7 rounded-lg" />
-              <span className="font-display text-sm font-bold">GestioPro</span>
+              <img src={logoIcon} alt="GestioAuto" className="h-7 w-7 rounded-lg" />
+              <span className="font-display text-sm font-bold">GestioAuto</span>
             </div>
             <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
               <Link to="/mentions-legales" className="hover:text-foreground">Mentions légales</Link>
@@ -407,7 +407,7 @@ function LandingPage() {
             </nav>
           </div>
           <p className="mt-6 text-center text-xs text-muted-foreground/70 sm:text-left">
-            © {new Date().getFullYear()} GestioPro · L'ERP des PME automobiles africaines
+            © {new Date().getFullYear()} GestioAuto · L'ERP des PME automobiles africaines
           </p>
         </div>
       </footer>

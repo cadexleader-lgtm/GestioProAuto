@@ -10,7 +10,7 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/app/parametres")({
-  head: () => ({ meta: [{ title: "Paramètres — GestioPro" }] }),
+  head: () => ({ meta: [{ title: "Paramètres — GestioAuto" }] }),
   validateSearch: searchSchema,
   component: () => (<AppShell><Settings /></AppShell>),
 });

@@ -4,8 +4,8 @@ import { LegalPageShell } from "@/components/LegalPageShell";
 export const Route = createFileRoute("/mentions-legales")({
   head: () => ({
     meta: [
-      { title: "Mentions légales — GestioPro" },
-      { name: "description", content: "Mentions légales de GestioPro Auto." },
+      { title: "Mentions légales — GestioAuto" },
+      { name: "description", content: "Mentions légales de GestioAuto." },
     ],
   }),
   component: MentionsLegalesPage,
@@ -22,7 +22,7 @@ function MentionsLegalesPage() {
 
       <h2>Éditeur du site</h2>
       <p>
-        Le présent site et l'application GestioPro Auto sont édités par <strong>[Raison sociale de l'entreprise]</strong>,
+        Le présent site et l'application GestioAuto sont édités par <strong>[Raison sociale de l'entreprise]</strong>,
         [forme juridique — ex. SARL, SAS, entreprise individuelle], immatriculée sous le numéro RCCM [numéro RCCM],
         dont le siège social est situé [adresse complète], [ville], [pays].
       </p>
@@ -51,7 +51,7 @@ function MentionsLegalesPage() {
 
       <h2>Responsabilité</h2>
       <p>
-        GestioPro Auto est un outil de gestion mis à disposition des entreprises clientes. L'exactitude des données
+        GestioAuto est un outil de gestion mis à disposition des entreprises clientes. L'exactitude des données
         saisies (ventes, crédits, stocks, informations véhicules) relève de la responsabilité de l'entreprise
         utilisatrice. [Raison sociale de l'entreprise] met en œuvre des moyens raisonnables pour assurer la
         disponibilité et la sécurité du service, sans garantie de disponibilité absolue.

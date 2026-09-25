@@ -119,14 +119,14 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         {/* Brand */}
         <div className="h-16 shrink-0 flex items-center gap-2 px-3 border-b border-sidebar-border overflow-hidden">
           <Link to="/app" className="flex items-center gap-2.5 min-w-0 flex-1">
-            <img src={logoIcon} alt="GestioPro" className="h-9 w-9 shrink-0 rounded-xl shadow-sm" />
+            <img src={logoIcon} alt="GestioAuto" className="h-9 w-9 shrink-0 rounded-xl shadow-sm" />
             <span
               className={cn(
                 "flex min-w-0 flex-col leading-tight transition-opacity duration-200",
                 !expanded && "md:opacity-0 md:pointer-events-none",
               )}
             >
-              <span className="font-display text-[15px] font-bold text-sidebar-foreground truncate">GestioPro</span>
+              <span className="font-display text-[15px] font-bold text-sidebar-foreground truncate">GestioAuto</span>
               <span className="text-[10px] font-medium text-sidebar-foreground/50 truncate">{sub.label}</span>
             </span>
           </Link>

@@ -62,7 +62,7 @@ export function InstallAppButton({ className, variant = "outline", label = "Inst
       <Dialog open={iosHelp} onOpenChange={setIosHelp}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Installer GestioPro</DialogTitle>
+            <DialogTitle>Installer GestioAuto</DialogTitle>
             <DialogDescription>Ajoutez l'application à votre écran d'accueil en 2 étapes.</DialogDescription>
           </DialogHeader>
           <ol className="space-y-3 text-sm">

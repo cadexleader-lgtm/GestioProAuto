@@ -4,8 +4,8 @@ import { LegalPageShell } from "@/components/LegalPageShell";
 export const Route = createFileRoute("/conditions-generales")({
   head: () => ({
     meta: [
-      { title: "Conditions générales d'utilisation — GestioPro" },
-      { name: "description", content: "Conditions générales d'utilisation et de vente de GestioPro Auto." },
+      { title: "Conditions générales d'utilisation — GestioAuto" },
+      { name: "description", content: "Conditions générales d'utilisation et de vente de GestioAuto." },
     ],
   }),
   component: TermsPage,
@@ -21,14 +21,14 @@ function TermsPage() {
 
       <h2>1. Objet</h2>
       <p>
-        Les présentes conditions régissent l'accès et l'utilisation de l'application GestioPro Auto, éditée par
+        Les présentes conditions régissent l'accès et l'utilisation de l'application GestioAuto, éditée par
         <strong> [Raison sociale de l'entreprise]</strong>, par toute entreprise cliente ("le Client") et ses
         utilisateurs autorisés.
       </p>
 
       <h2>2. Abonnement et essai</h2>
       <p>
-        GestioPro Auto est proposé sous forme d'abonnement mensuel ou annuel, selon les formules décrites sur la page
+        GestioAuto est proposé sous forme d'abonnement mensuel ou annuel, selon les formules décrites sur la page
         <a href="/#tarifs"> Tarifs</a>. Un accès gratuit limité ("Découverte") peut être proposé sans engagement ni
         moyen de paiement. Le passage à une formule payante n'entraîne aucun prélèvement automatique sans action
         explicite du Client : chaque paiement est initié volontairement par le Client via le moyen proposé dans

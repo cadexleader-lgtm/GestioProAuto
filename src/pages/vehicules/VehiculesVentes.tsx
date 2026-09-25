@@ -61,7 +61,7 @@ export function VehiculesVentes() {
     if (!s || !v || !s.phone) return toast.error("Numéro client manquant");
     sendWhatsApp(
       s.phone,
-      `Bonjour ${s.customer}, merci pour l'achat de votre ${v.brand} ${v.model} d'un montant de ${formatFCFA(s.amount)}. — GestioPro`,
+      `Bonjour ${s.customer}, merci pour l'achat de votre ${v.brand} ${v.model} d'un montant de ${formatFCFA(s.amount)}. — GestioAuto`,
     );
   };
 

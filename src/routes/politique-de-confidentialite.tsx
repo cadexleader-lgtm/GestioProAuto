@@ -4,8 +4,8 @@ import { LegalPageShell } from "@/components/LegalPageShell";
 export const Route = createFileRoute("/politique-de-confidentialite")({
   head: () => ({
     meta: [
-      { title: "Politique de confidentialité — GestioPro" },
-      { name: "description", content: "Comment GestioPro Auto collecte, utilise et protège vos données." },
+      { title: "Politique de confidentialité — GestioAuto" },
+      { name: "description", content: "Comment GestioAuto collecte, utilise et protège vos données." },
     ],
   }),
   component: PrivacyPolicyPage,
@@ -22,7 +22,7 @@ function PrivacyPolicyPage() {
 
       <h2>1. Qui sommes-nous</h2>
       <p>
-        GestioPro Auto est un logiciel de gestion (ERP) destiné aux concessionnaires et loueurs de véhicules, édité
+        GestioAuto est un logiciel de gestion (ERP) destiné aux concessionnaires et loueurs de véhicules, édité
         par <strong>[Raison sociale de l'entreprise]</strong> — voir les <a href="/mentions-legales">mentions
         légales</a> pour les coordonnées complètes.
       </p>
@@ -38,7 +38,7 @@ function PrivacyPolicyPage() {
       <h2>3. Pourquoi nous les utilisons</h2>
       <p>
         Ces données servent exclusivement à faire fonctionner le service pour l'entreprise cliente qui les a saisies :
-        gestion du parc automobile, comptabilité interne, alertes d'échéances, facturation de l'abonnement GestioPro.
+        gestion du parc automobile, comptabilité interne, alertes d'échéances, facturation de l'abonnement GestioAuto.
         Elles ne sont jamais vendues à des tiers.
       </p>
 

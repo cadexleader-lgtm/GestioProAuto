@@ -3,6 +3,6 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Personnel } from "@/pages/cross/Personnel";
 
 export const Route = createFileRoute("/app/personnel")({
-  head: () => ({ meta: [{ title: "Personnel — GestioPro" }] }),
+  head: () => ({ meta: [{ title: "Personnel — GestioAuto" }] }),
   component: () => (<AppShell><Personnel /></AppShell>),
 });

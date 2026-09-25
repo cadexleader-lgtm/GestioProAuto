@@ -131,7 +131,7 @@ export function Settings() {
           </div>
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight truncate">{company?.name || "Paramètres"}</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Centre de gestion de votre espace GestioPro</p>
+            <p className="text-sm text-muted-foreground mt-0.5">Centre de gestion de votre espace GestioAuto</p>
           </div>
         </div>
         {roleInfo && (

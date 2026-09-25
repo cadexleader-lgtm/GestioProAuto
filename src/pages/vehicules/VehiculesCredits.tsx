@@ -239,7 +239,7 @@ export function VehiculesCredits() {
                     <FileText size={14} /> Échéancier PDF
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => {
-                    sendWhatsApp("", `Bonjour ${openDetail.customer}, votre solde de crédit véhicule est de ${formatFCFA(remaining)}. Prochaine échéance le ${openDetail.nextDueDate}. — GestioPro`);
+                    sendWhatsApp("", `Bonjour ${openDetail.customer}, votre solde de crédit véhicule est de ${formatFCFA(remaining)}. Prochaine échéance le ${openDetail.nextDueDate}. — GestioAuto`);
                   }}>
                     <MessageCircle size={14} /> Rappel WhatsApp
                   </Button>

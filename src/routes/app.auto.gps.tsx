@@ -6,6 +6,6 @@ export const Route = createFileRoute("/app/auto/gps")({
   validateSearch: (search: Record<string, unknown>) => ({
     v: typeof search.v === "string" ? search.v : undefined,
   }),
-  head: () => ({ meta: [{ title: "Suivi GPS — GestioPro" }] }),
+  head: () => ({ meta: [{ title: "Suivi GPS — GestioAuto" }] }),
   component: () => (<AppShell><VehiculesGPS /></AppShell>),
 });

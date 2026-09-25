@@ -6,6 +6,8 @@
 
 **Décision stratégique (2026-09-21) : pivot mono-secteur — exécutée (2026-09-24, commit `f1d59e0`).** GestioProAuto n'est plus une app multi-secteur — c'est un **ERP automobile dédié**, exclusivement. Boutique/Électroménager/Restaurant ont été **entièrement supprimés** du code (pas juste masqués — voir roadmap items 15-16) ; seules les tables Postgres correspondantes restent en base, orphelines, en attendant une validation explicite avant suppression. Cible : PME automobiles au Bénin, puis Afrique. Ambition produit : un ERP au niveau de finition et de confiance d'un produit **Apple** — design system unique, pas un "template IA générique". Multi-tenant strict par `company_id`, 3 rôles (`patron` > `manager` > `terrain`).
 
+**Rebranding (2026-09-25) : « GestioPro » / « GestioPro Auto » → « GestioAuto ».** Nouveau domaine : `https://gestioauto.com`. Renommage appliqué à tout ce qui est **visible par l'utilisateur** (UI, PDF générés, filigrane photos, messages WhatsApp, pages légales, métadonnées de routes, `manifest.webmanifest`). **Volontairement conservés en l'état** — identifiants techniques invisibles, renommer casserait la compatibilité avec les données déjà en place chez les utilisateurs existants : clés `localStorage`/`sessionStorage` (`gestiopro.theme`, `gestiopro.plan`, `gestiopro.tour.*`, `gestiopro.pendingCompany`, etc.), préfixes de logs console `[gestiopro]`, noms des fichiers assets (`gestiopro-icon.webp/png`, `gestiopro-logo.svg`), nom du dépôt/package/Worker Cloudflare, et les commentaires de code. Le repo lui-même reste `GestioProAuto` (nom technique).
+
 ## Stack
 
 - Frontend : React 19 + TypeScript, **TanStack Router/Start** (pas React Router), Vite 7, Tailwind 4, shadcn/Radix, react-hook-form + zod, TanStack Query, jsPDF.

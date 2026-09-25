@@ -5,8 +5,8 @@ import { Dashboard } from "@/pages/Dashboard";
 export const Route = createFileRoute("/app/")({
   head: () => ({
     meta: [
-      { title: "Tableau de bord — GestioPro" },
-      { name: "description", content: "Pilotez votre activité depuis le dashboard GestioPro." },
+      { title: "Tableau de bord — GestioAuto" },
+      { name: "description", content: "Pilotez votre activité depuis le dashboard GestioAuto." },
       { name: "robots", content: "noindex" },
     ],
   }),

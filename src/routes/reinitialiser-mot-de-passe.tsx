@@ -11,8 +11,8 @@ import { PasswordInput, PasswordStrengthMeter } from "@/components/PasswordInput
 export const Route = createFileRoute("/reinitialiser-mot-de-passe")({
   head: () => ({
     meta: [
-      { title: "Nouveau mot de passe — GestioPro" },
-      { name: "description", content: "Définissez un nouveau mot de passe pour votre compte GestioPro." },
+      { title: "Nouveau mot de passe — GestioAuto" },
+      { name: "description", content: "Définissez un nouveau mot de passe pour votre compte GestioAuto." },
     ],
   }),
   component: ResetPasswordPage,
@@ -68,8 +68,8 @@ function ResetPasswordPage() {
 
       <div className="relative mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-8 sm:px-6">
         <Link to="/" className="mx-auto mb-8 inline-flex items-center gap-2.5">
-          <img src={logoIcon} alt="GestioPro" className="h-9 w-9 rounded-lg" />
-          <span className="font-display text-xl font-bold">GestioPro</span>
+          <img src={logoIcon} alt="GestioAuto" className="h-9 w-9 rounded-lg" />
+          <span className="font-display text-xl font-bold">GestioAuto</span>
         </Link>
 
         <div className="rounded-2xl border border-border bg-card p-8">
