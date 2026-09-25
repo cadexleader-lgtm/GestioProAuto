@@ -8,6 +8,7 @@ import { MoneyInput } from "@/components/ui/money-input";
 import {
   createPendingPrivateDocument,
   db,
+  useCollection,
   getPrivateDocumentUrl,
   privateDocumentSummary,
   uploadPrivateDocument,
@@ -54,6 +55,32 @@ export function VehicleDialog({
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
+  const [removingArchivedId, setRemovingArchivedId] = useState<string | null>(null);
+
+  // Documents deja archives pour ce vehicule (coffre-fort prive,
+  // uploadPrivateDocument avec entityType "vehicle") — source reelle,
+  // distincte de `form.documents` (champ legacy sur la fiche vehicule,
+  // qui ne contient que d'anciens documents encore en base64 et n'est
+  // jamais mis a jour par le flux d'upload actuel). Sans ca, rouvrir un
+  // vehicule pour le modifier ne montrait aucun des documents deja
+  // ajoutes — risque de double ajout du meme document par confusion.
+  const allDocuments = useCollection("documents");
+  const archivedDocs = vehicle
+    ? allDocuments.filter((d: any) => d.entityType === "vehicle" && d.entityId === vehicle.id)
+    : [];
+
+  const removeArchivedDoc = async (id: string) => {
+    if (removingArchivedId) return;
+    setRemovingArchivedId(id);
+    try {
+      await db.removeConfirmed("documents", id);
+      toast.success("Document supprimé");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Suppression impossible.");
+    } finally {
+      setRemovingArchivedId(null);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -151,7 +178,7 @@ export function VehicleDialog({
     try {
       const a = document.createElement("a");
       a.href = await getPrivateDocumentUrl(d);
-      a.download = d.name;
+      a.download = d.name || d.title || d.reference || "document";
       a.click();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Téléchargement indisponible.");
@@ -420,11 +447,24 @@ export function VehicleDialog({
               </Label>
             </div>
 
-            {(form.documents?.length || 0) === 0 && pendingDocs.length === 0 ? (
+            {(form.documents?.length || 0) === 0 && pendingDocs.length === 0 && archivedDocs.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-4">Aucun document</p>
             ) : (
               <ul className="space-y-2">
-                {form.documents.map((d: any) => (
+                {archivedDocs.map((d: any) => (
+                  <li key={d.id} className="flex items-center gap-3 p-3 rounded-lg border bg-white/60 dark:bg-slate-900/40">
+                    <FileText size={18} className="text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{d.title || d.reference || d.name}</p>
+                      <p className="text-[11px] text-muted-foreground">Déjà archivé · {d.createdAt ? new Date(d.createdAt).toLocaleDateString("fr-FR") : ""}</p>
+                    </div>
+                    <Button type="button" size="icon" variant="ghost" onClick={() => downloadDoc(d)}><Download size={14} /></Button>
+                    <Button type="button" size="icon" variant="ghost" disabled={removingArchivedId === d.id} onClick={() => void removeArchivedDoc(d.id)}>
+                      <Trash2 size={14} className="text-rose-600" />
+                    </Button>
+                  </li>
+                ))}
+                {form.documents?.map((d: any) => (
                   <li key={d.id} className="flex items-center gap-3 p-3 rounded-lg border bg-white/60 dark:bg-slate-900/40">
                     <FileText size={18} className="text-primary shrink-0" />
                     <div className="flex-1 min-w-0">
