@@ -38,8 +38,15 @@ import { Toaster } from "@/components/ui/sonner";
  * `window.location.reload()` récupère un `index.html` et des références de
  * chunks à jour.
  */
+// "reading 'component'" : confirme via client_error_logs — quand le chunk
+// d'une ROUTE (pas un import() applicatif) echoue a se charger, TanStack
+// Router essaie quand meme de lire `.component` sur le resultat (undefined)
+// de l'import rate, avant meme que l'evenement vite:preloadError n'ait pu
+// declencher le reload — meme incident, symptome different, capture le
+// meme instant (a la milliseconde pres) que l'erreur "Failed to fetch
+// dynamically imported module" correspondante dans les logs reels.
 const CHUNK_LOAD_ERROR_RE =
-  /failed to fetch dynamically imported module|error loading dynamically imported module|importing a module script failed|loading chunk [\w.-]+ failed|unable to preload css/i;
+  /failed to fetch dynamically imported module|error loading dynamically imported module|importing a module script failed|loading chunk [\w.-]+ failed|unable to preload css|reading 'component'/i;
 
 function isChunkLoadError(error: unknown): boolean {
   const message =
