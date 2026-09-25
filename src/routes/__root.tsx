@@ -79,6 +79,31 @@ if (typeof window !== "undefined") {
     reportLovableError(event.payload ?? event, { boundary: "vite_preload_error" });
     if (reloadOnceForChunkError()) event.preventDefault();
   });
+
+  // Filet de sécurité contre le crash "Failed to execute 'removeChild'/
+  // 'insertBefore' on 'Node': ... is not a child of this node" — cause
+  // confirmée en prod (client_error_logs) : la traduction automatique de
+  // Chrome mobile modifie le DOM en dehors de React (insère des <font>,
+  // déplace des nœuds texte), donc quand React essaie ensuite de
+  // retirer/insérer un nœud qu'il croit toujours à sa place, l'appel natif
+  // échoue et fait planter tout l'arbre. `notranslate`/`translate="no"`
+  // (voir RootShell + meta "google") réduit le risque en amont, mais ce
+  // patch défensif — pattern standard, largement utilisé par des apps React
+  // en production pour survivre aux extensions qui mutent le DOM — rend les
+  // deux méthodes tolérantes : si le nœud n'est déjà plus à l'endroit que
+  // React croit, on n'essaie pas l'opération native (qui jetterait), on la
+  // no-op silencieusement au lieu de faire planter toute la page.
+  const proto = Node.prototype as any;
+  const nativeRemoveChild = proto.removeChild;
+  proto.removeChild = function (child: Node) {
+    if (child.parentNode !== this) return child;
+    return nativeRemoveChild.call(this, child);
+  };
+  const nativeInsertBefore = proto.insertBefore;
+  proto.insertBefore = function (newNode: Node, referenceNode: Node | null) {
+    if (referenceNode && referenceNode.parentNode !== this) return newNode;
+    return nativeInsertBefore.call(this, newNode, referenceNode);
+  };
 }
 
 function NotFoundComponent() {
@@ -191,6 +216,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#2563eb" },
+      // Cf. commentaire sur CHUNK_LOAD_ERROR_RE plus haut dans ce fichier :
+      // la traduction automatique (Chrome/Google Translate) mute le DOM en
+      // dehors de React, ce qui provoque des crashs "removeChild" aleatoires
+      // sur mobile. `notranslate` demande explicitement de ne pas traduire.
+      { name: "google", content: "notranslate" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
@@ -230,7 +260,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    // lang="fr" (pas "en" — tout le contenu est en français, cf. commentaire
+    // plus haut sur la traduction automatique) ; `translate="no"` +
+    // `notranslate` demandent explicitement à Chrome/Google Translate de ne
+    // pas toucher au DOM de la page.
+    <html lang="fr" translate="no" className="notranslate" suppressHydrationWarning>
       <head>
         {/* Anti-flash : applique .dark avant l'hydratation React, sinon flash clair→sombre au chargement. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
