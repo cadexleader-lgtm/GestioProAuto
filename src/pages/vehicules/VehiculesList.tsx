@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,8 @@ import { toast } from "sonner";
 import { formatFCFA } from "@/lib/format";
 import { vehicleCost } from "@/lib/demo-data";
 import { db, useCollection, uploadVehiclePhoto } from "@/lib/demo-store";
-import { VehicleDialog } from "@/components/forms/SectorDialogs";
+import { VehicleDialog, VEHICLE_DRAFT_KEY } from "@/components/forms/SectorDialogs";
+import { loadDraft } from "@/lib/form-draft";
 import {
   RentVehicleDialog, MaintenanceVehicleDialog,
 } from "@/components/vehicles/VehicleActionsDialogs";
@@ -37,6 +38,16 @@ export function VehiculesList() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [openAdd, setOpenAdd] = useState(false);
+
+  // Si la page (et donc le dialogue d'ajout) a ete rechargee malgre elle
+  // pendant une saisie en cours — cas frequent sur mobile en manque de
+  // memoire au moment d'ouvrir le selecteur de fichiers — le brouillon
+  // survit en localStorage mais le dialogue, lui, se referme forcement
+  // (son etat React repart de zero). On le rouvre automatiquement au lieu
+  // de laisser l'utilisateur redecouvrir son brouillon par hasard.
+  useEffect(() => {
+    if (loadDraft(VEHICLE_DRAFT_KEY)) setOpenAdd(true);
+  }, []);
   const [editFor, setEditFor] = useState<Vehicle | null>(null);
   const [rentFor, setRentFor] = useState<Vehicle | null>(null);
   const [saleVehicle, setSaleVehicle] = useState<Vehicle | null>(null);

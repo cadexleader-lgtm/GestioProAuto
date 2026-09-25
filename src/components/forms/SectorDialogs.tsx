@@ -25,7 +25,7 @@ import { withWakeLock } from "@/lib/wake-lock";
 import { Progress } from "@/components/ui/progress";
 
 const MAX_GALLERY_PHOTOS = 12;
-const VEHICLE_DRAFT_KEY = "gestiopro.draft.newVehicle";
+export const VEHICLE_DRAFT_KEY = "gestiopro.draft.newVehicle";
 
 interface GalleryItem { key: string; url: string; file?: File }
 
