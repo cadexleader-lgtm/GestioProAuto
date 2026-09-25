@@ -4,7 +4,7 @@
  * Persisté dans la table `company_settings` (une ligne singleton `profile`).
  */
 import { useMemo } from "react";
-import { useCollection, db } from "./demo-store";
+import { useCollection, db, setCompanyProfile } from "./demo-store";
 
 export interface CompanyProfile {
   /** Identité */
@@ -81,7 +81,16 @@ export function getCompanyProfile(): CompanyProfile {
   return { ...EMPTY_PROFILE, ...(row ?? {}) };
 }
 
-export function saveCompanyProfile(patch: Partial<CompanyProfile>) {
+/** Enregistre le profil via la RPC `set_company_profile` (company_settings
+ * est écriture-RPC-only, voir 20260925100000_add_set_company_profile_rpc.sql
+ * — un ancien `db.upsert("settings", ...)` direct échouait silencieusement
+ * côté serveur depuis le durcissement des feature flags : la modification
+ * semblait enregistrée localement mais n'atteignait jamais la base, invisible
+ * sur un autre appareil ou après déconnexion). Doit être attendue : contrairement
+ * à l'ancien appel synchrone optimiste, un échec (droits insuffisants, réseau)
+ * est maintenant remonté à l'appelant au lieu d'être masqué. */
+export async function saveCompanyProfile(patch: Partial<CompanyProfile>): Promise<CompanyProfile> {
   const next = { ...getCompanyProfile(), ...patch, id: PROFILE_ID };
-  db.upsert("settings", next as any);
+  const saved = await setCompanyProfile(next);
+  return { ...EMPTY_PROFILE, ...saved } as CompanyProfile;
 }

@@ -1342,6 +1342,29 @@ export async function setFeatureFlags(flags: Record<string, boolean>) {
   return setting;
 }
 
+/** Enregistre le profil "Identite & documents" (logo, signature, cachet,
+ * coordonnees, articles de contrats) via une RPC dediee -- company_settings
+ * est ecriture-RPC-only depuis le durcissement des feature flags, voir
+ * 20260925100000_add_set_company_profile_rpc.sql. */
+export async function setCompanyProfile(profile: Record<string, unknown>) {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+
+  const { data: row, error } = await sb.rpc("set_company_profile", {
+    p_company_id: companyId,
+    p_profile: profile,
+  });
+
+  if (error) throw new Error(rpcErrorMessage(error, "Le profil de l'entreprise n'a pas pu être enregistré."));
+
+  const setting = { id: row.id, ...(row.data ?? {}) };
+  db.upsertLocal("settings", setting);
+  return setting;
+}
+
+export function getActiveCompanyId(): string | null {
+  return companyId;
+}
+
 export async function startRental(
   payload: Omit<Rental, "id"> & { rentalId: string; idempotencyKey: string; currency: string; method: string },
 ) {

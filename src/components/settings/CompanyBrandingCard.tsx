@@ -74,17 +74,39 @@ export function CompanyBrandingCard() {
   const saved = useCompanyProfile();
   const [p, setP] = useState<CompanyProfile>(saved);
   const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
   const logoInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => { if (!dirty) setP(saved); }, [saved, dirty]);
 
   const set = (patch: Partial<CompanyProfile>) => { setP((prev) => ({ ...prev, ...patch })); setDirty(true); };
 
-  const save = () => { saveCompanyProfile(p); setDirty(false); toast.success("Identité de l'entreprise enregistrée"); };
+  const save = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await saveCompanyProfile(p);
+      setDirty(false);
+      toast.success("Identité de l'entreprise enregistrée");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Échec de l'enregistrement");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const preview = async () => {
-    saveCompanyProfile(p);
-    setDirty(false);
+    if (saving) return;
+    setSaving(true);
+    try {
+      await saveCompanyProfile(p);
+      setDirty(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Échec de l'enregistrement");
+      setSaving(false);
+      return;
+    }
+    setSaving(false);
     const { pdfInvoice } = await import("@/lib/pdf/templates");
     pdfInvoice({
       reference: "APERCU-001",
@@ -109,11 +131,11 @@ export function CompanyBrandingCard() {
       <CardHeader className="flex flex-row items-start justify-between gap-4">
         <CardTitle className="flex items-center gap-2"><Building2 size={18} /> Identité & documents</CardTitle>
         <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" className="rounded-xl gap-1.5" onClick={preview}>
+          <Button type="button" variant="outline" size="sm" className="rounded-xl gap-1.5" onClick={preview} disabled={saving}>
             <FileText size={14} /> Aperçu PDF
           </Button>
-          <Button type="button" size="sm" className="rounded-xl gap-1.5" onClick={save} disabled={!dirty}>
-            <Save size={14} /> Enregistrer
+          <Button type="button" size="sm" className="rounded-xl gap-1.5" onClick={save} disabled={!dirty || saving}>
+            <Save size={14} /> {saving ? "Enregistrement..." : "Enregistrer"}
           </Button>
         </div>
       </CardHeader>
