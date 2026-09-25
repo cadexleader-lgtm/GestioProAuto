@@ -106,12 +106,10 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  const retried = useRef(false);
+  const attempts = useRef(0);
 
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
-    if (retried.current) return;
-    retried.current = true;
 
     if (isChunkLoadError(error)) {
       // Chunk de route obsolète ou coupure réseau pendant le téléchargement
@@ -122,17 +120,23 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
       return;
     }
 
-    // Reprise automatique silencieuse à usage limité : un unique essai, pour
-    // les vrais accidents transitoires (ex. un `loader`/une requête réseau
-    // ponctuelle qui échoue une fois). Ne masque pas l'erreur : elle est déjà
-    // journalisée ci-dessus (console.error + reportLovableError) avant toute
-    // tentative de reprise.
+    // Reprise automatique silencieuse, avec délai croissant : réseau mobile
+    // capricieux (cible Bénin/Afrique) — une requête qui échoue une fois peut
+    // très bien réussir 1 à 2 secondes plus tard sans qu'il s'agisse d'un vrai
+    // chunk obsolète. 2 essais max (400 ms puis 1500 ms). Ne masque pas
+    // l'erreur : elle est déjà journalisée ci-dessus (console.error +
+    // reportLovableError) avant toute tentative de reprise.
+    if (attempts.current >= 2) return;
+    const delay = attempts.current === 0 ? 400 : 1500;
+    attempts.current += 1;
     const t = setTimeout(() => {
       router.invalidate();
       reset();
-    }, 400);
+    }, delay);
     return () => clearTimeout(t);
   }, [error, router, reset]);
+
+  const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -143,6 +147,14 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
         <p className="mt-2 text-sm text-muted-foreground">
           Une erreur est survenue. Réessayez, la reprise est automatique dans la plupart des cas.
         </p>
+        {/* Diagnostic temporaire : permet à un utilisateur de capturer le
+            message exact (capture d'écran) en cas de récidive, plutôt que de
+            deviner la cause à distance. Discret (replié), pas de stack trace
+            brute affichée d'emblée. */}
+        <details className="mt-3 text-left">
+          <summary className="cursor-pointer text-xs text-muted-foreground/70 text-center">Détails techniques</summary>
+          <pre className="mt-2 max-h-32 overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted p-2 text-[11px] text-muted-foreground">{detail}</pre>
+        </details>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
