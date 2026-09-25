@@ -216,16 +216,16 @@ export function TeamCard() {
             </div>
           ) : (
             <div className="mt-2 space-y-2 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/60 dark:bg-emerald-950/30 p-4">
-              <p className="text-sm text-emerald-900">
+              <p className="text-sm text-emerald-900 dark:text-emerald-200">
                 Compte créé pour <strong>{lastCreated.email}</strong>. Communiquez ce mot de passe temporaire :
               </p>
               <div className="flex items-center gap-2">
-                <code className="flex-1 rounded-lg bg-white border px-3 py-2 text-sm font-mono">{lastCreated.tempPassword}</code>
+                <code className="flex-1 rounded-lg bg-background text-foreground border px-3 py-2 text-sm font-mono select-all break-all">{lastCreated.tempPassword}</code>
                 <Button type="button" size="icon" variant="outline" onClick={() => void copyPassword()}>
                   {copied ? <Check size={16} /> : <Copy size={16} />}
                 </Button>
               </div>
-              <p className="text-xs text-emerald-800/80">Ce mot de passe ne sera plus affiché après fermeture.</p>
+              <p className="text-xs text-emerald-800/80 dark:text-emerald-300/80">Ce mot de passe ne sera plus affiché après fermeture.</p>
             </div>
           )}
 

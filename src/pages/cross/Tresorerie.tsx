@@ -193,10 +193,10 @@ export function Tresorerie() {
                     {m.type === "in" ? <ArrowDownLeft size={17} /> : <ArrowUpRight size={17} />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate inline-flex items-center gap-1.5">
-                      {m.label}
+                    <p className="font-semibold text-sm flex items-center gap-1.5 min-w-0">
+                      <span className="truncate">{m.label}</span>
                       {m.sourceType === "manual_cash_transfer" && (
-                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0 font-normal">Virement interne</Badge>
+                        <Badge variant="secondary" className="shrink-0 text-[9px] px-1.5 py-0 font-normal">Virement interne</Badge>
                       )}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
@@ -204,7 +204,7 @@ export function Tresorerie() {
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className={`font-bold text-sm ${m.type === "in" ? "text-emerald-700" : "text-rose-700"}`}>
+                    <p className={`font-bold text-sm tabular-nums ${m.type === "in" ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"}`}>
                       {m.type === "in" ? "+" : "−"}{formatFCFA(m.amount)}
                     </p>
                     <p className="text-[10px] text-muted-foreground tabular-nums">Solde {formatFCFA(m.running)}</p>
