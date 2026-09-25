@@ -1409,7 +1409,13 @@ export async function startRental(
     p_currency: payload.currency,
     p_method: payload.method,
     p_idempotency_key: payload.idempotencyKey,
-    p_metadata: { notes: payload.notes ?? "" },
+    // La signature electronique du locataire (capturee dans le dialogue de
+    // location) transite via metadata plutot qu'un nouveau parametre RPC —
+    // record_vehicle_rental fusionne deja p_metadata dans la ligne stockee
+    // (v_rental_data := COALESCE(p_metadata, '{}') || jsonb_build_object(...)),
+    // donc `signatures` ressort tel quel comme champ de premier niveau du
+    // rental sans migration necessaire.
+    p_metadata: { notes: payload.notes ?? "", signatures: payload.signatures },
   });
 
   if (error) {
@@ -1431,7 +1437,7 @@ export async function startRental(
       ledgerEntryId: data.ledger_entry_id,
     } as CashMovement);
   }
-  return data;
+  return { ...data, rental };
 }
 
 export async function recordRentalPayment(

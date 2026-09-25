@@ -15,6 +15,8 @@ import {
 } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
 import type { Vehicle, VehicleCredit, Rental } from "@/lib/demo-data";
+import { SignaturePad } from "@/components/ui/signature-pad";
+import { generateRentalContract } from "@/lib/vehicle-pdf";
 
 const glass = "backdrop-blur-xl bg-white/85 dark:bg-slate-900/80 border border-white/40 dark:border-white/10";
 
@@ -33,12 +35,14 @@ export function RentVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
   const today = new Date().toISOString().slice(0, 10);
   const [f, setF] = useState<any>({});
+  const [clientSignature, setClientSignature] = useState<string | undefined>(undefined);
   useEffect(() => {
     if (open) {
       setStep(0);
       setSubmitting(false);
       setRentalId(crypto.randomUUID());
       setIdempotencyKey(crypto.randomUUID());
+      setClientSignature(undefined);
       setF({
         customer: "", phone: "", address: "", idDocument: "", licenseNumber: "",
         startDate: today, endDate: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
@@ -74,13 +78,15 @@ export function RentVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
     if (!f.customer) return toast.error("Nom du client requis");
     setSubmitting(true);
     try {
-      await startRental({
+      const signatures = clientSignature ? { client: clientSignature, signedAt: new Date().toISOString() } : undefined;
+      const result = await startRental({
         vehicleId: vehicle.id,
         customer: f.customer, phone: f.phone, address: f.address,
         idDocument: f.idDocument, licenseNumber: f.licenseNumber,
         startDate: f.startDate, endDate: f.endDate, startTime: f.startTime, endTime: f.endTime,
         dailyRate: f.dailyRate, deposit: f.deposit, advance: f.advance,
         totalAmount: total, remaining, notes: f.notes,
+        signatures,
         status: "active",
         rentalId,
         idempotencyKey,
@@ -89,6 +95,16 @@ export function RentVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
       });
       toast.success(`${vehicle.brand} ${vehicle.model} loué à ${f.customer}`);
       onOpenChange(false);
+
+      // Contrat genere et archive directement dans le coffre-fort prive (page
+      // Documents) des la validation — plus besoin de revenir cliquer "PDF"
+      // separement sur la page Locations pour que le document apparaisse.
+      if (result.rental) {
+        void generateRentalContract(result.rental, vehicle).catch((error) => {
+          console.error("[gestiopro] rental contract generation failed", error);
+          toast.error("Location enregistrée, le contrat PDF n'a pas pu être généré automatiquement.");
+        });
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "La location n'a pas pu être enregistrée.");
     } finally {
@@ -218,6 +234,16 @@ export function RentVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
                 </div>
               </div>
               {f.notes && <p className="text-xs text-muted-foreground italic">{f.notes}</p>}
+
+              <SignaturePad
+                label="Signature du locataire"
+                value={clientSignature}
+                onChange={setClientSignature}
+                height={130}
+              />
+              <p className="text-[11px] text-muted-foreground -mt-1">
+                Le client signe ici avant confirmation — la signature est intégrée automatiquement au contrat de location, généré et archivé dès la validation.
+              </p>
             </div>
           )}
         </div>
