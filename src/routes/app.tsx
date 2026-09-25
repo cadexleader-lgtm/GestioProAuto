@@ -12,6 +12,11 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/app")({
   ssr: false,
+  // Espace authentifié : aucune valeur pour un moteur de recherche (contenu
+  // par entreprise, jamais le même d'un visiteur à l'autre) — noindex évite
+  // de gaspiller le budget de crawl et empêche une page vide/redirection de
+  // finir indexée par erreur. Hérité par toutes les routes /app/* enfants.
+  head: () => ({ meta: [{ name: "robots", content: "noindex, nofollow" }] }),
   beforeLoad: async ({ location }) => {
     // `getSession()` lit la session deja persistee localement (pas d'aller-
     // retour reseau, contrairement a `getUser()` qui revalide le JWT aupres

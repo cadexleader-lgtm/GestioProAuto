@@ -13,6 +13,7 @@ export const Route = createFileRoute("/reinitialiser-mot-de-passe")({
     meta: [
       { title: "Nouveau mot de passe — GestioAuto" },
       { name: "description", content: "Définissez un nouveau mot de passe pour votre compte GestioAuto." },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: ResetPasswordPage,

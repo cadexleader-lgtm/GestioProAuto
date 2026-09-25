@@ -9,16 +9,48 @@ import logoIcon from "@/assets/gestiopro-icon.webp";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 
+const HOME_TITLE = "GestioAuto — ERP gestion parc automobile (Bénin & Afrique)";
+const HOME_DESCRIPTION = "Logiciel ERP tout-en-un pour concessionnaires et loueurs de véhicules au Bénin et en Afrique : ventes, crédit, location, maintenance, documents et finances.";
+const HOME_KEYWORDS = "logiciel gestion parc automobile, ERP concession auto, logiciel concessionnaire automobile Bénin, gestion vente véhicule occasion, logiciel location voiture Bénin, gestion garage automobile, ERP PME automobile Afrique, GestioAuto";
+
+const homeStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "GestioAuto",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  description: HOME_DESCRIPTION,
+  url: "https://gestioauto.com",
+  image: "https://gestioauto.com/og-image.png",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "XOF",
+    description: "Formule Découverte gratuite ; formules payantes à partir de 15 000 FCFA/mois.",
+  },
+  provider: {
+    "@type": "Organization",
+    name: "GestioAuto",
+    url: "https://gestioauto.com",
+  },
+  areaServed: ["Bénin", "Afrique de l'Ouest"],
+};
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "GestioAuto — L'ERP des concessionnaires et loueurs de véhicules africains" },
-      { name: "description", content: "GestioAuto : la plateforme tout-en-un pour gérer ventes, crédits, locations, maintenance, clients, fournisseurs, personnel et finances de votre parc automobile." },
-      { property: "og:title", content: "GestioAuto — L'ERP des concessionnaires et loueurs de véhicules africains" },
-      { property: "og:description", content: "GestioAuto : la plateforme tout-en-un pour gérer ventes, crédits, locations, maintenance, clients, fournisseurs, personnel et finances de votre parc automobile." },
+      { title: HOME_TITLE },
+      { name: "description", content: HOME_DESCRIPTION },
+      { name: "keywords", content: HOME_KEYWORDS },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: HOME_TITLE },
+      { property: "og:description", content: HOME_DESCRIPTION },
       { property: "og:type", content: "website" },
     ],
     links: [{ rel: "canonical", href: "/" }],
+    scripts: [
+      { type: "application/ld+json", children: JSON.stringify(homeStructuredData) },
+    ],
   }),
   component: LandingPage,
 });
