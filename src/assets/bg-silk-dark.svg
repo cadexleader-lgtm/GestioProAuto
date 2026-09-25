@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
   <style>
-    .f{transform-box:fill-box;transform-origin:center;animation:ease-in-out infinite alternate}
+    .f{transform-box:fill-box;transform-origin:center;animation:ease-in-out infinite alternate;will-change:transform,opacity}
     .light{animation-name:light;animation-duration:14s}
     .w1{animation-name:w1;animation-duration:16s}
     .w2{animation-name:w2;animation-duration:20s}
@@ -11,7 +11,7 @@
     @keyframes w2{to{transform:translate(50px,20px) scaleY(.94)}}
     @keyframes w3{to{transform:translate(-60px,15px) scaleX(1.05)}}
     @keyframes edge{from{opacity:.3}to{opacity:.75}}
-    @media (prefers-reduced-motion:reduce){.f{animation:none}}
+    @media (max-width:640px),(prefers-reduced-motion:reduce){.f{animation:none}}
   </style>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
