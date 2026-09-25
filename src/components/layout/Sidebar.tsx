@@ -43,7 +43,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   // Mobile: expanded when isOpen. Desktop: expanded on hover.
   const expanded = isOpen || hovered;
 
-  const renderItem = (item: { href: string; iconName: string; label: string }) => {
+  const renderItem = (item: { href: string; iconName: string; label: string; tourId?: string }) => {
     const Icon = ICON_MAP[item.iconName] ?? LayoutDashboard;
     const active = location === item.href;
     return (
@@ -53,6 +53,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         onClick={() => setIsOpen(false)}
         title={!expanded ? item.label : undefined}
         aria-current={active ? "page" : undefined}
+        data-tour={item.tourId}
         className={cn(
           "group relative flex items-center gap-3 rounded-xl h-10 px-2 transition-all duration-200",
           active
@@ -139,7 +140,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2.5 py-2 custom-scrollbar space-y-0.5">
+        <nav data-tour="sidebar-nav" className="flex-1 overflow-y-auto overflow-x-hidden px-2.5 py-2 custom-scrollbar space-y-0.5">
           {sectionLabel("Métier")}
           {filterModulesByFlags(sub.metierModules, flags).map(renderItem)}
 
@@ -147,7 +148,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           {filterModulesByFlags(getCrossModules(company?.subSectorId), flags).map(renderItem)}
 
           {sectionLabel("Entreprise")}
-          {renderItem({ href: "/app/parametres", iconName: "Settings", label: "Paramètres" })}
+          {renderItem({ href: "/app/parametres", iconName: "Settings", label: "Paramètres", tourId: "sidebar-settings" })}
         </nav>
 
         {/* Incitation à l'abonnement — uniquement en formule gratuite, et

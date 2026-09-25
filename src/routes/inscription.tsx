@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import logoIcon from "@/assets/gestiopro-icon.webp";
 import { createCompany } from "@/lib/tenant";
 import { supabase } from "@/integrations/supabase/client";
+import { markSignupForTour } from "@/lib/onboarding";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { PasswordInput, PasswordStrengthMeter } from "@/components/PasswordInput";
@@ -46,6 +47,7 @@ function SignupPage() {
 
   const handleGoogle = async () => {
     // OAuth Google gere directement par Supabase Auth (pas de broker Lovable).
+    markSignupForTour();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: window.location.origin + "/app" },
@@ -75,6 +77,8 @@ function SignupPage() {
       toast.error(error.message);
       return;
     }
+
+    markSignupForTour();
 
     const pending = {
       name: form.company,

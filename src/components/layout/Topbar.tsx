@@ -99,7 +99,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 h-9 pl-1 pr-2 rounded-full border border-border bg-card hover:border-primary/50 transition">
+            <button data-tour="user-avatar" className="flex items-center gap-2 h-9 pl-1 pr-2 rounded-full border border-border bg-card hover:border-primary/50 transition">
               <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center text-xs overflow-hidden shrink-0">
                 {profile.logoDataUrl
                   ? <img src={profile.logoDataUrl} alt="" className="w-full h-full object-cover" />

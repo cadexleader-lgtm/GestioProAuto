@@ -132,7 +132,7 @@ export function TopbarSearch() {
   return (
     <Popover open={open && trimmed.length > 0} onOpenChange={(o) => setOpen(o)}>
       <PopoverAnchor asChild>
-        <div className="h-9 items-center px-3 bg-card rounded-lg border border-border shadow-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all max-w-md w-full sm:w-64 hidden sm:flex">
+        <div data-tour="topbar-search" className="h-9 items-center px-3 bg-card rounded-lg border border-border shadow-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all max-w-md w-full sm:w-64 hidden sm:flex">
           <Search size={18} className="text-muted-foreground shrink-0" />
           <input
             value={query}

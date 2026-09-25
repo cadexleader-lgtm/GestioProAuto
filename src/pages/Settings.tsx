@@ -1,4 +1,4 @@
-import { useSearch } from "@tanstack/react-router";
+import { useSearch, useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -29,6 +29,8 @@ import { FEATURE_FLAGS, useFeatureFlags } from "@/lib/feature-flags";
 import { SlidersHorizontal, CreditCard, Smartphone, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PLAN_NAMES, type PlanId, getCurrentPlan, setCurrentPlanStorage } from "@/lib/subscription";
+import { relaunchDashboardTour } from "@/lib/onboarding";
+import { PlayCircle } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -356,6 +358,7 @@ export function Settings() {
 
 function PreferencesSection() {
   const role = useRole();
+  const navigate = useNavigate();
   const [sound, setSound] = useState(isSoundEnabled());
   const [theme, setThemeState] = useTheme();
   return (
@@ -404,6 +407,25 @@ function PreferencesSection() {
             </div>
           </div>
           <Switch checked={sound} onCheckedChange={(v) => { setSound(v); setSoundEnabled(v); }} />
+        </div>
+
+        <div className="flex items-center justify-between rounded-2xl border border-border p-4">
+          <div className="flex items-start gap-3">
+            <PlayCircle size={20} className="text-primary mt-0.5"/>
+            <div>
+              <p className="font-semibold text-sm">Tutoriel de découverte</p>
+              <p className="text-xs text-muted-foreground">Revoir la visite guidée du tableau de bord (menu, recherche, notifications…).</p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-xl gap-1.5 shrink-0"
+            onClick={() => { relaunchDashboardTour(); navigate({ to: "/app" }); }}
+          >
+            Relancer
+          </Button>
         </div>
       </CardContent>
     </Card>

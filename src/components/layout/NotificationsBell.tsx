@@ -57,6 +57,7 @@ export function NotificationsBell() {
     <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) markAllRead(); }}>
       <PopoverTrigger asChild>
         <button
+          data-tour="notifications-bell"
           className="relative p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
           title="Notifications"
         >

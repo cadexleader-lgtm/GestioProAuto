@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatFCFA } from "@/lib/format";
 import { Link } from "@tanstack/react-router";
@@ -10,6 +10,8 @@ import {
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useRole } from "@/lib/roles";
 import { VEHICLE_STATUS } from "@/lib/vehicle-status";
+import { ProductTour } from "@/components/onboarding/ProductTour";
+import { DASHBOARD_TOUR_STEPS, shouldStartDashboardTour, markDashboardTourDone } from "@/lib/onboarding";
 
 function businessDateKey(value: string | Date) {
   // Date-only values are business dates: preserve them rather than parsing in UTC.
@@ -20,6 +22,15 @@ function businessDateKey(value: string | Date) {
 
 export function VehiculesDashboard() {
   const role = useRole();
+  const [tourOpen, setTourOpen] = useState(false);
+  useEffect(() => {
+    if (shouldStartDashboardTour()) {
+      // Laisse le temps au premier rendu (sidebar/topbar/KPI) de se poser
+      // avant de mesurer leurs positions.
+      const t = setTimeout(() => setTourOpen(true), 400);
+      return () => clearTimeout(t);
+    }
+  }, []);
   const vehicles = useCollection("vehicles");
   const rentals = useCollection("rentals");
   const sales = useCollection("vehicleSales");
@@ -149,13 +160,19 @@ export function VehiculesDashboard() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {tourOpen && (
+        <ProductTour
+          steps={DASHBOARD_TOUR_STEPS}
+          onFinish={() => { markDashboardTourDone(); setTourOpen(false); }}
+        />
+      )}
       <div>
         <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Tableau de bord — Véhicules</h1>
         <p className="text-muted-foreground mt-1">Ce que le patron regarde en premier.</p>
       </div>
 
       {/* KPIs prioritaires */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div data-tour="dashboard-kpis" className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <Kpi icon={<DollarSign className="text-emerald-600" />} label="CA signé du mois" value={formatFCFA(stats.saleRevenueMonth)} tone="emerald" />
         <Kpi icon={<ArrowDownLeft className="text-blue-600" />} label="Encaissements du mois" value={formatFCFA(stats.cashInMonth)} tone="blue" />
         <Kpi icon={<ArrowUpRight className="text-rose-600" />} label="Décaissements du mois" value={formatFCFA(stats.cashOutMonth)} tone="rose" />
