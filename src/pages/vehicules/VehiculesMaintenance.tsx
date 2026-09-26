@@ -8,12 +8,16 @@ import { MoneyInput } from "@/components/ui/money-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCollection, completeVehicleMaintenance, updateVehicleMaintenance } from "@/lib/demo-store";
+import {
+  useCollection, completeVehicleMaintenance, updateVehicleMaintenance,
+  addMaintenanceSchedule, markMaintenanceScheduleDone, removeMaintenanceSchedule,
+} from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { Wrench, Plus, AlertTriangle, Clock, CheckCircle2, TrendingDown, Pencil } from "lucide-react";
+import { Wrench, Plus, AlertTriangle, Clock, CheckCircle2, TrendingDown, Pencil, RotateCcw, Trash2, CalendarClock } from "lucide-react";
 import { MaintenanceVehicleDialog } from "@/components/vehicles/VehicleActionsDialogs";
 import { toast } from "sonner";
 import type { VehicleMaintenance } from "@/lib/demo-store";
+import type { VehicleMaintenanceSchedule } from "@/lib/demo-data";
 import { MAINTENANCE_STATUS as STATUS } from "@/lib/vehicle-status";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
 import { useFeatureFlags } from "@/lib/feature-flags";
@@ -31,6 +35,34 @@ export function VehiculesMaintenance() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
+  const [openSchedule, setOpenSchedule] = useState(false);
+  const [scheduleForm, setScheduleForm] = useState({ vehicleId: "", label: "Vidange", frequencyMonths: 3, startDate: new Date().toISOString().slice(0, 10) });
+  const [savingSchedule, setSavingSchedule] = useState(false);
+
+  const schedules = useMemo(() => {
+    return vehicles
+      .flatMap((v) => (v.maintenanceSchedules ?? []).map((s) => ({ ...s, vehicle: v })))
+      .sort((a, b) => +new Date(a.nextDueDate) - +new Date(b.nextDueDate));
+  }, [vehicles]);
+
+  const saveSchedule = () => {
+    if (!scheduleForm.vehicleId) return toast.error("Choisissez un véhicule");
+    if (!scheduleForm.label.trim()) return toast.error("Renseignez le type d'entretien");
+    if (savingSchedule) return;
+    setSavingSchedule(true);
+    try {
+      addMaintenanceSchedule(scheduleForm.vehicleId, {
+        label: scheduleForm.label.trim(),
+        frequencyMonths: scheduleForm.frequencyMonths,
+        startDate: scheduleForm.startDate,
+      });
+      toast.success("Entretien récurrent ajouté");
+      setOpenSchedule(false);
+      setScheduleForm({ vehicleId: "", label: "Vidange", frequencyMonths: 3, startDate: new Date().toISOString().slice(0, 10) });
+    } finally {
+      setSavingSchedule(false);
+    }
+  };
 
   const stats = useMemo(() => {
     const active = items.filter((m) => m.status !== "done").length;
@@ -153,6 +185,58 @@ export function VehiculesMaintenance() {
         <Kpi icon={<AlertTriangle className="text-orange-600" size={18} />} label="Attente pièces" value={String(items.filter((m) => m.status === "parts_wait").length)} />
       </div>
 
+      <Card className="shadow-sm">
+        <CardContent className="p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <h2 className="font-display font-bold text-sm sm:text-base flex items-center gap-2">
+              <CalendarClock size={16} className="text-primary" /> Entretiens récurrents
+            </h2>
+            <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setOpenSchedule(true)}>
+              <Plus size={13} /> Ajouter
+            </Button>
+          </div>
+          {schedules.length === 0 ? (
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Aucun entretien récurrent programmé (vidange, freins…). Ajoutez-en un pour être alerté avant l'échéance.
+            </p>
+          ) : (
+            <div className="grid gap-1.5">
+              {schedules.map((s) => {
+                const days = Math.round((+new Date(s.nextDueDate) - Date.now()) / 86400000);
+                const overdue = days < 0;
+                const soon = !overdue && days <= 30;
+                return (
+                  <div
+                    key={s.id}
+                    className={`flex items-center gap-2 sm:gap-3 rounded-xl border p-2.5 sm:p-3 ${
+                      overdue ? "border-rose-300 bg-rose-50/60 dark:border-rose-800/40 dark:bg-rose-950/20"
+                        : soon ? "border-amber-300 bg-amber-50/60 dark:border-amber-800/40 dark:bg-amber-950/20"
+                        : "border-border"
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm font-medium truncate">
+                        {s.label} — {s.vehicle.brand} {s.vehicle.model} <span className="text-muted-foreground">({s.vehicle.plate})</span>
+                      </p>
+                      <p className={`text-[11px] sm:text-xs ${overdue ? "text-rose-700 dark:text-rose-400" : soon ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground"}`}>
+                        Tous les {s.frequencyMonths} mois · prochaine échéance {new Date(s.nextDueDate).toLocaleDateString("fr-FR")}
+                        {overdue ? " · en retard" : soon ? ` · dans ${days}j` : ""}
+                      </p>
+                    </div>
+                    <Button size="sm" variant="outline" className="h-8 text-xs shrink-0" onClick={() => { markMaintenanceScheduleDone(s.vehicle.id, s.id); toast.success("Marqué comme fait — prochaine échéance recalculée"); }}>
+                      <RotateCcw size={13} /> Fait
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0 text-muted-foreground" onClick={() => removeMaintenanceSchedule(s.vehicle.id, s.id)}>
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative flex-1 max-w-md">
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Motif, garage, véhicule..." />
@@ -259,6 +343,56 @@ export function VehiculesMaintenance() {
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setEditingId(null)} disabled={!!updatingId}>Annuler</Button>
             <Button onClick={() => void saveEdit()} disabled={!!updatingId}>{updatingId === editingId ? "Enregistrement..." : "Enregistrer"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openSchedule} onOpenChange={setOpenSchedule}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Ajouter un entretien récurrent</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div>
+              <Label>Véhicule</Label>
+              <Select value={scheduleForm.vehicleId} onValueChange={(v) => setScheduleForm({ ...scheduleForm, vehicleId: v })}>
+                <SelectTrigger><SelectValue placeholder="Choisir un véhicule" /></SelectTrigger>
+                <SelectContent>
+                  {vehicles.filter((v) => v.status !== "sold").map((v) => (
+                    <SelectItem key={v.id} value={v.id}>{v.brand} {v.model} — {v.plate}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Type d'entretien</Label>
+              <Select value={scheduleForm.label} onValueChange={(v) => setScheduleForm({ ...scheduleForm, label: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Vidange">Vidange</SelectItem>
+                  <SelectItem value="Freins">Freins</SelectItem>
+                  <SelectItem value="Filtres">Filtres</SelectItem>
+                  <SelectItem value="Courroie de distribution">Courroie de distribution</SelectItem>
+                  <SelectItem value="Pneus">Pneus</SelectItem>
+                  <SelectItem value="Autre">Autre</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Fréquence (mois)</Label>
+                <Input type="number" min={1} value={scheduleForm.frequencyMonths} onChange={(e) => setScheduleForm({ ...scheduleForm, frequencyMonths: Math.max(1, Number(e.target.value) || 1) })} />
+              </div>
+              <div>
+                <Label>Dernier fait le</Label>
+                <Input type="date" value={scheduleForm.startDate} onChange={(e) => setScheduleForm({ ...scheduleForm, startDate: e.target.value })} />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Prochaine échéance calculée : {new Date(new Date(scheduleForm.startDate).setMonth(new Date(scheduleForm.startDate).getMonth() + scheduleForm.frequencyMonths)).toLocaleDateString("fr-FR")}
+            </p>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setOpenSchedule(false)} disabled={savingSchedule}>Annuler</Button>
+            <Button onClick={saveSchedule} disabled={savingSchedule}>{savingSchedule ? "Ajout..." : "Ajouter"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

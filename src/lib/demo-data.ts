@@ -144,7 +144,7 @@ export interface Vehicle {
   photo: string;
   /** Photo de couverture — 1re photo de la galerie, utilisée partout où une vignette véhicule s'affiche. */
   image?: string;
-  /** Photos supplémentaires (jusqu'à 7, en plus de la couverture — 8 au total). */
+  /** Photos supplémentaires (jusqu'à 9, en plus de la couverture — 10 au total). */
   photos?: string[];
   /** Vidéo de présentation (optionnelle). */
   video?: string;
@@ -171,6 +171,17 @@ export interface Vehicle {
     recordedAt: string;
     source: "manual" | "webhook";
   };
+  /** Entretiens récurrents (vidange, freins…) — indépendants des tickets `VehicleMaintenance`
+   * ponctuels, juste un rappel de fréquence. `nextDueDate` est recalculée à chaque "fait". */
+  maintenanceSchedules?: VehicleMaintenanceSchedule[];
+}
+
+export interface VehicleMaintenanceSchedule {
+  id: string;
+  label: string;
+  frequencyMonths: number;
+  lastDoneDate?: string;
+  nextDueDate: string;
 }
 
 export const vehicles: Vehicle[] = [

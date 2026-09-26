@@ -358,6 +358,15 @@ export function NotificationCenter() {
       expiryCheck({ key: `vehicle-tech-${v.id}`, date: v.techControlExpiry, label: "Contrôle technique véhicule", who: label, href: "/app/auto/vehicules", toastEmoji: "🔍" });
     });
 
+    /* --- Entretiens récurrents (vidange, freins…) approchant de l'échéance --- */
+    vehicles.forEach((v) => {
+      if (v.status === "sold") return;
+      const label = vName(v.id);
+      (v.maintenanceSchedules ?? []).forEach((s) => {
+        expiryCheck({ key: `maint-schedule-${v.id}-${s.id}`, date: s.nextDueDate, label: s.label, who: label, href: "/app/auto/maintenance", toastEmoji: "🔧" });
+      });
+    });
+
     /* --- Documents arrivant à expiration --- */
     documents.forEach((doc: any) => {
       if (!doc.expiresAt) return;

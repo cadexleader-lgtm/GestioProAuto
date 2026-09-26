@@ -10,6 +10,7 @@ import {
   vehicles as seedVehicles, vehicleCredits as seedVCredits, rentals as seedRentals,
   type Supplier, type Employee, type Expense, type CashMovement,
   type Vehicle, type VehicleCredit, type Rental, type RentalPayment,
+  type VehicleMaintenanceSchedule,
 } from "./demo-data";
 
 export interface ArchivedDocument {
@@ -1774,6 +1775,46 @@ export function creditOutstandingTotal(): number {
     const paid = c.downPayment + payments.filter((p) => p.creditId === c.id).reduce((a, p) => a + p.amount, 0);
     return s + Math.max(0, c.total - paid);
   }, 0);
+}
+
+function addMonthsIso(dateIso: string, months: number): string {
+  const d = new Date(dateIso);
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Ajoute un entretien récurrent (vidange, freins…) à un véhicule — écriture
+ * directe `db.update`, même convention que `tracker`/`lastPosition` (métadonnée
+ * non financière du véhicule, pas de RPC nécessaire). */
+export function addMaintenanceSchedule(vehicleId: string, input: { label: string; frequencyMonths: number; startDate: string }) {
+  const v = db.list("vehicles").find((x) => x.id === vehicleId);
+  if (!v) throw new Error("Véhicule introuvable.");
+  const schedule: VehicleMaintenanceSchedule = {
+    id: crypto.randomUUID(),
+    label: input.label,
+    frequencyMonths: input.frequencyMonths,
+    lastDoneDate: input.startDate,
+    nextDueDate: addMonthsIso(input.startDate, input.frequencyMonths),
+  };
+  db.update("vehicles", vehicleId, { maintenanceSchedules: [...(v.maintenanceSchedules ?? []), schedule] });
+}
+
+/** Marque un entretien récurrent comme fait aujourd'hui — recalcule la
+ * prochaine échéance à partir de la fréquence. */
+export function markMaintenanceScheduleDone(vehicleId: string, scheduleId: string) {
+  const v = db.list("vehicles").find((x) => x.id === vehicleId);
+  if (!v?.maintenanceSchedules) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const next = v.maintenanceSchedules.map((s) =>
+    s.id === scheduleId ? { ...s, lastDoneDate: today, nextDueDate: addMonthsIso(today, s.frequencyMonths) } : s,
+  );
+  db.update("vehicles", vehicleId, { maintenanceSchedules: next });
+}
+
+export function removeMaintenanceSchedule(vehicleId: string, scheduleId: string) {
+  const v = db.list("vehicles").find((x) => x.id === vehicleId);
+  if (!v?.maintenanceSchedules) return;
+  db.update("vehicles", vehicleId, { maintenanceSchedules: v.maintenanceSchedules.filter((s) => s.id !== scheduleId) });
 }
 
 export function vehicleProfitability(vehicleId: string) {
