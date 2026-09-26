@@ -26,6 +26,7 @@ import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
 import { Route as AppParametresRouteImport } from './routes/app.parametres'
 import { Route as AppPersonnelRouteImport } from './routes/app.personnel'
 import { Route as AppTresorerieRouteImport } from './routes/app.tresorerie'
+import { Route as AppAdminAnnoncesRouteImport } from './routes/app.admin.annonces'
 import { Route as AppAutoClientsRouteImport } from './routes/app.auto.clients'
 import { Route as AppAutoCreditsRouteImport } from './routes/app.auto.credits'
 import { Route as AppAutoGpsRouteImport } from './routes/app.auto.gps'
@@ -121,6 +122,11 @@ const AppTresorerieRoute = AppTresorerieRouteImport.update({
   path: '/tresorerie',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminAnnoncesRoute = AppAdminAnnoncesRouteImport.update({
+  id: '/admin/annonces',
+  path: '/admin/annonces',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAutoClientsRoute = AppAutoClientsRouteImport.update({
   id: '/auto/clients',
   path: '/auto/clients',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/app/personnel': typeof AppPersonnelRoute
   '/app/tresorerie': typeof AppTresorerieRoute
   '/app/': typeof AppIndexRoute
+  '/app/admin/annonces': typeof AppAdminAnnoncesRoute
   '/app/auto/clients': typeof AppAutoClientsRoute
   '/app/auto/credits': typeof AppAutoCreditsRoute
   '/app/auto/gps': typeof AppAutoGpsRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/app/personnel': typeof AppPersonnelRoute
   '/app/tresorerie': typeof AppTresorerieRoute
   '/app': typeof AppIndexRoute
+  '/app/admin/annonces': typeof AppAdminAnnoncesRoute
   '/app/auto/clients': typeof AppAutoClientsRoute
   '/app/auto/credits': typeof AppAutoCreditsRoute
   '/app/auto/gps': typeof AppAutoGpsRoute
@@ -234,6 +242,7 @@ export interface FileRoutesById {
   '/app/personnel': typeof AppPersonnelRoute
   '/app/tresorerie': typeof AppTresorerieRoute
   '/app/': typeof AppIndexRoute
+  '/app/admin/annonces': typeof AppAdminAnnoncesRoute
   '/app/auto/clients': typeof AppAutoClientsRoute
   '/app/auto/credits': typeof AppAutoCreditsRoute
   '/app/auto/gps': typeof AppAutoGpsRoute
@@ -263,6 +272,7 @@ export interface FileRouteTypes {
     | '/app/personnel'
     | '/app/tresorerie'
     | '/app/'
+    | '/app/admin/annonces'
     | '/app/auto/clients'
     | '/app/auto/credits'
     | '/app/auto/gps'
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/app/personnel'
     | '/app/tresorerie'
     | '/app'
+    | '/app/admin/annonces'
     | '/app/auto/clients'
     | '/app/auto/credits'
     | '/app/auto/gps'
@@ -316,6 +327,7 @@ export interface FileRouteTypes {
     | '/app/personnel'
     | '/app/tresorerie'
     | '/app/'
+    | '/app/admin/annonces'
     | '/app/auto/clients'
     | '/app/auto/credits'
     | '/app/auto/gps'
@@ -458,6 +470,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTresorerieRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin/annonces': {
+      id: '/app/admin/annonces'
+      path: '/admin/annonces'
+      fullPath: '/app/admin/annonces'
+      preLoaderRoute: typeof AppAdminAnnoncesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/auto/clients': {
       id: '/app/auto/clients'
       path: '/auto/clients'
@@ -527,6 +546,7 @@ interface AppRouteChildren {
   AppPersonnelRoute: typeof AppPersonnelRoute
   AppTresorerieRoute: typeof AppTresorerieRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppAdminAnnoncesRoute: typeof AppAdminAnnoncesRoute
   AppAutoClientsRoute: typeof AppAutoClientsRoute
   AppAutoCreditsRoute: typeof AppAutoCreditsRoute
   AppAutoGpsRoute: typeof AppAutoGpsRoute
@@ -547,6 +567,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPersonnelRoute: AppPersonnelRoute,
   AppTresorerieRoute: AppTresorerieRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAdminAnnoncesRoute: AppAdminAnnoncesRoute,
   AppAutoClientsRoute: AppAutoClientsRoute,
   AppAutoCreditsRoute: AppAutoCreditsRoute,
   AppAutoGpsRoute: AppAutoGpsRoute,
