@@ -4,7 +4,16 @@ import { routeTree } from "./routeTree.gen";
 import { RoutePendingFallback } from "./components/RoutePendingFallback";
 
 export const getRouter = () => {
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      // Revenir sur l'app depuis l'appareil photo/le sélecteur de fichiers
+      // natif redonne le focus à la fenêtre — le comportement par défaut
+      // (true) relance un refetch à ce moment précis, perçu comme un
+      // "rechargement" en plein flux d'ajout de document (cf. retours
+      // utilisateur sur la lenteur/instabilité au retour d'appareil photo).
+      queries: { refetchOnWindowFocus: false },
+    },
+  });
 
   const router = createRouter({
     routeTree,

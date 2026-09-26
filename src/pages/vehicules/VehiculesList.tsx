@@ -27,13 +27,15 @@ import { VehicleShareDialog } from "@/components/vehicles/VehicleShareDialog";
 import type { Vehicle } from "@/lib/demo-data";
 import { useRole, can } from "@/lib/roles";
 import { VEHICLE_STATUS } from "@/lib/vehicle-status";
+import { useFeatureFlags } from "@/lib/feature-flags";
 
 type Filter = "all" | Vehicle["status"];
 
 export function VehiculesList() {
   const role = useRole();
-  const canSell = can(role, "create.sale");
-  const canRent = can(role, "manage.rental");
+  const flags = useFeatureFlags();
+  const canSell = can(role, "create.sale") && flags.sales;
+  const canRent = can(role, "manage.rental") && flags.rentals;
   const canEditVehicle = can(role, "edit.vehicle");
   const canCreateVehicle = can(role, "create.vehicle");
   const canViewCost = can(role, "view.vehicleCost");
@@ -175,7 +177,7 @@ export function VehiculesList() {
           const st = VEHICLE_STATUS[v.status];
           const canRentThis = v.status === "available" && canRent;
           const canSellThis = v.status === "available" && canSell;
-          const canMaintainThis = v.status !== "sold" && v.status !== "maintenance";
+          const canMaintainThis = v.status !== "sold" && v.status !== "maintenance" && flags.maintenance;
           return (
             <Card
               key={v.id}

@@ -68,7 +68,11 @@ export function MobileBottomNav() {
       <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background via-background/70 to-transparent" />
 
       <div className="relative pointer-events-auto px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <ul className="grid grid-cols-5 gap-1 rounded-[26px] border border-white/50 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl shadow-[0_10px_40px_-12px_rgba(15,23,42,0.35)] p-1.5">
+        {/* backdrop-blur-2xl (40px) d'origine recomposité à chaque frame de
+            scroll/transition — très coûteux sur iOS Safari (bien plus que
+            sur Android Chrome), cause probable de la navigation "dure" sur
+            iPhone. blur-md (12px) suffit avec un fond déjà à 80% opaque. */}
+        <ul className="grid grid-cols-5 gap-1 rounded-[26px] border border-white/50 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-[0_10px_40px_-12px_rgba(15,23,42,0.35)] p-1.5">
           {items.map((item) => {
             const Icon = ICON_MAP[item.iconName] ?? LayoutDashboard;
             const active = location === item.href;

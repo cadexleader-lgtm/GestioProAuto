@@ -9,6 +9,7 @@ import type { Vehicle } from "@/lib/demo-data";
 import { Car, Fuel, Gauge, KeyRound, Wrench, ShoppingCart, Pencil, Send, TrendingUp, TrendingDown, ArrowLeft, Play } from "lucide-react";
 import { VEHICLE_STATUS, RENTAL_STATUS, MAINTENANCE_STATUS, creditStatusLabel } from "@/lib/vehicle-status";
 import { useRole, can } from "@/lib/roles";
+import { useFeatureFlags } from "@/lib/feature-flags";
 
 interface VehicleDetailSheetProps {
   vehicle: Vehicle | null;
@@ -23,8 +24,9 @@ interface VehicleDetailSheetProps {
 
 export function VehicleDetailSheet({ vehicle, open, onOpenChange, onRent, onSell, onMaintenance, onEdit, onShare }: VehicleDetailSheetProps) {
   const role = useRole();
-  const canRent = can(role, "manage.rental");
-  const canSell = can(role, "create.sale");
+  const flags = useFeatureFlags();
+  const canRent = can(role, "manage.rental") && flags.rentals;
+  const canSell = can(role, "create.sale") && flags.sales;
   const canEditVehicle = can(role, "edit.vehicle");
   const canViewCost = can(role, "view.vehicleCost");
   const [activePhoto, setActivePhoto] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export function VehicleDetailSheet({ vehicle, open, onOpenChange, onRent, onSell
 
   const canRentThis = vehicle.status === "available" && canRent && !!onRent;
   const canSellThis = vehicle.status === "available" && canSell && !!onSell;
-  const canMaintainThis = vehicle.status !== "sold" && vehicle.status !== "maintenance" && !!onMaintenance;
+  const canMaintainThis = vehicle.status !== "sold" && vehicle.status !== "maintenance" && flags.maintenance && !!onMaintenance;
 
   const act = (fn?: (v: Vehicle) => void) => () => { onOpenChange(false); fn?.(vehicle); };
 

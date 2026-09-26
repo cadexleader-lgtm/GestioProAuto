@@ -127,7 +127,11 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         onMouseLeave={() => setHovered(false)}
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex flex-col shrink-0 border-r border-sidebar-border",
-          "bg-sidebar/95 backdrop-blur-xl transition-[width,transform] duration-300 ease-out",
+          // bg-sidebar/95 est déjà quasi-opaque : blur-xl (24px) n'y ajoutait
+          // presque rien visuellement, pour un coût de recomposition élevé
+          // sur iOS Safari — surtout ici, où le panneau anime sa largeur
+          // (survol desktop) et sa position (tiroir mobile) en continu.
+          "bg-sidebar/95 backdrop-blur-sm transition-[width,transform] duration-300 ease-out",
           "w-[264px] md:w-[68px]",
           expanded && "md:w-[248px] md:shadow-[0_20px_60px_-20px_rgba(15,23,42,0.35)]",
           !isOpen && "-translate-x-full md:translate-x-0",

@@ -19,10 +19,12 @@ export function AppShell({ children }: AppShellProps) {
           pages de l'app puisque injecté ici une seule fois, jamais page par page.
           Les cartes de contenu restent en `bg-card` opaque (100%), donc la légibilité
           des composants n'est jamais affectée par ce fond. `blur-md` (12px) rendait le
-          motif méconnaissable comme animation ("juste un dégradé flou") — `blur-sm`
-          (4px) garde les vagues identifiables sans les rendre nettes/distrayantes. */}
+          motif méconnaissable comme animation ("juste un dégradé flou") ; `blur-sm`
+          (4px) restait encore trop discret — `blur-[2px]` est le point d'équilibre
+          retenu après retour utilisateur : les vagues se distinguent nettement tout
+          en gardant un rendu doux, pas une illustration nette au premier plan. */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <AnimatedBackground variant="silk" className="scale-110 blur-sm opacity-35 dark:opacity-40" />
+        <AnimatedBackground variant="silk" className="scale-110 blur-[2px] opacity-35 dark:opacity-40" />
         <div className="absolute -top-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-primary/[0.07] dark:bg-primary/[0.10] blur-[120px]" />
         <div className="absolute top-[40%] -left-[10%] w-[50%] h-[50%] rounded-full bg-accent/[0.05] dark:bg-primary/[0.06] blur-[100px]" />
       </div>

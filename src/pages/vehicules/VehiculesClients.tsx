@@ -3,6 +3,7 @@ import {
   useCollection, vehicleProfitability, uploadPrivateDocument, getEntityDocuments, getPrivateDocumentUrl,
   type ArchivedDocument,
 } from "@/lib/demo-store";
+import { savePendingCapture, loadPendingCapture, clearPendingCapture } from "@/lib/pending-capture";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -14,11 +15,15 @@ import { formatFCFA } from "@/lib/format";
 import {
   Users, Search, Car, CreditCard, KeyRound, Phone, MapPin,
   AlertTriangle, ShieldAlert, Wrench, TrendingUp, FileText,
-  Camera, Upload, Plus, Eye, Loader2, IdCard,
+  Camera, Upload, Plus, Eye, Loader2, IdCard, RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { can, useRole } from "@/lib/roles";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
+
+/** Une seule capture "en attente d'envoi" à la fois — suffisant pour ce
+ * flux (un utilisateur ne photographie pas 2 pièces en parallèle). */
+const PENDING_CAPTURE_KEY = "client-document";
 
 const CLIENT_DOC_TYPES: Record<string, string> = {
   cin: "Carte d'identité",
@@ -56,8 +61,29 @@ export function VehiculesClients() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadType, setUploadType] = useState("cin");
   const [uploading, setUploading] = useState(false);
+  const [capturedFile, setCapturedFile] = useState<File | null>(null);
+  const [capturedPreviewUrl, setCapturedPreviewUrl] = useState<string | null>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Récupère une capture interrompue (l'app a rechargé pendant que l'appareil
+  // photo/le sélecteur de fichiers natif était ouvert, ou juste après le
+  // retour) — voir pending-capture.ts. Rouvre directement la fiche du bon
+  // client avec la photo déjà prête à être confirmée, pour ne jamais la
+  // perdre silencieusement.
+  useEffect(() => {
+    loadPendingCapture(PENDING_CAPTURE_KEY).then((pending) => {
+      if (!pending) return;
+      const meta = pending.meta as { clientName?: string; docType?: string };
+      if (!meta.clientName) return;
+      setSelected(meta.clientName);
+      setCapturedFile(pending.file);
+      setCapturedPreviewUrl(URL.createObjectURL(pending.file));
+      setUploadType(meta.docType || "cin");
+      setUploadOpen(true);
+      toast.info("Photo récupérée après une interruption — vérifiez le type puis envoyez.");
+    });
+  }, []);
 
   const clients = useMemo<ClientAgg[]>(() => {
     const map = new Map<string, ClientAgg>();
@@ -125,13 +151,41 @@ export function VehiculesClients() {
     return () => { cancelled = true; };
   }, [selectedClient?.name]);
 
-  const uploadClientDocument = async (file: File) => {
+  // Étape 1 : la photo/le fichier vient d'être capturé — on ne l'envoie pas
+  // tout de suite. On l'affiche en aperçu avec le type de document à
+  // confirmer (avant : le type par défaut "Carte d'identité" partait tel
+  // quel si l'utilisateur photographiait directement sans y penser, donc un
+  // passeport/permis se retrouvait enregistré sous le mauvais intitulé).
+  // Sauvegarde immédiate dans IndexedDB (pending-capture.ts) : si l'app
+  // recharge avant l'étape 2 (retour d'appareil photo peu fiable sur
+  // certains mobiles), la photo n'est pas perdue — voir le useEffect de
+  // récupération plus haut.
+  const onFileCaptured = async (file: File) => {
     if (!selectedClient) return;
     if (file.size > 8 * 1024 * 1024) return toast.error("Fichier trop lourd (max 8 Mo)");
+    setCapturedFile(file);
+    setCapturedPreviewUrl(URL.createObjectURL(file));
+    await savePendingCapture(PENDING_CAPTURE_KEY, file, { clientName: selectedClient.name, docType: uploadType });
+  };
+
+  const resetUpload = () => {
+    setUploadOpen(false);
+    setCapturedFile(null);
+    setCapturedPreviewUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
+  };
+
+  const cancelUpload = () => {
+    void clearPendingCapture(PENDING_CAPTURE_KEY);
+    resetUpload();
+  };
+
+  // Étape 2 : type confirmé (ou corrigé) par l'utilisateur, envoi réel.
+  const confirmUpload = async () => {
+    if (!selectedClient || !capturedFile) return;
     setUploading(true);
     try {
       await uploadPrivateDocument({
-        file,
+        file: capturedFile,
         type: uploadType,
         title: `${CLIENT_DOC_TYPES[uploadType]} — ${selectedClient.name}`,
         reference: selectedClient.name,
@@ -142,7 +196,8 @@ export function VehiculesClients() {
         origin: "Importé",
       });
       toast.success("Document ajouté");
-      setUploadOpen(false);
+      await clearPendingCapture(PENDING_CAPTURE_KEY);
+      resetUpload();
       const docs = await getEntityDocuments("customer", selectedClient.name);
       setClientDocs(docs);
     } catch (error) {
@@ -464,45 +519,69 @@ export function VehiculesClients() {
         </SheetContent>
       </Sheet>
 
-      <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+      <Dialog open={uploadOpen} onOpenChange={(o) => { if (!o) cancelUpload(); else setUploadOpen(true); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Ajouter un document</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <Select value={uploadType} onValueChange={setUploadType}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(CLIENT_DOC_TYPES).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="grid grid-cols-2 gap-2">
-              <Button type="button" variant="outline" disabled={uploading} onClick={() => cameraInputRef.current?.click()}>
-                <Camera size={15} /> Prendre une photo
-              </Button>
-              <Button type="button" variant="outline" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
-                <Upload size={15} /> Choisir un fichier
-              </Button>
+          {!capturedFile ? (
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground">Prenez la photo ou choisissez un fichier — vous confirmerez le type de document juste après, avec un aperçu.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" onClick={() => cameraInputRef.current?.click()}>
+                  <Camera size={15} /> Prendre une photo
+                </Button>
+                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                  <Upload size={15} /> Choisir un fichier
+                </Button>
+              </div>
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFileCaptured(f); e.target.value = ""; }}
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFileCaptured(f); e.target.value = ""; }}
+              />
             </div>
-            {uploading && <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Loader2 size={12} className="animate-spin" /> Envoi en cours…</p>}
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadClientDocument(f); e.target.value = ""; }}
-            />
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,application/pdf"
-              className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadClientDocument(f); e.target.value = ""; }}
-            />
-          </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="rounded-xl border overflow-hidden bg-muted/40 aspect-video grid place-items-center">
+                {capturedFile.type.startsWith("image/") ? (
+                  <img src={capturedPreviewUrl ?? undefined} alt="Aperçu" className="w-full h-full object-contain" />
+                ) : (
+                  <div className="flex flex-col items-center gap-1.5 text-muted-foreground text-xs p-4">
+                    <FileText size={28} /> {capturedFile.name}
+                  </div>
+                )}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-1.5">Quel type de document est-ce ?</p>
+                <Select value={uploadType} onValueChange={(v) => { setUploadType(v); if (selectedClient) void savePendingCapture(PENDING_CAPTURE_KEY, capturedFile, { clientName: selectedClient.name, docType: v }); }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(CLIENT_DOC_TYPES).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="button" variant="ghost" size="sm" className="text-xs" disabled={uploading} onClick={() => { setCapturedFile(null); setCapturedPreviewUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; }); }}>
+                <RotateCcw size={12} /> Reprendre la photo
+              </Button>
+              {uploading && <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Loader2 size={12} className="animate-spin" /> Envoi en cours…</p>}
+            </div>
+          )}
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setUploadOpen(false)} disabled={uploading}>Annuler</Button>
+            <Button variant="ghost" onClick={cancelUpload} disabled={uploading}>Annuler</Button>
+            {capturedFile && (
+              <Button onClick={confirmUpload} disabled={uploading}>{uploading ? "Envoi..." : "Confirmer et envoyer"}</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
