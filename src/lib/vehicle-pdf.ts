@@ -1,10 +1,16 @@
 /**
  * Adaptateurs de compatibilité — délèguent aux modèles PDF professionnels,
- * déclenchent le téléchargement local ET persistent le vrai fichier dans le
- * coffre-fort privé (Supabase Storage), pour qu'il reste téléchargeable
- * depuis n'importe quel appareil après la génération initiale.
+ * persistent le vrai fichier dans le coffre-fort privé (Supabase Storage)
+ * et retournent le `PdfDoc` construit. Ne déclenchent plus aucun
+ * téléchargement/ouverture eux-mêmes (c'était le cas avant : chaque modèle
+ * de pdf/templates.ts appelait `.save()` en interne, provoquant un
+ * téléchargement surprise à chaque génération, y compris silencieuse) —
+ * c'est à l'appelant de décider quoi faire du `PdfDoc` retourné, typiquement
+ * via `PdfPreviewDialog`/`usePdfPreview()` pour un aperçu avant
+ * téléchargement/impression.
  * @see src/lib/pdf/templates.ts
  * @see src/lib/demo-store.ts:uploadPrivateDocument
+ * @see src/components/PdfPreviewDialog.tsx
  */
 import { formatFCFA } from "./format";
 import type { Vehicle, VehicleCredit, Rental } from "./demo-data";
@@ -37,6 +43,7 @@ export async function generateRentalContract(rental: Rental, vehicle: Vehicle) {
     origin: "Généré",
     metadata: { phone: (rental as any).phone, rentalId: rental.id },
   });
+  return doc;
 }
 
 export async function generateSaleInvoice(sale: VehicleSale, vehicle: Vehicle) {
@@ -58,6 +65,7 @@ export async function generateSaleInvoice(sale: VehicleSale, vehicle: Vehicle) {
     origin: "Généré",
     metadata: { phone: sale.phone, saleId: sale.id },
   });
+  return doc;
 }
 
 export async function generateCreditSchedule(credit: VehicleCredit, vehicle: Vehicle, payments: VehiclePayment[]) {
@@ -80,6 +88,7 @@ export async function generateCreditSchedule(credit: VehicleCredit, vehicle: Veh
     origin: "Généré",
     metadata: { phone: (credit as any).phone, creditId: credit.id },
   });
+  return doc;
 }
 
 export async function generatePaymentReceipt(payment: VehiclePayment, credit: VehicleCredit, vehicle: Vehicle) {
@@ -111,6 +120,7 @@ export async function generatePaymentReceipt(payment: VehiclePayment, credit: Ve
     origin: "Généré",
     metadata: { phone: (credit as any).phone, creditId: credit.id, paymentId: payment.id },
   });
+  return doc;
 }
 
 export { formatFCFA };

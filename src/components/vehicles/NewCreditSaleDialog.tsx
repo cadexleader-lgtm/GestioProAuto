@@ -5,9 +5,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { recordVehicleCreditSale, useCollection } from "@/lib/demo-store";
+import { recordVehicleCreditSale, useCollection, db } from "@/lib/demo-store";
+import { generateCreditSchedule } from "@/lib/vehicle-pdf";
 import { formatFCFA } from "@/lib/format";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { SignaturePad } from "@/components/ui/signature-pad";
+import { PdfPreviewDialog, usePdfPreview } from "@/components/PdfPreviewDialog";
 
 const STEPS = ["Véhicule", "Client", "Financement"] as const;
 
@@ -20,6 +23,8 @@ export function NewCreditSaleDialog({ open, onOpenChange }: { open: boolean; onO
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
   const [saleId, setSaleId] = useState(() => crypto.randomUUID());
   const [creditId, setCreditId] = useState(() => crypto.randomUUID());
+  const [clientSignature, setClientSignature] = useState<string | undefined>(undefined);
+  const preview = usePdfPreview();
 
   useEffect(() => {
     if (!open) return;
@@ -33,6 +38,7 @@ export function NewCreditSaleDialog({ open, onOpenChange }: { open: boolean; onO
     setIdempotencyKey(crypto.randomUUID());
     setSaleId(crypto.randomUUID());
     setCreditId(crypto.randomUUID());
+    setClientSignature(undefined);
   }, [open]);
 
   const vehicle = vehicles.find((v) => v.id === f.vehicleId);
@@ -51,6 +57,8 @@ export function NewCreditSaleDialog({ open, onOpenChange }: { open: boolean; onO
 
   const submit = async () => {
     if (!f.vehicleId || !f.customer || !f.total) return toast.error("Champs requis manquants");
+    const soldVehicle = vehicle;
+    if (!soldVehicle) return;
     const monthly = f.monthlyPayment || suggestedMonthly;
     setSubmitting(true);
     try {
@@ -69,9 +77,16 @@ export function NewCreditSaleDialog({ open, onOpenChange }: { open: boolean; onO
         currency: "XOF",
         method: "Cash",
         idempotencyKey,
+        metadata: clientSignature ? { signatures: { client: clientSignature, signedAt: new Date().toISOString() } } : undefined,
       });
       toast.success("Vente à crédit créée");
       onOpenChange(false);
+      const credit = db.list("vehicleCredits").find((c) => c.id === creditId);
+      if (credit) {
+        generateCreditSchedule(credit, soldVehicle, [])
+          .then((doc) => preview.show(doc, `contrat-credit-${creditId}`, `Échéancier de crédit — ${soldVehicle.brand} ${soldVehicle.model}`))
+          .catch((error) => toast.error(error instanceof Error ? error.message : "L'échéancier n'a pas pu être généré."));
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "La vente à crédit a échoué.");
     } finally {
@@ -80,6 +95,7 @@ export function NewCreditSaleDialog({ open, onOpenChange }: { open: boolean; onO
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto backdrop-blur-xl bg-white/90 dark:bg-slate-900/85">
         <DialogHeader>
@@ -145,6 +161,9 @@ export function NewCreditSaleDialog({ open, onOpenChange }: { open: boolean; onO
               <div className="p-3 rounded-lg bg-muted text-sm flex justify-between"><span>À financer</span><strong>{formatFCFA(financed)}</strong></div>
               <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-sm flex justify-between"><span>Total échéances</span><strong className="text-emerald-700">{formatFCFA((f.monthlyPayment || suggestedMonthly) * f.totalMonths)}</strong></div>
             </div>
+            <div className="col-span-2">
+              <SignaturePad label="Signature du client" value={clientSignature} onChange={setClientSignature} height={130} />
+            </div>
           </div>
         )}
 
@@ -161,5 +180,7 @@ export function NewCreditSaleDialog({ open, onOpenChange }: { open: boolean; onO
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <PdfPreviewDialog open={preview.open} onOpenChange={preview.onOpenChange} url={preview.url} filename={preview.filename} title={preview.title} />
+    </>
   );
 }

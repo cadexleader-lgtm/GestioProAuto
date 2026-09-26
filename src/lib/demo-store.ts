@@ -1022,6 +1022,7 @@ export async function recordVehicleCreditSale(payload: VehicleCreditSalePayload)
   const vehicle = db.list("vehicles").find((item) => item.id === payload.vehicleId);
   if (vehicle) db.upsertLocal("vehicles", { ...vehicle, status: "sold" });
   db.upsertLocal("vehicleCredits", {
+    ...(payload.metadata ?? {}),
     id: payload.creditId,
     vehicleId: payload.vehicleId,
     customer: payload.customer,

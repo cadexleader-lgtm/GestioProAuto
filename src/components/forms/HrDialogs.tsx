@@ -190,6 +190,7 @@ export function PayrollDialog({ open, onOpenChange }: { open:boolean; onOpenChan
               net: (existingPayslip as any).netDue ?? 0, currency: "XOF", paymentMethod: method,
             });
             await attachPayslipDocumentFile({ documentId: result.document_id, file: doc.toFile(`bulletin-${paymentId}.pdf`) });
+            doc.save(`bulletin-${paymentId}`);
           } catch (docError) {
             toast.error(docError instanceof Error ? docError.message : "Le PDF du bulletin n'a pas pu être archivé (paiement bien enregistré).");
           }
@@ -234,6 +235,7 @@ export function PayrollDialog({ open, onOpenChange }: { open:boolean; onOpenChan
               net, currency: "XOF", paymentMethod: method,
             });
             await attachPayslipDocumentFile({ documentId: result.document_id, file: doc.toFile(`bulletin-${paymentId}.pdf`) });
+            doc.save(`bulletin-${paymentId}`);
           } catch (docError) {
             toast.error(docError instanceof Error ? docError.message : "Le PDF du bulletin n'a pas pu être archivé (paiement bien enregistré).");
           }
@@ -430,6 +432,7 @@ export function BulkPayrollDialog({ open, onOpenChange }: { open: boolean; onOpe
               paymentMethod: method,
             });
             await attachPayslipDocumentFile({ documentId: result.document_id, file: doc.toFile(`bulletin-${paymentId}.pdf`) });
+            doc.save(`bulletin-${paymentId}`);
           } catch {
             // Paiement bien enregistré ; seul le PDF n'a pas pu être archivé — pas bloquant pour la suite du lot.
           }

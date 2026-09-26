@@ -17,6 +17,7 @@ import { formatFCFA } from "@/lib/format";
 import type { Vehicle, VehicleCredit, Rental } from "@/lib/demo-data";
 import { SignaturePad } from "@/components/ui/signature-pad";
 import { generateRentalContract } from "@/lib/vehicle-pdf";
+import { PdfPreviewDialog, usePdfPreview } from "@/components/PdfPreviewDialog";
 
 const glass = "backdrop-blur-xl bg-white/85 dark:bg-slate-900/80 border border-white/40 dark:border-white/10";
 
@@ -36,6 +37,7 @@ export function RentVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
   const today = new Date().toISOString().slice(0, 10);
   const [f, setF] = useState<any>({});
   const [clientSignature, setClientSignature] = useState<string | undefined>(undefined);
+  const preview = usePdfPreview();
   useEffect(() => {
     if (open) {
       setStep(0);
@@ -52,7 +54,11 @@ export function RentVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
     }
   }, [open]);
 
-  if (!vehicle) return null;
+  // Le contrat se génère/archive après la fermeture du dialogue (vehicle
+  // redevient null côté parent avant que la promesse ne se résolve) — on
+  // garde le composant monté tant que l'aperçu PDF doit encore s'afficher,
+  // sinon `preview.show(...)` n'aurait plus rien à rendre.
+  if (!vehicle && !preview.open) return null;
   const days = Math.max(1, Math.round((+new Date(f.endDate || today) - +new Date(f.startDate || today)) / 86400000));
   const total = days * (f.dailyRate || 0);
   const remaining = total - (f.advance || 0);
@@ -76,6 +82,7 @@ export function RentVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
   const submit = async () => {
     if (submitting) return;
     if (!f.customer) return toast.error("Nom du client requis");
+    if (!vehicle) return;
     setSubmitting(true);
     try {
       const signatures = clientSignature ? { client: clientSignature, signedAt: new Date().toISOString() } : undefined;
@@ -99,11 +106,15 @@ export function RentVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
       // Contrat genere et archive directement dans le coffre-fort prive (page
       // Documents) des la validation — plus besoin de revenir cliquer "PDF"
       // separement sur la page Locations pour que le document apparaisse.
+      // L'apercu s'ouvre automatiquement (au lieu d'un telechargement force) :
+      // le proprietaire decide lui-meme de telecharger/imprimer depuis la.
       if (result.rental) {
-        void generateRentalContract(result.rental, vehicle).catch((error) => {
-          console.error("[gestiopro] rental contract generation failed", error);
-          toast.error("Location enregistrée, le contrat PDF n'a pas pu être généré automatiquement.");
-        });
+        void generateRentalContract(result.rental, vehicle)
+          .then((doc) => preview.show(doc, `contrat-location-${result.rental.id}`, `Contrat de location — ${vehicle.brand} ${vehicle.model}`))
+          .catch((error) => {
+            console.error("[gestiopro] rental contract generation failed", error);
+            toast.error("Location enregistrée, le contrat PDF n'a pas pu être généré automatiquement.");
+          });
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "La location n'a pas pu être enregistrée.");
@@ -113,6 +124,8 @@ export function RentVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
   };
 
   return (
+    <>
+    {vehicle && (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={`max-w-2xl p-0 gap-0 ${glass} max-h-[92vh] overflow-hidden flex flex-col`}>
         {/* Header véhicule */}
@@ -242,7 +255,7 @@ export function RentVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
                 height={130}
               />
               <p className="text-[11px] text-muted-foreground -mt-1">
-                Le client signe ici avant confirmation — la signature est intégrée automatiquement au contrat de location, généré et archivé dès la validation.
+                Le client signe ici avant confirmation — la signature est intégrée automatiquement au contrat de location, généré, archivé et présenté en aperçu dès la validation.
               </p>
             </div>
           )}
@@ -261,6 +274,9 @@ export function RentVehicleDialog({ vehicle, open, onOpenChange }: { vehicle: Ve
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    )}
+    <PdfPreviewDialog open={preview.open} onOpenChange={preview.onOpenChange} url={preview.url} filename={preview.filename} title={preview.title} />
+    </>
   );
 }
 

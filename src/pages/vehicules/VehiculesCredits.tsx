@@ -15,6 +15,7 @@ import type { VehicleCredit } from "@/lib/demo-data";
 import { useRole, can } from "@/lib/roles";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
 import { useFeatureFlags } from "@/lib/feature-flags";
+import { PdfPreviewDialog, usePdfPreview } from "@/components/PdfPreviewDialog";
 
 export function VehiculesCredits() {
   const role = useRole();
@@ -28,6 +29,7 @@ export function VehiculesCredits() {
   const [openPay, setOpenPay] = useState<VehicleCredit | null>(null);
   const [openNew, setOpenNew] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const preview = usePdfPreview();
 
   const paidOf = (c: VehicleCredit) =>
     c.downPayment + payments.filter(p => p.creditId === c.id).reduce((x, p) => x + p.amount, 0);
@@ -233,7 +235,7 @@ export function VehiculesCredits() {
                   <Button variant="outline" size="sm" onClick={() => {
                     if (!v) return;
                     generateCreditSchedule(openDetail, v, credPays)
-                      .then(() => toast.success("Échéancier PDF généré et archivé"))
+                      .then((doc) => preview.show(doc, `contrat-credit-${openDetail.id}`, `Échéancier de crédit — ${v.brand} ${v.model}`))
                       .catch((error) => toast.error(error instanceof Error ? error.message : "L'échéancier n'a pas pu être archivé."));
                   }}>
                     <FileText size={14} /> Échéancier PDF
@@ -252,6 +254,7 @@ export function VehiculesCredits() {
 
       <CreditPaymentDialog credit={openPay} open={!!openPay} onOpenChange={(o) => !o && setOpenPay(null)} />
       <NewCreditSaleDialog open={openNew} onOpenChange={setOpenNew} />
+      <PdfPreviewDialog open={preview.open} onOpenChange={preview.onOpenChange} url={preview.url} filename={preview.filename} title={preview.title} />
     </div>
   );
 }

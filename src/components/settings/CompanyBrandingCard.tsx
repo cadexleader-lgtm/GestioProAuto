@@ -108,7 +108,7 @@ export function CompanyBrandingCard() {
     }
     setSaving(false);
     const { pdfInvoice } = await import("@/lib/pdf/templates");
-    pdfInvoice({
+    const doc = pdfInvoice({
       reference: "APERCU-001",
       customer: { name: "Client de démonstration", phone: "+229 00 00 00 00" },
       lines: [
@@ -118,6 +118,7 @@ export function CompanyBrandingCard() {
       paid: 100000,
       note: "Document d'aperçu généré depuis les paramètres.",
     });
+    doc.save("apercu-facture");
   };
 
   const onLogo = async (f?: File | null) => {

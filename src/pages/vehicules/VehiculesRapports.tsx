@@ -146,7 +146,7 @@ export function VehiculesRapports() {
     setExporting(true);
     try {
       const { pdfReport } = await import("@/lib/pdf/templates");
-      pdfReport({
+      const doc = pdfReport({
         title: "Rapport Auto",
         period: PERIODS[period],
         sections: [
@@ -186,6 +186,7 @@ export function VehiculesRapports() {
           },
         ],
       });
+      doc.save(`rapport-auto-${new Date().toISOString().slice(0, 10)}`);
       toast.success("Rapport PDF généré");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Le rapport n'a pas pu être généré.");

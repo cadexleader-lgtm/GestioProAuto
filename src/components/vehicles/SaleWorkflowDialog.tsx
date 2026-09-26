@@ -14,8 +14,10 @@ import {
   recordVehicleCreditSale,
   uploadPrivateDocument,
   useCollection,
+  db,
   type PendingPrivateDocument,
 } from "@/lib/demo-store";
+import { generateSaleInvoice, generateCreditSchedule } from "@/lib/vehicle-pdf";
 import { formatFCFA } from "@/lib/format";
 import {
   User, FileText, Car, Wallet, KeyRound, CheckCircle2,
@@ -23,6 +25,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { SignaturePad } from "@/components/ui/signature-pad";
+import { PdfPreviewDialog, usePdfPreview } from "@/components/PdfPreviewDialog";
 
 interface Props {
   open: boolean;
@@ -70,7 +74,9 @@ export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Pro
   const [deliveryKm, setDeliveryKm] = useState<number>(0);
   const [fuelLevel, setFuelLevel] = useState<string>("Plein");
   const [conditionNote, setConditionNote] = useState("");
-  const [signed, setSigned] = useState(false);
+  const [clientSignature, setClientSignature] = useState<string | undefined>(undefined);
+  const signed = !!clientSignature;
+  const preview = usePdfPreview();
 
   // Step 6
   const [insuranceExpiry, setInsuranceExpiry] = useState("");
@@ -110,7 +116,7 @@ export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Pro
     setDocuments([]); setVehicleId(""); setAmount(0); setPayment("cash");
     setMethod("Cash"); setDownPayment(0); setMonths(12);
     setDeliveryDate(today); setDeliveryKm(0); setFuelLevel("Plein");
-    setConditionNote(""); setSigned(false);
+    setConditionNote(""); setClientSignature(undefined);
     setInsuranceExpiry(""); setTechControlExpiry("");
     setIdempotencyKey(crypto.randomUUID());
     setSaleId(crypto.randomUUID());
@@ -153,8 +159,10 @@ export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Pro
   };
 
   const finalize = async () => {
-    if (!selectedVehicle) return;
+    const vehicle = selectedVehicle;
+    if (!vehicle) return;
     if (submitting) return;
+    const signatures = clientSignature ? { client: clientSignature, signedAt: new Date().toISOString() } : undefined;
     if (payment === "cash") {
       setSubmitting(true);
       try {
@@ -172,6 +180,7 @@ export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Pro
             documents: documents.map(privateDocumentSummary),
             delivery: { date: deliveryDate, km: deliveryKm, fuelLevel, conditionNote, signed },
             reminders: { insuranceExpiry: insuranceExpiry || undefined, techControlExpiry: techControlExpiry || undefined },
+            signatures,
           },
         });
         toast.success("Vente comptant enregistrée");
@@ -179,6 +188,12 @@ export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Pro
           await archiveSaleDocuments();
         } catch (error) {
           toast.error(error instanceof Error ? `Vente enregistrée, document non archivé : ${error.message}` : "Vente enregistrée, document non archivé.");
+        }
+        const sale = db.list("vehicleSales").find((s) => s.id === saleId);
+        if (sale) {
+          generateSaleInvoice(sale, vehicle)
+            .then((doc) => preview.show(doc, `contrat-vente-${saleId}`, `Contrat de vente — ${vehicle.brand} ${vehicle.model}`))
+            .catch((error) => toast.error(error instanceof Error ? error.message : "Le contrat n'a pas pu être généré."));
         }
         reset();
         onOpenChange(false);
@@ -214,6 +229,7 @@ export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Pro
           documents: documents.map(privateDocumentSummary),
           delivery: { date: deliveryDate, km: deliveryKm, fuelLevel, conditionNote, signed },
           reminders: { insuranceExpiry: insuranceExpiry || undefined, techControlExpiry: techControlExpiry || undefined },
+          signatures,
         },
       });
       toast.success("Vente à crédit enregistrée");
@@ -221,6 +237,13 @@ export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Pro
         await archiveSaleDocuments();
       } catch (error) {
         toast.error(error instanceof Error ? `Vente enregistrée, document non archivé : ${error.message}` : "Vente enregistrée, document non archivé.");
+      }
+      const credit = db.list("vehicleCredits").find((c) => c.id === creditId);
+      if (credit) {
+        const creditPayments = db.list("vehiclePayments").filter((p) => p.creditId === creditId);
+        generateCreditSchedule(credit, vehicle, creditPayments)
+          .then((doc) => preview.show(doc, `contrat-credit-${creditId}`, `Échéancier de crédit — ${vehicle.brand} ${vehicle.model}`))
+          .catch((error) => toast.error(error instanceof Error ? error.message : "L'échéancier n'a pas pu être généré."));
       }
       reset();
       onOpenChange(false);
@@ -232,6 +255,7 @@ export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Pro
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
       <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
@@ -387,9 +411,12 @@ export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Pro
                     {["Vide", "1/4", "1/2", "3/4", "Plein"].map((v) => <option key={v}>{v}</option>)}
                   </select>
                 </Field>
-                <Field label="Signature client"><label className="flex items-center gap-2 h-9"><input type="checkbox" checked={signed} onChange={(e) => setSigned(e.target.checked)} /> <span className="text-sm">PV signé</span></label></Field>
               </div>
               <Field label="État général / observations"><Textarea rows={3} value={conditionNote} onChange={(e) => setConditionNote(e.target.value)} placeholder="Rayures, accessoires remis, doubles clés..." /></Field>
+              <SignaturePad label="Signature du client" value={clientSignature} onChange={setClientSignature} height={130} />
+              <p className="text-[11px] text-muted-foreground -mt-1">
+                Le client signe ici avant confirmation — la signature est intégrée automatiquement au contrat, généré, archivé et présenté en aperçu dès la validation.
+              </p>
             </div>
           )}
 
@@ -430,6 +457,8 @@ export function SaleWorkflowDialog({ open, onOpenChange, initialVehicleId }: Pro
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <PdfPreviewDialog open={preview.open} onOpenChange={preview.onOpenChange} url={preview.url} filename={preview.filename} title={preview.title} />
+    </>
   );
 }
 

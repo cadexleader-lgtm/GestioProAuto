@@ -150,7 +150,7 @@ export function Documents() {
     setGenerating(true);
     try {
       const doc = await buildPdf(kind, reference, form);
-      await uploadPrivateDocument({
+      const archived = await uploadPrivateDocument({
         file: doc.toFile(`${kind}-${reference}.pdf`),
         type: kind,
         reference,
@@ -166,6 +166,10 @@ export function Documents() {
       });
       toast.success(`${reference} généré et archivé`);
       setKind(null);
+      // Aperçu immédiat depuis le blob local (pas de round-trip stockage) —
+      // remplace l'ancien comportement où pdfInvoice/pdfReceipt déclenchaient
+      // eux-mêmes un téléchargement silencieux (`.save()` interne au modèle).
+      setPreview({ doc: archived, url: doc.objectUrl() });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Le document n'a pas pu être archivé.");
     } finally {
@@ -174,8 +178,9 @@ export function Documents() {
   };
 
   const regenerate = async (d: any) => {
-    if (d.payload) await buildPdf(d.type as DocKind, d.reference, d.payload);
-    else toast.error("Document sans données source");
+    if (!d.payload) return toast.error("Document sans données source");
+    const doc = await buildPdf(d.type as DocKind, d.reference, d.payload);
+    setPreview({ doc: { ...d, mimeType: "application/pdf" }, url: doc.objectUrl() });
   };
 
   const isPayrollDocument = (d: any) => {
@@ -829,7 +834,23 @@ export function Documents() {
             <Button variant="outline" className="rounded-xl gap-1.5" onClick={() => preview && window.open(preview.url, "_blank")}>
               <ExternalLink size={15} /> Ouvrir dans un onglet
             </Button>
-            <Button className="rounded-xl gap-1.5" onClick={() => preview && downloadDocument(preview.doc)}>
+            <Button
+              className="rounded-xl gap-1.5"
+              onClick={() => {
+                if (!preview) return;
+                // Document sans fichier réellement stocké (régénéré depuis son
+                // payload, cf. `regenerate()`) : pas de storagePath à signer,
+                // on télécharge directement le blob local de l'aperçu.
+                if (!preview.doc.storagePath) {
+                  const a = document.createElement("a");
+                  a.href = preview.url;
+                  a.download = preview.doc.originalName || preview.doc.reference || preview.doc.title || "document.pdf";
+                  a.click();
+                  return;
+                }
+                void downloadDocument(preview.doc);
+              }}
+            >
               <Download size={15} /> Télécharger
             </Button>
           </DialogFooter>

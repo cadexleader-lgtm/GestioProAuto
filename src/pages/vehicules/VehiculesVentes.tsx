@@ -12,6 +12,7 @@ import { SaleWorkflowDialog } from "@/components/vehicles/SaleWorkflowDialog";
 import { useRole, can } from "@/lib/roles";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
 import { useFeatureFlags } from "@/lib/feature-flags";
+import { PdfPreviewDialog, usePdfPreview } from "@/components/PdfPreviewDialog";
 
 export function VehiculesVentes() {
   const role = useRole();
@@ -23,6 +24,7 @@ export function VehiculesVentes() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | "cash" | "credit">("all");
   const [workflowOpen, setWorkflowOpen] = useState(false);
+  const preview = usePdfPreview();
 
   const filtered = useMemo(() => {
     return sales
@@ -48,8 +50,8 @@ export function VehiculesVentes() {
     const v = s && vehicles.find((x) => x.id === s.vehicleId);
     if (!s || !v) return;
     try {
-      await generateSaleInvoice(s, v);
-      toast.success("Contrat PDF généré et archivé");
+      const doc = await generateSaleInvoice(s, v);
+      preview.show(doc, `contrat-vente-${s.id}`, `Contrat de vente — ${v.brand} ${v.model}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Le contrat n'a pas pu être archivé.");
     }
@@ -156,6 +158,7 @@ export function VehiculesVentes() {
       </div>
 
       <SaleWorkflowDialog open={workflowOpen} onOpenChange={setWorkflowOpen} />
+      <PdfPreviewDialog open={preview.open} onOpenChange={preview.onOpenChange} url={preview.url} filename={preview.filename} title={preview.title} />
     </div>
   );
 }

@@ -496,6 +496,15 @@ export class PdfDoc {
     const url = this.doc.output("bloburl");
     window.open(url as unknown as string, "_blank");
   }
+
+  /** URL `blob:` du PDF, pour l'afficher dans un `<iframe>` d'aperçu en page
+   * (contrairement à `.open()`/`window.open`, ne dépend pas de l'autorisation
+   * popup du navigateur — important quand l'appel suit un `await` réseau, où
+   * beaucoup de navigateurs bloquent silencieusement une nouvelle fenêtre). */
+  objectUrl(): string {
+    this.finalizeFooters();
+    return this.doc.output("bloburl") as unknown as string;
+  }
 }
 
 export function slug(s: string) {

@@ -127,7 +127,6 @@ export function pdfSaleContract(sale: VehicleSale, vehicle: Vehicle) {
   d.notice("Conditions générales", articlesText(p.contractArticles?.vente, p.terms || "Le véhicule est vendu en l'état. Aucune réclamation ne sera acceptée après la remise des clés, sauf vice caché avéré au sens de la loi applicable."));
   d.signatures(sigSlots(sale.customer, sale.signatures));
   d.stamp();
-  d.save(`contrat-vente-${slug(sale.customer)}-${sale.date}`);
   return d;
 }
 
@@ -191,7 +190,6 @@ export function pdfRentalContract(rental: Rental, vehicle: Vehicle) {
   );
   d.signatures(sigSlots(rental.customer, rental.signatures));
   d.stamp();
-  d.save(`contrat-location-${slug(rental.customer)}-${rental.startDate}`);
   return d;
 }
 
@@ -260,7 +258,6 @@ export function pdfCreditContract(credit: VehicleCredit, vehicle: Vehicle, payme
   );
   d.signatures(sigSlots(credit.customer, credit.signatures));
   d.stamp();
-  d.save(`contrat-credit-${slug(credit.customer)}-${credit.id}`);
   return d;
 }
 
@@ -335,7 +332,6 @@ export function pdfInvoice(opts: {
   d.notice("Conditions générales", p.terms || "");
   d.signatures(sigSlots(opts.customer.name, opts.signatures));
   d.stamp();
-  d.save(`facture-${slug(opts.reference)}`);
   return d;
 }
 
@@ -375,7 +371,6 @@ export function pdfReceipt(opts: {
   );
   d.signatures(sigSlots(opts.payerName, opts.signatures));
   d.stamp();
-  d.save(`recu-${slug(opts.reference)}`);
   return d;
 }
 
@@ -453,7 +448,6 @@ export function pdfPayslip(opts: {
     { label: "Le salarié", name: employeeName },
   ]);
   d.stamp();
-  d.save(`bulletin-${slug(employeeName)}-${opts.month}`);
   return d;
 }
 
@@ -488,7 +482,6 @@ export function pdfReport(opts: { title: string; period: string; sections: Repor
 
   d.signatures([{ label: "Établi par", name: p.name, dataUrl: p.signatureDataUrl || undefined }]);
   d.stamp();
-  d.save(`rapport-${slug(opts.title)}-${today()}`);
   return d;
 }
 

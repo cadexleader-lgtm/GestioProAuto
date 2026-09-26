@@ -18,6 +18,7 @@ import { useCompanyProfile } from "@/lib/company-profile";
 import { RENTAL_STATUS as STATUS } from "@/lib/vehicle-status";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
 import { useFeatureFlags } from "@/lib/feature-flags";
+import { PdfPreviewDialog, usePdfPreview } from "@/components/PdfPreviewDialog";
 
 /** Message WhatsApp de rappel de retour — humanisé et signé du nom réel de
  * l'entreprise (pas "GestioPro", qui est l'éditeur du logiciel, pas le
@@ -65,6 +66,7 @@ export function VehiculesLocations() {
   const [rentVehicleId, setRentVehicleId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const preview = usePdfPreview();
 
   // Auto-detect overdue and reflect in display (do not mutate)
   const enriched = useMemo(() => rentals.map((r) => ({
@@ -175,7 +177,7 @@ export function VehiculesLocations() {
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => {
                     generateRentalContract(r, v)
-                      .then(() => toast.success("Contrat PDF généré et archivé"))
+                      .then((doc) => preview.show(doc, `contrat-location-${r.id}`, `Contrat de location — ${v.brand} ${v.model}`))
                       .catch((error) => toast.error(error instanceof Error ? error.message : "Le contrat n'a pas pu être archivé."));
                   }}>
                     <FileText size={14} /> PDF
@@ -285,6 +287,7 @@ export function VehiculesLocations() {
         onOpenChange={(o) => !o && setDetailId(null)}
       />
       <ReturnRentalDialog rentalId={returnId} vehicle={returnVehicle} open={!!returnId} onOpenChange={(o) => !o && setReturnId(null)} onConfirm={confirmReturn} />
+      <PdfPreviewDialog open={preview.open} onOpenChange={preview.onOpenChange} url={preview.url} filename={preview.filename} title={preview.title} />
     </div>
   );
 }
