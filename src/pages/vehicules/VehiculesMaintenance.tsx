@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   useCollection, completeVehicleMaintenance, updateVehicleMaintenance,
   addMaintenanceSchedule, markMaintenanceScheduleDone, removeMaintenanceSchedule,
+  recordManualExpense,
 } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
 import { Wrench, Plus, AlertTriangle, Clock, CheckCircle2, TrendingDown, Pencil, RotateCcw, Trash2, CalendarClock } from "lucide-react";
@@ -36,8 +37,14 @@ export function VehiculesMaintenance() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [openSchedule, setOpenSchedule] = useState(false);
-  const [scheduleForm, setScheduleForm] = useState({ vehicleId: "", label: "Vidange", frequencyMonths: 3, startDate: new Date().toISOString().slice(0, 10) });
+  const [scheduleForm, setScheduleForm] = useState<{ vehicleId: string; label: string; frequencyMonths: number | ""; startDate: string; estimatedCost: number }>(
+    { vehicleId: "", label: "Vidange", frequencyMonths: 3, startDate: new Date().toISOString().slice(0, 10), estimatedCost: 0 },
+  );
   const [savingSchedule, setSavingSchedule] = useState(false);
+  const [doneSchedule, setDoneSchedule] = useState<(VehicleMaintenanceSchedule & { vehicle: any }) | null>(null);
+  const [doneCost, setDoneCost] = useState(0);
+  const [doneMethod, setDoneMethod] = useState<"Cash" | "Wave" | "Orange Money" | "Virement" | "Chèque">("Cash");
+  const [markingDone, setMarkingDone] = useState(false);
 
   const schedules = useMemo(() => {
     return vehicles
@@ -48,19 +55,52 @@ export function VehiculesMaintenance() {
   const saveSchedule = () => {
     if (!scheduleForm.vehicleId) return toast.error("Choisissez un véhicule");
     if (!scheduleForm.label.trim()) return toast.error("Renseignez le type d'entretien");
+    const frequencyMonths = Number(scheduleForm.frequencyMonths);
+    if (!frequencyMonths || frequencyMonths < 1) return toast.error("Renseignez une fréquence d'au moins 1 mois");
     if (savingSchedule) return;
     setSavingSchedule(true);
     try {
       addMaintenanceSchedule(scheduleForm.vehicleId, {
         label: scheduleForm.label.trim(),
-        frequencyMonths: scheduleForm.frequencyMonths,
+        frequencyMonths,
         startDate: scheduleForm.startDate,
+        estimatedCost: scheduleForm.estimatedCost || undefined,
       });
       toast.success("Entretien récurrent ajouté");
       setOpenSchedule(false);
-      setScheduleForm({ vehicleId: "", label: "Vidange", frequencyMonths: 3, startDate: new Date().toISOString().slice(0, 10) });
+      setScheduleForm({ vehicleId: "", label: "Vidange", frequencyMonths: 3, startDate: new Date().toISOString().slice(0, 10), estimatedCost: 0 });
     } finally {
       setSavingSchedule(false);
+    }
+  };
+
+  const openDoneDialog = (s: VehicleMaintenanceSchedule & { vehicle: any }) => {
+    setDoneSchedule(s);
+    setDoneCost(s.estimatedCost || 0);
+    setDoneMethod("Cash");
+  };
+
+  const confirmDone = async () => {
+    if (!doneSchedule || markingDone) return;
+    setMarkingDone(true);
+    try {
+      if (doneCost > 0) {
+        await recordManualExpense({
+          category: "Maintenance",
+          label: `${doneSchedule.label} — ${doneSchedule.vehicle.brand} ${doneSchedule.vehicle.model} (${doneSchedule.vehicle.plate})`,
+          amount: doneCost,
+          paymentMethod: doneMethod,
+          idempotencyKey: crypto.randomUUID(),
+          sourceId: crypto.randomUUID(),
+        });
+      }
+      markMaintenanceScheduleDone(doneSchedule.vehicle.id, doneSchedule.id, doneCost || undefined);
+      toast.success(doneCost > 0 ? "Marqué comme fait — dépense enregistrée" : "Marqué comme fait");
+      setDoneSchedule(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "L'entretien n'a pas pu être marqué comme fait.");
+    } finally {
+      setMarkingDone(false);
     }
   };
 
@@ -221,9 +261,17 @@ export function VehiculesMaintenance() {
                       <p className={`text-[11px] sm:text-xs ${overdue ? "text-rose-700 dark:text-rose-400" : soon ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground"}`}>
                         Tous les {s.frequencyMonths} mois · prochaine échéance {new Date(s.nextDueDate).toLocaleDateString("fr-FR")}
                         {overdue ? " · en retard" : soon ? ` · dans ${days}j` : ""}
+                        {s.estimatedCost ? ` · ≈ ${formatFCFA(s.estimatedCost)}` : ""}
                       </p>
                     </div>
-                    <Button size="sm" variant="outline" className="h-8 text-xs shrink-0" onClick={() => { markMaintenanceScheduleDone(s.vehicle.id, s.id); toast.success("Marqué comme fait — prochaine échéance recalculée"); }}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs shrink-0"
+                      disabled={!overdue && !soon}
+                      title={!overdue && !soon ? `Disponible à partir de 30 jours avant l'échéance (dans ${days}j)` : undefined}
+                      onClick={() => openDoneDialog(s)}
+                    >
                       <RotateCcw size={13} /> Fait
                     </Button>
                     <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0 text-muted-foreground" onClick={() => removeMaintenanceSchedule(s.vehicle.id, s.id)}>
@@ -379,20 +427,78 @@ export function VehiculesMaintenance() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Fréquence (mois)</Label>
-                <Input type="number" min={1} value={scheduleForm.frequencyMonths} onChange={(e) => setScheduleForm({ ...scheduleForm, frequencyMonths: Math.max(1, Number(e.target.value) || 1) })} />
+                <Input
+                  type="number"
+                  min={1}
+                  value={scheduleForm.frequencyMonths}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    // Ne pas forcer une valeur (ex. 1) tant que le champ est
+                    // vide en cours de saisie — sinon impossible de taper "2"
+                    // après avoir effacé le "1" par défaut (il revenait à 1 à
+                    // chaque frappe). La fréquence minimale est vérifiée à
+                    // l'enregistrement (saveSchedule), pas ici.
+                    setScheduleForm({ ...scheduleForm, frequencyMonths: raw === "" ? "" : Math.max(0, Number(raw)) });
+                  }}
+                />
               </div>
               <div>
                 <Label>Dernier fait le</Label>
                 <Input type="date" value={scheduleForm.startDate} onChange={(e) => setScheduleForm({ ...scheduleForm, startDate: e.target.value })} />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Prochaine échéance calculée : {new Date(new Date(scheduleForm.startDate).setMonth(new Date(scheduleForm.startDate).getMonth() + scheduleForm.frequencyMonths)).toLocaleDateString("fr-FR")}
-            </p>
+            <div>
+              <Label>Coût estimé (FCFA) — optionnel</Label>
+              <MoneyInput value={scheduleForm.estimatedCost} onChange={(v) => setScheduleForm({ ...scheduleForm, estimatedCost: v })} />
+              <p className="text-[11px] text-muted-foreground mt-1">Indicatif — le montant réel se saisit à chaque "Fait", le prix du marché pouvant varier.</p>
+            </div>
+            {scheduleForm.frequencyMonths !== "" && (
+              <p className="text-xs text-muted-foreground">
+                Prochaine échéance calculée : {new Date(new Date(scheduleForm.startDate).setMonth(new Date(scheduleForm.startDate).getMonth() + Number(scheduleForm.frequencyMonths))).toLocaleDateString("fr-FR")}
+              </p>
+            )}
           </div>
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setOpenSchedule(false)} disabled={savingSchedule}>Annuler</Button>
             <Button onClick={saveSchedule} disabled={savingSchedule}>{savingSchedule ? "Ajout..." : "Ajouter"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!doneSchedule} onOpenChange={(o) => !o && setDoneSchedule(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Marquer comme fait</DialogTitle></DialogHeader>
+          {doneSchedule && (
+            <div className="space-y-3 mt-2">
+              <p className="text-sm">
+                {doneSchedule.label} — {doneSchedule.vehicle.brand} {doneSchedule.vehicle.model} <span className="text-muted-foreground">({doneSchedule.vehicle.plate})</span>
+              </p>
+              <div>
+                <Label>Coût réel (FCFA) — optionnel</Label>
+                <MoneyInput value={doneCost} onChange={setDoneCost} />
+                {doneSchedule.estimatedCost ? (
+                  <p className="text-[11px] text-muted-foreground mt-1">Estimation précédente : {formatFCFA(doneSchedule.estimatedCost)}</p>
+                ) : null}
+              </div>
+              {doneCost > 0 && (
+                <div>
+                  <Label>Mode de paiement</Label>
+                  <Select value={doneMethod} onValueChange={(v) => setDoneMethod(v as typeof doneMethod)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(["Cash", "Wave", "Orange Money", "Virement", "Chèque"] as const).map((m) => (
+                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground mt-1">Une dépense "Maintenance" sera enregistrée pour ce montant.</p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setDoneSchedule(null)} disabled={markingDone}>Annuler</Button>
+            <Button onClick={confirmDone} disabled={markingDone}>{markingDone ? "Enregistrement..." : "Confirmer"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

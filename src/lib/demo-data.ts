@@ -182,6 +182,9 @@ export interface VehicleMaintenanceSchedule {
   frequencyMonths: number;
   lastDoneDate?: string;
   nextDueDate: string;
+  /** Coût estimé — indicatif, remis à jour avec le coût réel à chaque "fait"
+   * puisque le prix marché peut varier dans le temps (pièces, carburant…). */
+  estimatedCost?: number;
 }
 
 export const vehicles: Vehicle[] = [

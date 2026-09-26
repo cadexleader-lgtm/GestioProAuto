@@ -1837,7 +1837,7 @@ function addMonthsIso(dateIso: string, months: number): string {
 /** Ajoute un entretien récurrent (vidange, freins…) à un véhicule — écriture
  * directe `db.update`, même convention que `tracker`/`lastPosition` (métadonnée
  * non financière du véhicule, pas de RPC nécessaire). */
-export function addMaintenanceSchedule(vehicleId: string, input: { label: string; frequencyMonths: number; startDate: string }) {
+export function addMaintenanceSchedule(vehicleId: string, input: { label: string; frequencyMonths: number; startDate: string; estimatedCost?: number }) {
   const v = db.list("vehicles").find((x) => x.id === vehicleId);
   if (!v) throw new Error("Véhicule introuvable.");
   const schedule: VehicleMaintenanceSchedule = {
@@ -1846,18 +1846,22 @@ export function addMaintenanceSchedule(vehicleId: string, input: { label: string
     frequencyMonths: input.frequencyMonths,
     lastDoneDate: input.startDate,
     nextDueDate: addMonthsIso(input.startDate, input.frequencyMonths),
+    estimatedCost: input.estimatedCost,
   };
   db.update("vehicles", vehicleId, { maintenanceSchedules: [...(v.maintenanceSchedules ?? []), schedule] });
 }
 
 /** Marque un entretien récurrent comme fait aujourd'hui — recalcule la
- * prochaine échéance à partir de la fréquence. */
-export function markMaintenanceScheduleDone(vehicleId: string, scheduleId: string) {
+ * prochaine échéance à partir de la fréquence, et met à jour l'estimation de
+ * coût avec le montant réel payé (le prix marché varie dans le temps). */
+export function markMaintenanceScheduleDone(vehicleId: string, scheduleId: string, actualCost?: number) {
   const v = db.list("vehicles").find((x) => x.id === vehicleId);
   if (!v?.maintenanceSchedules) return;
   const today = new Date().toISOString().slice(0, 10);
   const next = v.maintenanceSchedules.map((s) =>
-    s.id === scheduleId ? { ...s, lastDoneDate: today, nextDueDate: addMonthsIso(today, s.frequencyMonths) } : s,
+    s.id === scheduleId
+      ? { ...s, lastDoneDate: today, nextDueDate: addMonthsIso(today, s.frequencyMonths), estimatedCost: actualCost ?? s.estimatedCost }
+      : s,
   );
   db.update("vehicles", vehicleId, { maintenanceSchedules: next });
 }
