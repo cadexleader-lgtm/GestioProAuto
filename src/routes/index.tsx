@@ -226,17 +226,18 @@ function LandingPage() {
 
       {/* HERO — seule section avec le fond net, non flouté */}
       <section className="relative overflow-hidden">
-        {/* Hauteur en h-[100dvh] (essayee avant) ne suffisait pas sur mobile :
-            un ecran de telephone est bien plus etroit-et-haut que le ratio de
-            l'image (1440x900, paysage), donc object-cover devait zoomer
-            enormement pour couvrir toute la hauteur — ne laissant voir qu'un
-            fragment agrandi d'une bulle centrale, le reste du dessin hors
-            cadre. Fix : `aspect-[1440/900]` fait respecter le ratio reel de
-            l'image (cover ne recadre alors quasi plus rien, le dessin entier
-            est visible) ; sur desktop/tablette (plus large que haut), c'est
-            `max-h-[100dvh]` qui prend le relais pour ne pas depasser un ecran
-            — la legere marge de recadrage residuelle y est negligeable. */}
-        <div className="absolute inset-x-0 top-0 -z-10 aspect-[1440/900] max-h-[100dvh] overflow-hidden"><AnimatedBackground variant="bubbles" /></div>
+        {/* `h-[100dvh]` seul (premier essai) etait deja correct sur desktop —
+            probleme mobile uniquement : un ecran de telephone est bien plus
+            etroit-et-haut que le ratio de l'image (1440x900, paysage), donc
+            object-cover devait zoomer enormement pour couvrir toute la
+            hauteur — ne laissant voir qu'un fragment agrandi d'une bulle
+            centrale. `aspect-[1440/900]` corrige ca en dessous du breakpoint
+            `sm` (respecte le vrai ratio de l'image, cover ne recadre plus
+            rien) ; `sm:aspect-auto sm:h-[100dvh]` annule cet ajustement a
+            partir de `sm` et restaure exactement le rendu desktop d'origine
+            (ne pas reappliquer aspect-[1440/900] au desktop — deja tente,
+            ca reduisait le fond au lieu de le laisser plein cadre). */}
+        <div className="absolute inset-x-0 top-0 -z-10 aspect-[1440/900] sm:aspect-auto sm:h-[100dvh] overflow-hidden"><AnimatedBackground variant="bubbles" /></div>
         <div className="mx-auto max-w-7xl px-4 pt-16 pb-20 sm:px-6 sm:pt-24">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mx-auto max-w-3xl text-center">
           <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
