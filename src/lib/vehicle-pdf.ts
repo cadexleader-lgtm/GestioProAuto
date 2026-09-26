@@ -15,7 +15,7 @@
 import { formatFCFA } from "./format";
 import type { Vehicle, VehicleCredit, Rental } from "./demo-data";
 import type { VehicleSale, VehiclePayment } from "./demo-store";
-import { uploadPrivateDocument } from "./demo-store";
+import { uploadPrivateDocument, addDocumentRelation } from "./demo-store";
 import { sendWhatsApp as waSend } from "./whatsapp";
 // jsPDF (~475 Ko) n'est chargé qu'à l'appel réel d'une des fonctions
 // ci-dessous (import() dynamique), pas au chargement des pages Ventes/
@@ -43,7 +43,22 @@ export async function generateRentalContract(rental: Rental, vehicle: Vehicle) {
     origin: "Généré",
     metadata: { phone: (rental as any).phone, rentalId: rental.id },
   });
+  await linkDocumentToCustomer(`rental-contract:${rental.id}`, rental.customer);
   return doc;
+}
+
+/** Relie aussi le document au client (en plus du véhicule, déjà fait par
+ * uploadPrivateDocument) — pour qu'il apparaisse dans l'onglet Documents de
+ * la fiche client (VehiculesClients.tsx), pas juste sur la fiche véhicule.
+ * Best-effort : un échec ici ne doit jamais faire échouer la génération du
+ * contrat lui-même (déjà archivé avec succès à ce stade). */
+async function linkDocumentToCustomer(documentId: string, customer: string | undefined) {
+  if (!customer?.trim()) return;
+  try {
+    await addDocumentRelation(documentId, "customer", customer.trim());
+  } catch (error) {
+    console.error("[gestiopro] document-customer link failed", error);
+  }
 }
 
 export async function generateSaleInvoice(sale: VehicleSale, vehicle: Vehicle) {
@@ -65,6 +80,7 @@ export async function generateSaleInvoice(sale: VehicleSale, vehicle: Vehicle) {
     origin: "Généré",
     metadata: { phone: sale.phone, saleId: sale.id },
   });
+  await linkDocumentToCustomer(`sale-contract:${sale.id}`, sale.customer);
   return doc;
 }
 
@@ -88,6 +104,7 @@ export async function generateCreditSchedule(credit: VehicleCredit, vehicle: Veh
     origin: "Généré",
     metadata: { phone: (credit as any).phone, creditId: credit.id },
   });
+  await linkDocumentToCustomer(`credit-contract:${credit.id}`, credit.customer);
   return doc;
 }
 
@@ -120,6 +137,7 @@ export async function generatePaymentReceipt(payment: VehiclePayment, credit: Ve
     origin: "Généré",
     metadata: { phone: (credit as any).phone, creditId: credit.id, paymentId: payment.id },
   });
+  await linkDocumentToCustomer(`payment-receipt:${payment.id}`, credit.customer);
   return doc;
 }
 

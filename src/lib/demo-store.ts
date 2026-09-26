@@ -488,6 +488,56 @@ export async function uploadPrivateDocument(input: {
   return documentData;
 }
 
+/** Ajoute une relation supplémentaire à un document déjà archivé (ex. un
+ * contrat de vente lié au véhicule par `uploadPrivateDocument` peut aussi
+ * être lié au client via cette fonction) — utilise `document_relations`,
+ * créée en 2026-09 mais jamais exploitée par l'UI jusqu'ici. Silencieux si
+ * la relation existe déjà (contrainte unique, code 23505). */
+export async function addDocumentRelation(
+  documentId: string,
+  entityType: PrivateDocumentEntityType,
+  entityId: string,
+  relationType = "attachment",
+) {
+  if (!companyId) throw new Error("Aucune entreprise active n'est disponible.");
+  const { error } = await sb.from("document_relations").insert({
+    company_id: companyId,
+    document_id: documentId,
+    entity_type: entityType,
+    entity_id: entityId,
+    relation_type: relationType,
+  });
+  if (error && error.code !== "23505") {
+    throw new Error(error.message || "Le document n'a pas pu être relié.");
+  }
+}
+
+/** Documents liés à une entité (ex. tous les documents d'un client) via
+ * `document_relations`. Requête à la demande (pas une collection réactive
+ * globale) — utilisé pour l'onglet Documents de la fiche client. */
+export async function getEntityDocuments(entityType: PrivateDocumentEntityType, entityId: string): Promise<ArchivedDocument[]> {
+  if (!companyId) return [];
+  const { data: relations, error: relError } = await sb
+    .from("document_relations")
+    .select("document_id")
+    .eq("company_id", companyId)
+    .eq("entity_type", entityType)
+    .eq("entity_id", entityId);
+  if (relError || !relations?.length) return [];
+
+  const documentIds = [...new Set((relations as { document_id: string }[]).map((r) => r.document_id))];
+  const { data: docs, error: docsError } = await sb
+    .from("documents")
+    .select("*")
+    .eq("company_id", companyId)
+    .in("id", documentIds);
+  if (docsError || !docs) return [];
+
+  return (docs as any[])
+    .map((d) => ({ id: d.id, ...(d.data ?? {}) }) as ArchivedDocument)
+    .sort((a: ArchivedDocument, b: ArchivedDocument) => +new Date(b.createdAt) - +new Date(a.createdAt));
+}
+
 export async function getPrivateDocumentUrl(
   doc: { dataUrl?: string; storageBucket?: string; storagePath?: string },
   expiresInSeconds = 60,

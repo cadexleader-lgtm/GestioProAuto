@@ -1,15 +1,31 @@
-import { useMemo, useState } from "react";
-import { useCollection, vehicleProfitability } from "@/lib/demo-store";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCollection, vehicleProfitability, uploadPrivateDocument, getEntityDocuments, getPrivateDocumentUrl,
+  type ArchivedDocument,
+} from "@/lib/demo-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatFCFA } from "@/lib/format";
 import {
   Users, Search, Car, CreditCard, KeyRound, Phone, MapPin,
   AlertTriangle, ShieldAlert, Wrench, TrendingUp, FileText,
+  Camera, Upload, Plus, Eye, Loader2, IdCard,
 } from "lucide-react";
+import { toast } from "sonner";
+import { can, useRole } from "@/lib/roles";
+import { RestrictedAccess } from "@/components/RestrictedAccess";
+
+const CLIENT_DOC_TYPES: Record<string, string> = {
+  cin: "Carte d'identité",
+  passeport: "Passeport",
+  permis: "Permis de conduire",
+  autre: "Autre document",
+};
 
 type ClientAgg = {
   name: string;
@@ -27,6 +43,7 @@ type ClientAgg = {
 };
 
 export function VehiculesClients() {
+  const role = useRole();
   const vehicles = useCollection("vehicles");
   const sales = useCollection("vehicleSales");
   const credits = useCollection("vehicleCredits");
@@ -34,6 +51,13 @@ export function VehiculesClients() {
   const rentals = useCollection("rentals");
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+  const [clientDocs, setClientDocs] = useState<ArchivedDocument[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadType, setUploadType] = useState("cin");
+  const [uploading, setUploading] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const clients = useMemo<ClientAgg[]>(() => {
     const map = new Map<string, ClientAgg>();
@@ -90,6 +114,56 @@ export function VehiculesClients() {
 
   const selectedClient = clients.find((c) => c.name === selected) || null;
   const vById = (id: string) => vehicles.find((v) => v.id === id);
+
+  useEffect(() => {
+    if (!selectedClient) { setClientDocs([]); return; }
+    let cancelled = false;
+    setLoadingDocs(true);
+    getEntityDocuments("customer", selectedClient.name)
+      .then((docs) => { if (!cancelled) setClientDocs(docs); })
+      .finally(() => { if (!cancelled) setLoadingDocs(false); });
+    return () => { cancelled = true; };
+  }, [selectedClient?.name]);
+
+  const uploadClientDocument = async (file: File) => {
+    if (!selectedClient) return;
+    if (file.size > 8 * 1024 * 1024) return toast.error("Fichier trop lourd (max 8 Mo)");
+    setUploading(true);
+    try {
+      await uploadPrivateDocument({
+        file,
+        type: uploadType,
+        title: `${CLIENT_DOC_TYPES[uploadType]} — ${selectedClient.name}`,
+        reference: selectedClient.name,
+        entityType: "customer",
+        entityId: selectedClient.name,
+        entityLabel: selectedClient.name,
+        relationType: "client_identity",
+        origin: "Importé",
+      });
+      toast.success("Document ajouté");
+      setUploadOpen(false);
+      const docs = await getEntityDocuments("customer", selectedClient.name);
+      setClientDocs(docs);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Le document n'a pas pu être ajouté.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const viewClientDocument = async (doc: ArchivedDocument) => {
+    try {
+      const url = await getPrivateDocumentUrl(doc, 300);
+      window.open(url, "_blank");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Aperçu indisponible.");
+    }
+  };
+
+  if (!can(role, "view.finance")) {
+    return <RestrictedAccess title="Clients auto" message="Accès aux fiches clients restreint à votre rôle." />;
+  }
 
   const today = Date.now();
   const soonMs = 30 * 86400000;
@@ -340,6 +414,35 @@ export function VehiculesClients() {
                   )}
                 </Section>
 
+                <Section
+                  title="Documents"
+                  icon={<IdCard size={16} />}
+                  action={
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setUploadOpen(true)}>
+                      <Plus size={12} /> Ajouter
+                    </Button>
+                  }
+                >
+                  {loadingDocs ? (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Loader2 size={12} className="animate-spin" /> Chargement…</p>
+                  ) : clientDocs.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Aucun document (pièce d'identité, contrat…)</p>
+                  ) : (
+                    clientDocs.map((d) => (
+                      <div key={d.id} className="flex items-center gap-3 py-2 border-b last:border-0">
+                        <FileText size={14} className="text-muted-foreground shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{d.title}</p>
+                          <p className="text-[10px] text-muted-foreground">{new Date(d.createdAt).toLocaleDateString("fr-FR")}</p>
+                        </div>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => viewClientDocument(d)}>
+                          <Eye size={14} />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </Section>
+
                 {selectedClient.phone && (
                   <Button
                     className="w-full rounded-xl"
@@ -360,6 +463,49 @@ export function VehiculesClients() {
           )}
         </SheetContent>
       </Sheet>
+
+      <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Ajouter un document</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <Select value={uploadType} onValueChange={setUploadType}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(CLIENT_DOC_TYPES).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant="outline" disabled={uploading} onClick={() => cameraInputRef.current?.click()}>
+                <Camera size={15} /> Prendre une photo
+              </Button>
+              <Button type="button" variant="outline" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
+                <Upload size={15} /> Choisir un fichier
+              </Button>
+            </div>
+            {uploading && <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Loader2 size={12} className="animate-spin" /> Envoi en cours…</p>}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadClientDocument(f); e.target.value = ""; }}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,application/pdf"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadClientDocument(f); e.target.value = ""; }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setUploadOpen(false)} disabled={uploading}>Annuler</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -393,12 +539,15 @@ function Mini({ icon, value, label, accent }: { icon: React.ReactNode; value: nu
   );
 }
 
-function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Section({ title, icon, action, children }: { title: string; icon: React.ReactNode; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">
-        {icon} {title}
-      </h3>
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          {icon} {title}
+        </h3>
+        {action}
+      </div>
       <div className="rounded-xl border p-3">{children}</div>
     </div>
   );
