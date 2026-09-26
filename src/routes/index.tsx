@@ -226,19 +226,19 @@ function LandingPage() {
 
       {/* HERO — seule section avec le fond net, non flouté */}
       <section className="relative overflow-hidden">
-        {/* Hauteur bornée a un ecran (h-[100dvh]) plutot que inset-0 sur toute la
-            section : sur mobile, le hero (texte + boutons + maquette) est bien plus
-            haut qu'un ecran une fois empile en colonne — avec inset-0, le SVG en
-            preserveAspectRatio="...slice" (cover) devait alors zoomer enormement
-            pour couvrir cette forme tres etroite et tres haute, ne laissant voir
-            qu'un fragment agrandi d'une bulle. Borne a 100dvh, le ratio reste
-            raisonnable ; l'exces est de toute facon coupe par overflow-hidden. */}
-        <div className="absolute inset-x-0 top-0 -z-10 h-[100dvh]"><AnimatedBackground variant="bubbles" /></div>
+        {/* Hauteur en h-[100dvh] (essayee avant) ne suffisait pas sur mobile :
+            un ecran de telephone est bien plus etroit-et-haut que le ratio de
+            l'image (1440x900, paysage), donc object-cover devait zoomer
+            enormement pour couvrir toute la hauteur — ne laissant voir qu'un
+            fragment agrandi d'une bulle centrale, le reste du dessin hors
+            cadre. Fix : `aspect-[1440/900]` fait respecter le ratio reel de
+            l'image (cover ne recadre alors quasi plus rien, le dessin entier
+            est visible) ; sur desktop/tablette (plus large que haut), c'est
+            `max-h-[100dvh]` qui prend le relais pour ne pas depasser un ecran
+            — la legere marge de recadrage residuelle y est negligeable. */}
+        <div className="absolute inset-x-0 top-0 -z-10 aspect-[1440/900] max-h-[100dvh] overflow-hidden"><AnimatedBackground variant="bubbles" /></div>
         <div className="mx-auto max-w-7xl px-4 pt-16 pb-20 sm:px-6 sm:pt-24">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mx-auto max-w-3xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold text-primary">
-            <Sparkles size={14} /> ERP moderne · Pensé pour l'automobile africaine
-          </div>
           <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
             Gérez tout votre parc auto{" "}
             <span className="bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">depuis un seul logiciel</span>

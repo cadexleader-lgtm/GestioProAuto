@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
   <style>
     .f{transform-box:fill-box;transform-origin:center;animation:ease-in-out infinite alternate;will-change:transform,opacity}
-    .a{animation-name:dA;animation-duration:18s}
-    .b{animation-name:dB;animation-duration:22s}
-    .c{animation-name:dC;animation-duration:26s}
-    .d{animation-name:dD;animation-duration:20s}
-    .p{animation-name:pulse;animation-duration:9s}
+    .a{animation-name:dA;animation-duration:10s}
+    .b{animation-name:dB;animation-duration:12s}
+    .c{animation-name:dC;animation-duration:14s}
+    .d{animation-name:dD;animation-duration:11s}
+    .p{animation-name:pulse;animation-duration:5s}
     @keyframes dA{to{transform:translate(-30px,40px) scale(1.04)}}
     @keyframes dB{to{transform:translate(40px,-25px) scale(1.06)}}
     @keyframes dC{to{transform:translate(-45px,-30px) scale(1.03)}}

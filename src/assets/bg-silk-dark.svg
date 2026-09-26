@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
   <style>
     .f{transform-box:fill-box;transform-origin:center;animation:ease-in-out infinite alternate;will-change:transform,opacity}
-    .light{animation-name:light;animation-duration:14s}
-    .w1{animation-name:w1;animation-duration:16s}
-    .w2{animation-name:w2;animation-duration:20s}
-    .w3{animation-name:w3;animation-duration:24s}
-    .edge{animation-name:edge;animation-duration:8s}
+    .light{animation-name:light;animation-duration:8s}
+    .w1{animation-name:w1;animation-duration:9s}
+    .w2{animation-name:w2;animation-duration:11s}
+    .w3{animation-name:w3;animation-duration:13s}
+    .edge{animation-name:edge;animation-duration:5s}
     @keyframes light{to{transform:translate(120px,40px) scale(1.15);opacity:.7}}
     @keyframes w1{to{transform:translate(-40px,-25px) scaleY(1.08)}}
     @keyframes w2{to{transform:translate(50px,20px) scaleY(.94)}}

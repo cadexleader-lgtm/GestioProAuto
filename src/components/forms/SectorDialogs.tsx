@@ -25,7 +25,7 @@ import { saveDraft, loadDraft, clearDraft } from "@/lib/form-draft";
 import { withWakeLock } from "@/lib/wake-lock";
 import { Progress } from "@/components/ui/progress";
 
-const MAX_GALLERY_PHOTOS = 12;
+const MAX_GALLERY_PHOTOS = 10;
 export const VEHICLE_DRAFT_KEY = "gestiopro.draft.newVehicle";
 
 interface GalleryItem { key: string; url: string; file?: File }
@@ -215,7 +215,7 @@ export function VehicleDialog({
         // telles quelles. On envoie les fichiers réels au stockage et on
         // remplace par les URL publiques avant d'écrire le véhicule.
         // gallery[0] fait toujours office de couverture (form.image) ; le
-        // reste (jusqu'à 11 de plus, 12 au total) va dans form.photos.
+        // reste (jusqu'à 9 de plus, 10 au total) va dans form.photos.
         const uploadedUrls: string[] = [];
         let mediaFailed = false;
         let uploaded = 0;
