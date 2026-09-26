@@ -313,3 +313,29 @@
   }
   &::-webkit-scrollbar-track { background: transparent; }
 }
+
+/* Écran de chargement post-connexion (CarLoadingGauge.tsx) : une voiture qui
+   "roule" en boucle le long d'une jauge indéterminée — pas de pourcentage
+   réel disponible (juste un état chargé/pas chargé), donc une animation en
+   boucle plutôt qu'une vraie progression, comme le spinner qu'elle remplace. */
+@keyframes road-car-drive {
+  0% { left: -8%; }
+  100% { left: 108%; }
+}
+@keyframes road-car-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+@keyframes road-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.animate-road-car {
+  animation: road-car-drive 1.8s linear infinite, road-car-bounce 0.3s ease-in-out infinite;
+}
+.animate-road-sweep {
+  animation: road-sweep 1.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-road-car, .animate-road-sweep { animation: none; }
+}

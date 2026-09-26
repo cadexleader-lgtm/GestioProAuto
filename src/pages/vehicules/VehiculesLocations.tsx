@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCollection, startRental, recordVehicleRentalReturn, isRentalOverdue } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { KeyRound, Plus, AlertTriangle, Calendar, CheckCircle2, RotateCcw, FileText, MessageCircle, Archive, ChevronDown, MapPin, Car } from "lucide-react";
+import { KeyRound, Plus, AlertTriangle, Calendar, CheckCircle2, RotateCcw, FileText, MessageCircle, Archive, ChevronDown, MapPin, Car, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { RentVehicleDialog, RentalPaymentDialog, ReturnRentalDialog } from "@/components/vehicles/VehicleActionsDialogs";
 import { VehicleDetailSheet } from "@/components/vehicles/VehicleDetailSheet";
@@ -67,6 +67,7 @@ export function VehiculesLocations() {
   const [showHistory, setShowHistory] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const preview = usePdfPreview();
+  const [pdfLoadingId, setPdfLoadingId] = useState<string | null>(null);
 
   // Auto-detect overdue and reflect in display (do not mutate)
   const enriched = useMemo(() => rentals.map((r) => ({
@@ -175,12 +176,19 @@ export function VehiculesLocations() {
                   <Button size="sm" variant="outline" onClick={() => setDetailId(v.id)}>
                     <Car size={14} /> Fiche
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => {
-                    generateRentalContract(r, v)
-                      .then((doc) => preview.show(doc, `contrat-location-${r.id}`, `Contrat de location — ${v.brand} ${v.model}`))
-                      .catch((error) => toast.error(error instanceof Error ? error.message : "Le contrat n'a pas pu être archivé."));
-                  }}>
-                    <FileText size={14} /> PDF
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={pdfLoadingId === r.id}
+                    onClick={() => {
+                      setPdfLoadingId(r.id);
+                      generateRentalContract(r, v)
+                        .then((doc) => preview.show(doc, `contrat-location-${r.id}`, `Contrat de location — ${v.brand} ${v.model}`))
+                        .catch((error) => toast.error(error instanceof Error ? error.message : "Le contrat n'a pas pu être archivé."))
+                        .finally(() => setPdfLoadingId(null));
+                    }}
+                  >
+                    {pdfLoadingId === r.id ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />} PDF
                   </Button>
                   {r.phone && (
                     <Button size="sm" variant="outline" onClick={() => {

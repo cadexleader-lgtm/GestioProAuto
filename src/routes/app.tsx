@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Building2 } from "lucide-react";
 import { toast } from "sonner";
+import { CarLoadingGauge } from "@/components/CarLoadingGauge";
 
 export const Route = createFileRoute("/app")({
   ssr: false,
@@ -53,10 +54,7 @@ function TenantGate() {
   if (tenant.loading || (tenant.company && !bound)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm">Chargement de votre espace…</p>
-        </div>
+        <CarLoadingGauge />
       </div>
     );
   }

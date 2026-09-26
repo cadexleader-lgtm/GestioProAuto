@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
@@ -7,24 +7,35 @@ import {
 } from "recharts";
 import { TrendingUp, TrendingDown, Wallet, LineChart as LineChartIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-type Period = "J" | "S" | "M" | "A";
+import type { FinancePeriod, PeriodRange } from "@/lib/date-range";
 
 interface Bucket { key: string; label: string; ca: number; depenses: number; net: number; cumul: number; }
 
-const PERIOD_LABEL: Record<Period, string> = { J: "Jour", S: "Semaine", M: "Mois", A: "Année" };
-
 /**
- * Live revenue vs expenses evolution chart driven by cash movements + expenses.
- * J = 24h/heure, S = 7j/jour, M = 30j/jour, A = 12 mois.
+ * Live revenue vs expenses evolution chart driven by cash movements +
+ * expenses. Période et bornes exactes pilotées par le parent (Tresorerie.tsx)
+ * — avant, ce composant gérait son propre filtre interne indépendant de
+ * celui affiché au-dessus (les KPI "Encaissements/Décaissements/Résultat
+ * net"), ce qui les désynchronisait : changer un filtre ne changeait pas
+ * l'autre. day = 24h/heure (00h→23h de la journée exacte, pas glissant sur
+ * 24h), week = Lundi→Dimanche exact, month = tous les jours du mois
+ * calendaire, year = 12 mois de l'année calendaire.
  */
-export function RevenueEvolutionChart({ title = "Évolution CA vs Dépenses", className }: { title?: string; className?: string }) {
+export function RevenueEvolutionChart({
+  title = "Évolution CA vs Dépenses",
+  className,
+  period,
+  range,
+}: {
+  title?: string;
+  className?: string;
+  period: FinancePeriod;
+  range: PeriodRange;
+}) {
   const cash = useCollection("cash");
   const expenses = useCollection("expenses");
-  const [period, setPeriod] = useState<Period>("S");
 
   const data = useMemo<Bucket[]>(() => {
-    const now = new Date();
     const buckets: Bucket[] = [];
     const idx = new Map<string, Bucket>();
 
@@ -34,34 +45,39 @@ export function RevenueEvolutionChart({ title = "Évolution CA vs Dépenses", cl
       idx.set(key, b);
     };
 
-    if (period === "J") {
-      for (let h = 23; h >= 0; h--) {
-        const d = new Date(now); d.setMinutes(0, 0, 0); d.setHours(d.getHours() - h);
-        push(d.toISOString().slice(0, 13), `${String(d.getHours()).padStart(2, "0")}h`);
+    if (period === "day") {
+      for (let h = 0; h < 24; h++) {
+        const d = new Date(range.start); d.setHours(h, 0, 0, 0);
+        push(d.toISOString().slice(0, 13), `${String(h).padStart(2, "0")}h`);
       }
-    } else if (period === "S") {
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i);
+    } else if (period === "week") {
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(range.start); d.setDate(d.getDate() + i);
         push(d.toISOString().slice(0, 10), d.toLocaleDateString("fr-FR", { weekday: "short" }));
       }
-    } else if (period === "M") {
-      for (let i = 29; i >= 0; i--) {
-        const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i);
-        push(d.toISOString().slice(0, 10), `${d.getDate()}/${d.getMonth() + 1}`);
+    } else if (period === "month") {
+      const daysInMonth = Math.round((+range.end - +range.start) / 86400000);
+      for (let i = 0; i < daysInMonth; i++) {
+        const d = new Date(range.start); d.setDate(d.getDate() + i);
+        push(d.toISOString().slice(0, 10), `${d.getDate()}`);
       }
     } else {
-      for (let i = 11; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      for (let i = 0; i < 12; i++) {
+        const d = new Date(range.start.getFullYear(), range.start.getMonth() + i, 1);
         push(d.toISOString().slice(0, 7), d.toLocaleDateString("fr-FR", { month: "short" }));
       }
     }
 
     const bucketKey = (iso: string) => {
       const d = new Date(iso);
-      if (period === "J") return d.toISOString().slice(0, 13);
-      if (period === "A") return d.toISOString().slice(0, 7);
+      if (period === "day") return d.toISOString().slice(0, 13);
+      if (period === "year") return d.toISOString().slice(0, 7);
       return d.toISOString().slice(0, 10);
     };
+    // Pas de check de fenêtre explicite : un mouvement hors de la période
+    // produit une bucketKey absente de `idx` (buckets créés uniquement pour
+    // la fenêtre affichée) — `idx.get()` renvoie alors undefined et la ligne
+    // est ignorée plus bas (`if (!b) continue`).
 
     // Le journal de caisse est la source unique de vérité : chaque dépense
     // génère déjà une sortie de caisse, on ne l'additionne donc pas deux fois.
@@ -95,7 +111,7 @@ export function RevenueEvolutionChart({ title = "Évolution CA vs Dépenses", cl
       b.cumul = running;
     }
     return buckets;
-  }, [cash, expenses, period]);
+  }, [cash, expenses, period, +range.start, +range.end]);
 
   const totalCA = data.reduce((s, b) => s + b.ca, 0);
   const totalDep = data.reduce((s, b) => s + b.depenses, 0);
@@ -115,24 +131,8 @@ export function RevenueEvolutionChart({ title = "Évolution CA vs Dépenses", cl
           <div className="min-w-0">
             <CardTitle className="text-base sm:text-lg">{title}</CardTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {PERIOD_LABEL[period]} · {best && best.ca > 0 ? `Pic ${best.label} (${formatFCFA(best.ca)})` : "Synchronisé en temps réel"}
+              {range.label} · {best && best.ca > 0 ? `Pic ${best.label} (${formatFCFA(best.ca)})` : "Synchronisé en temps réel"}
             </p>
-          </div>
-          <div className="inline-flex w-full lg:w-auto rounded-xl border border-border bg-muted/40 p-1 text-xs font-semibold">
-            {(["J", "S", "M", "A"] as Period[]).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={cn(
-                  "flex-1 lg:flex-none px-3 py-1.5 rounded-lg transition-colors",
-                  period === p
-                    ? "bg-background shadow-sm text-foreground"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {PERIOD_LABEL[p]}
-              </button>
-            ))}
           </div>
         </div>
 
@@ -187,7 +187,7 @@ export function RevenueEvolutionChart({ title = "Évolution CA vs Dépenses", cl
                     );
                   }}
                 />
-                <Bar dataKey="depenses" name="Dépenses" fill="hsl(var(--chart-cout))" fillOpacity={0.35} radius={[4, 4, 0, 0]} barSize={period === "M" || period === "J" ? 6 : 18} />
+                <Bar dataKey="depenses" name="Dépenses" fill="hsl(var(--chart-cout))" fillOpacity={0.35} radius={[4, 4, 0, 0]} barSize={period === "month" || period === "day" ? 6 : 18} />
                 <Area type="monotone" dataKey="ca" name="Encaissements" stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#ca-grad)" />
                 <Line type="monotone" dataKey="cumul" name="Cumul net" stroke="hsl(var(--chart-profit))" strokeWidth={2} dot={false} strokeDasharray="5 4" />
               </ComposedChart>

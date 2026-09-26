@@ -14,7 +14,7 @@ import {
 import {
   FileText, Download, Send, Search, Plus, Trash2, FileSpreadsheet, Receipt,
   ScrollText, FileSignature, RefreshCw, CalendarClock, ShieldAlert, FolderOpen,
-  Wallet, Sparkles, Eye, ChevronLeft, ChevronRight, ExternalLink,
+  Wallet, Sparkles, Eye, ChevronLeft, ChevronRight, ExternalLink, Loader2,
 } from "lucide-react";
 import { useCollection, db, getPrivateDocumentUrl, uploadPrivateDocument, attachSaleDocuments } from "@/lib/demo-store";
 import { useRole } from "@/lib/roles";
@@ -809,7 +809,7 @@ export function Documents() {
           <DialogFooter className="mt-5 gap-2">
             <Button variant="outline" className="rounded-xl" onClick={() => setKind(null)} disabled={generating}>Annuler</Button>
             <Button className="rounded-xl gap-1.5" onClick={generate} disabled={generating}>
-              <Download size={15} /> {generating ? "Génération..." : "Générer le PDF"}
+              {generating ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />} {generating ? "Génération..." : "Générer le PDF"}
             </Button>
           </DialogFooter>
         </DialogContent>

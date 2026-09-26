@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { ShoppingCart, Search, FileText, MessageCircle, TrendingUp, Wallet, Package, Plus, Bell } from "lucide-react";
+import { ShoppingCart, Search, FileText, MessageCircle, TrendingUp, Wallet, Package, Plus, Bell, Loader2 } from "lucide-react";
 import { generateSaleInvoice, sendWhatsApp } from "@/lib/vehicle-pdf";
 import { toast } from "sonner";
 import { SaleWorkflowDialog } from "@/components/vehicles/SaleWorkflowDialog";
@@ -25,6 +25,7 @@ export function VehiculesVentes() {
   const [filter, setFilter] = useState<"all" | "cash" | "credit">("all");
   const [workflowOpen, setWorkflowOpen] = useState(false);
   const preview = usePdfPreview();
+  const [pdfLoadingId, setPdfLoadingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return sales
@@ -48,12 +49,15 @@ export function VehiculesVentes() {
   const handlePdf = async (saleId: string) => {
     const s = sales.find((x) => x.id === saleId);
     const v = s && vehicles.find((x) => x.id === s.vehicleId);
-    if (!s || !v) return;
+    if (!s || !v || pdfLoadingId) return;
+    setPdfLoadingId(saleId);
     try {
       const doc = await generateSaleInvoice(s, v);
       preview.show(doc, `contrat-vente-${s.id}`, `Contrat de vente — ${v.brand} ${v.model}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Le contrat n'a pas pu être archivé.");
+    } finally {
+      setPdfLoadingId(null);
     }
   };
 
@@ -141,7 +145,9 @@ export function VehiculesVentes() {
                   <p className="font-display font-bold text-primary text-lg">{formatFCFA(s.amount)}</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handlePdf(s.id)}><FileText size={14} /> PDF</Button>
+                  <Button size="sm" variant="outline" disabled={pdfLoadingId === s.id} onClick={() => handlePdf(s.id)}>
+                    {pdfLoadingId === s.id ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />} PDF
+                  </Button>
                   <Button size="sm" variant="outline" onClick={() => handleWa(s.id)}><MessageCircle size={14} /> WhatsApp</Button>
                 </div>
               </CardContent>

@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { CreditCard, AlertTriangle, Plus, Wallet, TrendingDown, FileText, MessageCircle, Archive, ChevronDown, CheckCircle2 } from "lucide-react";
+import { CreditCard, AlertTriangle, Plus, Wallet, TrendingDown, FileText, MessageCircle, Archive, ChevronDown, CheckCircle2, Loader2 } from "lucide-react";
 import { CreditPaymentDialog } from "@/components/vehicles/VehicleActionsDialogs";
 import { NewCreditSaleDialog } from "@/components/vehicles/NewCreditSaleDialog";
 import { generateCreditSchedule, sendWhatsApp } from "@/lib/vehicle-pdf";
@@ -30,6 +30,7 @@ export function VehiculesCredits() {
   const [openNew, setOpenNew] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const preview = usePdfPreview();
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const paidOf = (c: VehicleCredit) =>
     c.downPayment + payments.filter(p => p.creditId === c.id).reduce((x, p) => x + p.amount, 0);
@@ -232,13 +233,20 @@ export function VehiculesCredits() {
                 </div>
 
                 <div className="mt-4 flex gap-2 flex-wrap">
-                  <Button variant="outline" size="sm" onClick={() => {
-                    if (!v) return;
-                    generateCreditSchedule(openDetail, v, credPays)
-                      .then((doc) => preview.show(doc, `contrat-credit-${openDetail.id}`, `Échéancier de crédit — ${v.brand} ${v.model}`))
-                      .catch((error) => toast.error(error instanceof Error ? error.message : "L'échéancier n'a pas pu être archivé."));
-                  }}>
-                    <FileText size={14} /> Échéancier PDF
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={pdfLoading}
+                    onClick={() => {
+                      if (!v) return;
+                      setPdfLoading(true);
+                      generateCreditSchedule(openDetail, v, credPays)
+                        .then((doc) => preview.show(doc, `contrat-credit-${openDetail.id}`, `Échéancier de crédit — ${v.brand} ${v.model}`))
+                        .catch((error) => toast.error(error instanceof Error ? error.message : "L'échéancier n'a pas pu être archivé."))
+                        .finally(() => setPdfLoading(false));
+                    }}
+                  >
+                    {pdfLoading ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />} Échéancier PDF
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => {
                     sendWhatsApp("", `Bonjour ${openDetail.customer}, votre solde de crédit véhicule est de ${formatFCFA(remaining)}. Prochaine échéance le ${openDetail.nextDueDate}. — GestioAuto`);

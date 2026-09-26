@@ -5,13 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCollection } from "@/lib/demo-store";
 import { formatFCFA } from "@/lib/format";
-import { ArrowDownLeft, ArrowUpRight, Wallet, ArrowLeftRight, Scale, PiggyBank, Receipt } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Wallet, ArrowLeftRight, Scale, PiggyBank, Receipt, ChevronLeft, ChevronRight } from "lucide-react";
 import { CashMovementDialog } from "@/components/forms/FinanceDialogs";
 import { RevenueEvolutionChart } from "@/components/analytics/RevenueEvolutionChart";
 import { RestrictedAccess } from "@/components/RestrictedAccess";
 import { useRole, can } from "@/lib/roles";
+import { getPeriodRange, inRange, type FinancePeriod } from "@/lib/date-range";
 
-type Period = "day" | "month" | "year" | "all";
+type Period = FinancePeriod | "all";
 
 // Les ventes/paiements enregistrent le moyen de paiement ("Cash", "Virement", "Chèque")
 // alors que les mouvements manuels utilisent des noms de compte ("Caisse principale",
@@ -30,16 +31,19 @@ export function Tresorerie() {
   const expenses = useCollection("expenses");
   const [type, setType] = useState<"in"|"out"|"transfer"|null>(null);
   const [period, setPeriod] = useState<Period>("month");
+  // Navigue vers une période passée précise (ex. "la semaine dernière", "le
+  // mois d'avant") sans quitter le filtre choisi — 0 = période en cours,
+  // -1 = précédente, etc. Réinitialisé à chaque changement de granularité
+  // pour toujours repartir de la période en cours.
+  const [offset, setOffset] = useState(0);
   const [account, setAccount] = useState("all");
 
-  const todayKey = new Date().toISOString().slice(0, 10);
-  const monthKey = todayKey.slice(0, 7);
-  const yearKey = todayKey.slice(0, 4);
-  const inPeriod = (d: string) =>
-    period === "all" ? true
-      : period === "day" ? d.startsWith(todayKey)
-      : period === "month" ? d.startsWith(monthKey)
-      : d.startsWith(yearKey);
+  const range = useMemo(
+    () => (period === "all" ? null : getPeriodRange(period, offset)),
+    [period, offset],
+  );
+  // "Tout l'historique" n'a pas de bornes — tout passe.
+  const inPeriod = (d: string) => !range || inRange(d, range);
 
   const totalIn = cashMovements.filter(m => m.type === "in").reduce((s, m) => s + m.amount, 0);
   const totalOut = cashMovements.filter(m => m.type === "out").reduce((s, m) => s + m.amount, 0);
@@ -50,7 +54,7 @@ export function Tresorerie() {
     .filter(m => account === "all" || normalizeCashAccount(m.source) === account)
     .slice()
     .sort((a, b) => (a.date < b.date ? 1 : -1)),
-  [cashMovements, period, account]);
+  [cashMovements, period, offset, account]);
 
   // Les virements internes (Wave -> Caisse principale, etc.) déplacent de l'argent
   // entre comptes de l'entreprise mais ne sont ni un vrai encaissement ni un vrai
@@ -119,26 +123,54 @@ export function Tresorerie() {
         />
       </div>
 
-      <div className="grid grid-cols-2 sm:max-w-md gap-2">
-        <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="day">Aujourd'hui</SelectItem>
-            <SelectItem value="month">Ce mois</SelectItem>
-            <SelectItem value="year">Cette année</SelectItem>
-            <SelectItem value="all">Tout l'historique</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={account} onValueChange={setAccount}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes les caisses</SelectItem>
-            {accounts.map(a => <SelectItem key={a.name} value={a.name}>{a.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="grid grid-cols-2 sm:flex sm:w-auto gap-2">
+          <Select value={period} onValueChange={(v) => { setPeriod(v as Period); setOffset(0); }}>
+            <SelectTrigger className="sm:w-[160px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="day">Jour</SelectItem>
+              <SelectItem value="week">Semaine</SelectItem>
+              <SelectItem value="month">Mois</SelectItem>
+              <SelectItem value="year">Année</SelectItem>
+              <SelectItem value="all">Tout l'historique</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={account} onValueChange={setAccount}>
+            <SelectTrigger className="sm:w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes les caisses</SelectItem>
+              {accounts.map(a => <SelectItem key={a.name} value={a.name}>{a.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Navigation vers une période passée précise (ex. "la semaine
+            dernière") — sans changer la granularité choisie. */}
+        {range && (
+          <div className="flex items-center gap-1.5">
+            <Button size="icon" variant="outline" className="h-8 w-8 shrink-0" onClick={() => setOffset(o => o - 1)}>
+              <ChevronLeft size={15} />
+            </Button>
+            <span className="text-xs font-medium text-muted-foreground min-w-0 truncate px-1">{range.label}</span>
+            <Button size="icon" variant="outline" className="h-8 w-8 shrink-0" disabled={offset >= 0} onClick={() => setOffset(o => Math.min(0, o + 1))}>
+              <ChevronRight size={15} />
+            </Button>
+            {offset !== 0 && (
+              <Button size="sm" variant="ghost" className="h-8 text-xs shrink-0" onClick={() => setOffset(0)}>Aujourd'hui</Button>
+            )}
+          </div>
+        )}
       </div>
 
-      <RevenueEvolutionChart title="Flux financiers (temps réel)" />
+      {period === "all" || !range ? (
+        <Card className="rounded-2xl shadow-sm">
+          <CardContent className="p-6 text-sm text-muted-foreground text-center">
+            Choisissez Jour, Semaine, Mois ou Année ci-dessus pour voir le graphe détaillé de cette période.
+          </CardContent>
+        </Card>
+      ) : (
+        <RevenueEvolutionChart title="Flux financiers (temps réel)" period={period} range={range} />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="rounded-2xl shadow-sm">
